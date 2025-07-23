@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "docker:build": "docker build -t mr-kg-frontend .",
+    "docker:build-dev": "docker build -f Dockerfile.dev -t mr-kg-frontend-dev .",
+    "docker:run": "docker run -p 3000:80 mr-kg-frontend",
+    "docker:run-dev": "docker run -p 5173:5173 -v $(pwd):/app -v /app/node_modules mr-kg-frontend-dev"
   },
   "dependencies": {
     "vue": "^3.4.0"

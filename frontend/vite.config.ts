@@ -8,5 +8,16 @@ export default defineConfig({
     alias: {
       '@': '/src'
     }
+  },
+  server: {
+    host: true, // Listen on all addresses including Docker
+    port: 5173,
+    watch: {
+      usePolling: true, // Enable polling for file changes in Docker
+    }
+  },
+  preview: {
+    host: true,
+    port: 4173
   }
 })
