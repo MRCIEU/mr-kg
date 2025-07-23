@@ -1,7 +1,7 @@
 [project]
-name = "api"
+name = "backend"
 version = "0.1.0"
-description = "FastAPI server"
+description = "FastAPI backend server"
 authors = [
     { name = "Yi Liu" },
     { name = "Tom Gaunt" },

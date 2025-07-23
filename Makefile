@@ -1,33 +1,43 @@
 # Makefile for MR-KG Docker operations
 
-.PHONY: help build build-dev up up-dev down logs clean
+.PHONY: help build build-dev up up-dev down logs clean backend frontend
 
 # Default target
 help:
 	@echo "Available commands:"
-	@echo "  build     - Build production images"
-	@echo "  build-dev - Build development images"
-	@echo "  up        - Start production services"
-	@echo "  up-dev    - Start development services"
-	@echo "  down      - Stop all services"
-	@echo "  logs      - View logs from all services"
-	@echo "  clean     - Remove all containers and images"
+	@echo "  build        - Build all production images"
+	@echo "  build-dev    - Build all development images"
+	@echo "  up           - Start all production services"
+	@echo "  up-dev       - Start all development services"
+	@echo "  down         - Stop all services"
+	@echo "  logs         - View logs from all services"
+	@echo "  clean        - Remove all containers and images"
+	@echo "  backend      - Start only backend services"
+	@echo "  frontend     - Start only frontend services"
 
-# Build production images
+# Build all production images
 build:
 	docker-compose build
 
-# Build development images
+# Build all development images
 build-dev:
-	docker-compose build frontend-dev
+	docker-compose build frontend-dev backend-dev
 
-# Start production services
+# Start all production services
 up:
 	docker-compose up --build -d
 
-# Start development services
+# Start all development services
 up-dev:
 	docker-compose --profile dev up --build -d
+
+# Start only backend services
+backend:
+	docker-compose up backend --build -d
+
+# Start only frontend services
+frontend:
+	docker-compose up frontend --build -d
 
 # Stop all services
 down:

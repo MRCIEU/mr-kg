@@ -10,6 +10,8 @@ services:
       - "3000:80"
     environment:
       - NODE_ENV=production
+    depends_on:
+      - backend
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
@@ -32,20 +34,42 @@ services:
       - NODE_ENV=development
     profiles:
       - dev
+    depends_on:
+      - backend-dev
     restart: unless-stopped
 
-  # API service (placeholder for future backend)
-  # api:
-  #   build:
-  #     context: ./api
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - ENVIRONMENT=production
-  #   restart: unless-stopped
-  #   depends_on:
-  #     - db
+  # Backend service (production)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development backend service (for development only)
+  backend-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    environment:
+      - ENVIRONMENT=development
+    profiles:
+      - dev
+    restart: unless-stopped
 
   # Database service (placeholder for future database)
   # db:

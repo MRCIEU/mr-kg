@@ -1,19 +1,20 @@
 # MR-KG Docker Setup
 
-This project includes Docker configuration for both development and production environments.
+This project includes Docker configuration for both frontend (Vue.js) and backend (FastAPI) services in development and production environments.
 
 ## Quick Start
 
 ### Production Build
 ```bash
-# Build and run the production frontend
+# Build and run all services (frontend + backend)
 docker-compose up --build
 
 # Or run in detached mode
 docker-compose up --build -d
 ```
 
-The frontend will be available at http://localhost:3000
+The frontend will be available at <http://localhost:3000>
+The backend API will be available at <http://localhost:8000>
 
 ### Development Build
 ```bash
@@ -24,26 +25,48 @@ docker-compose --profile dev up --build
 docker-compose --profile dev up --build -d
 ```
 
-The development server will be available at http://localhost:5173
+The development frontend will be available at <http://localhost:5173>
+The development backend will be available at <http://localhost:8001>
 
 ## Services
 
 ### Frontend (Production)
+
 - **Port**: 3000
 - **Image**: Built from `frontend/Dockerfile`
-- **Features**: 
+- **Features**:
   - Multi-stage build with Node.js and Nginx
   - Optimized for production with gzip compression
   - Security headers configured
   - Health check endpoint at `/health`
 
 ### Frontend-Dev (Development)
+
 - **Port**: 5173
 - **Image**: Built from `frontend/Dockerfile.dev`
 - **Features**:
   - Hot module replacement (HMR)
   - Volume mounting for live code changes
   - Development optimizations
+
+### Backend (Production)
+
+- **Port**: 8000
+- **Image**: Built from `backend/Dockerfile`
+- **Features**:
+  - FastAPI with uv package manager
+  - Non-root user for security
+  - Health check endpoint at `/health`
+  - Optimized for production
+
+### Backend-Dev (Development)
+
+- **Port**: 8001
+- **Image**: Built from `backend/Dockerfile.dev`
+- **Features**:
+  - FastAPI with hot reload
+  - Volume mounting for live code changes
+  - uv for fast dependency management
 
 ## Docker Commands
 
