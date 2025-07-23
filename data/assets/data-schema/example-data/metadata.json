@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "exposures": [
+      {
+        "id": "1",
+        "trait": "Particulate matter 2.5",
+        "category": "Environmental"
+      },
+      {
+        "id": "2",
+        "trait": "Type 2 diabetes",
+        "category": "metabolic disease"
+      },
+      {
+        "id": "3",
+        "trait": "Body mass index",
+        "category": "Anthropometric"
+      }
+    ],
+    "outcomes": [
+      {
+        "id": "1",
+        "trait": "Forced expiratory volume in 1 s",
+        "category": "Clinical measure"
+      },
+      {
+        "id": "2",
+        "trait": "Forced vital capacity",
+        "category": "Clinical measure"
+      },
+      {
+        "id": "3",
+        "trait": "Gastroesophageal reflux disease",
+        "category": "disease of the digestive system"
+      },
+      {
+        "id": "4",
+        "trait": "Non-alcoholic fatty liver disease (NAFLD)",
+        "category": "disease of the digestive system"
+      }
+    ],
+    "methods": [
+      "two-sample mendelian randomization",
+      "multivariable mendelian randomization",
+      "colocalisation",
+      "network mendelian randomization"
+    ],
+    "population": [
+      "European men",
+      "Breast cancer patients",
+      "African-Americans"
+    ],
+    "metainformation": {
+      "error": "No information on population is provided in abstract",
+      "explanation": "Some methods do not match those listed in the prompt"
+    }
+  }
+}

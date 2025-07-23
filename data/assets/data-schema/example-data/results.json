@@ -1,0 +1,44 @@
+{
+  "results": [
+    {
+      "exposure": "Particulate matter 2.5",
+      "outcome": "Forced expiratory volume in 1 s",
+      "beta": 0.154,
+      "units": "mmHg",
+      "hazard ratio": null,
+      "odds ratio": null,
+      "95% CI": [0.101,0.215],
+      "SE": 0.102,
+      "P-value": 0.0015,
+      "Direction": "increases"
+    },
+    {
+      "exposure": "Body mass index",
+      "outcome": "Gastroesophageal reflux disease",
+      "beta": null,
+      "units": null,
+      "hazard ratio": null,
+      "odds ratio": 1.114,
+      "95% CI": [1.021,1.314],
+      "SE": null,
+      "P-value": 0.0157,
+      "Direction": "increases"
+    },
+    {
+      "exposure": "Body mass index",
+      "outcome": "Non-alcoholic fatty liver disease (NAFLD)",
+      "beta": null,
+      "units": null,
+      "hazard ratio": null,
+      "odds ratio": null,
+      "95% CI": [null,null],
+      "SE": null,
+      "P-value": null,
+      "Direction": "increases"
+    }
+  ],
+  "resultsinformation": {
+    "error": "No results provided in abstract",
+    "explanation": "P-values were string, not numeric values"
+  }
+}

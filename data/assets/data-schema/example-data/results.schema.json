@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Results",
+  "type": "object",
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "exposure": { "type": "string" },
+          "outcome": { "type": "string" },
+          "beta": { "type": ["number", "null"] },
+          "units": { "type": ["string", "null"] },
+          "hazard ratio": { "type": ["number", "null"] },
+          "odds ratio": { "type": ["number", "null"] },
+          "95% CI": {
+            "type": "array",
+            "items": { "type": ["number", "null"] },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "SE": { "type": ["number", "null"] },
+          "P-value": { "type": ["number", "null"] },
+          "Direction": { "type": "string" }
+        },
+        "required": [
+          "exposure",
+          "outcome",
+          "beta",
+          "units",
+          "hazard ratio",
+          "odds ratio",
+          "95% CI",
+          "SE",
+          "P-value",
+          "Direction"
+        ]
+      }
+    },
+    "resultsinformation": {
+      "type": "object",
+      "properties": {
+        "error": { "type": "string" },
+        "explanation": { "type": "string" }
+      },
+      "required": ["error", "explanation"]
+    }
+  },
+  "required": ["results", "resultsinformation"]
+}
