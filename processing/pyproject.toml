@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "common-funcs",
+    "common_funcs",
     "duckdb>=1.3.2",
     "pandas>=2.3.1",
     "scispacy>=0.5.5",
@@ -19,5 +19,5 @@ dev = [
 ]
 
 [tool.uv.sources]
-common-funcs = { path = "../src/common_funcs" }
-yiutils = { path = "../src/yiutils" }
+common_funcs = { path = "../src/common_funcs", editable = true }
+yiutils = { path = "../src/yiutils", editable = true }

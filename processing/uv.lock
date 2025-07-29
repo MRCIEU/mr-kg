@@ -113,7 +113,7 @@ wheels = [
 [[package]]
 name = "common-funcs"
 version = "0.1.0"
-source = { virtual = "../src/common_funcs" }
+source = { editable = "../src/common_funcs" }
 dependencies = [
     { name = "pandas" },
 ]
@@ -530,11 +530,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "common-funcs", virtual = "../src/common_funcs" },
+    { name = "common-funcs", editable = "../src/common_funcs" },
     { name = "duckdb", specifier = ">=1.3.2" },
     { name = "pandas", specifier = ">=2.3.1" },
     { name = "scispacy", specifier = ">=0.5.5" },
-    { name = "yiutils", directory = "../src/yiutils" },
+    { name = "yiutils", editable = "../src/yiutils" },
 ]
 
 [package.metadata.requires-dev]
@@ -1140,4 +1140,4 @@ wheels = [
 [[package]]
 name = "yiutils"
 version = "0.1.0"
-source = { directory = "../src/yiutils" }
+source = { editable = "../src/yiutils" }
