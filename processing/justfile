@@ -1,0 +1,25 @@
+default: help
+
+# Format using ruff format
+format:
+    fd --extension py --type file . | xargs uv run ruff format
+
+# Lint using ruff check
+lint:
+    fd --extension py --type file . | xargs uv run ruff check
+
+# Lint using ty check
+ty:
+    fd --extension py --type file . | xargs uv run ty check
+
+# sanity
+sanity:
+    uv run scripts/sanity.py
+
+# Format and lint in sequence
+check: format lint
+
+# Show help
+help:
+    @just --list
+
