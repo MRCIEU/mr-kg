@@ -1,3 +1,5 @@
+"Process trait labels from model results"
+
 import argparse
 import json
 
@@ -10,27 +12,18 @@ PROJECT_ROOT = find_project_root("docker-compose.yml")
 DATA_DIR = PROJECT_ROOT / "data"
 MODEL_DIR = PROJECT_ROOT / "models"
 RAW_RESULTS_DIR = DATA_DIR / "raw" / "llm-results-aggregated"
-SCISPACY_MODEL_DIR = (
-    MODEL_DIR
-    / "en_core_sci_lg-0.5.4"
-    / "en_core_sci_lg"
-    / "en_core_sci_lg-0.5.4"
-)
 
 MODELS = ["llama3", "llama3-2", "deepseek-r1-distilled", "gpt-4-1", "o4-mini"]
-# load scispacy model
 
 
 # make args
 def make_args():
-    parser = argparse.ArgumentParser(
-        description="Process trait labels and embeddings from model results"
-    )
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dry-run",
         "-n",
         action="store_true",
-        help="Perform a dry run without actually processing embeddings",
+        help="Perform a dry run without actually processing",
     )
     return parser.parse_args()
 
@@ -85,9 +78,6 @@ def main():
     args = make_args()
 
     # ===== init ====
-    assert SCISPACY_MODEL_DIR.exists(), (
-        f"Scispacy model directory {SCISPACY_MODEL_DIR} does not exist."
-    )
 
     # If dry run, stop here
     if args.dry_run:
@@ -134,8 +124,14 @@ def main():
         f"Total unique trait labels across all models: {len(unique_trait_labels)}"
     )
 
-    # embed and write
-    pass
+    # write output
+    output_dir = DATA_DIR / "processed" / "traits.txt"
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    with output_dir.open("w") as f:
+        for trait in unique_trait_labels:
+            f.write(f"{trait}\n")
+
+    logger.info(f"Unique trait labels have been written to {output_dir}")
 
 
 if __name__ == "__main__":
