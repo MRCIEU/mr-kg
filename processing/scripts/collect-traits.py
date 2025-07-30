@@ -3,6 +3,7 @@
 import argparse
 import json
 
+import pandas as pd
 from common_funcs.schema import raw_data_schema
 from loguru import logger
 from pydash import py_
@@ -72,7 +73,6 @@ def get_trait_labels(data: list[raw_data_schema.Rawdata]) -> list[str]:
     return unique_traits
 
 
-# main
 def main():
     # Parse command line arguments
     args = make_args()
@@ -93,7 +93,7 @@ def main():
         logger.info("Dry run completed. Exiting without processing.")
         return
 
-    # ==== get results ====
+    # ===== get results ====
     # collect all results and unique them
     def process_model(model: str) -> list[str]:
         """Process a single model and return its trait labels."""
@@ -119,19 +119,24 @@ def main():
         .from_pairs()
         .value()
     )
-    unique_trait_labels = py_.chain(results).values().flatten().uniq().value()
+    unique_trait_labels: list[str] = py_.chain(results).values().flatten().uniq().value()
     logger.info(
         f"Total unique trait labels across all models: {len(unique_trait_labels)}"
     )
 
-    # write output
-    output_dir = DATA_DIR / "processed" / "traits.txt"
-    output_dir.parent.mkdir(parents=True, exist_ok=True)
-    with output_dir.open("w") as f:
-        for trait in unique_trait_labels:
-            f.write(f"{trait}\n")
+    # Create a DataFrame of unique trait labels with an index column
+    trait_df = pd.DataFrame({
+        "index": range(len(unique_trait_labels)),
+        "trait": unique_trait_labels
+    })
 
-    logger.info(f"Unique trait labels have been written to {output_dir}")
+    # write output
+    output_dir = DATA_DIR / "processed" / "traits"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / "unique_traits.csv"
+    trait_df.to_csv(output_file, index=False)
+
+    logger.info(f"Unique trait labels have been written to {output_file}")
 
 
 if __name__ == "__main__":
