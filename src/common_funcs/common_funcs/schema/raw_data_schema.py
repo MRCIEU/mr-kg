@@ -30,8 +30,8 @@ class PopulationError(TypedDict, total=False):
 class Metadata(TypedDict, total=False):
     """Metadata schema for processed results."""
 
-    exposures: List[Union[str, ExposureOutcomeItem]]
-    outcomes: List[Union[str, ExposureOutcomeItem]]
+    exposures: List[ExposureOutcomeItem]
+    outcomes: List[ExposureOutcomeItem]
     methods: List[Union[MethodItem, List[str], str]]
     population: Union[str, List[str], List[Dict[str, Any]], PopulationError]
 

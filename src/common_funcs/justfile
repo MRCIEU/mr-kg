@@ -1,0 +1,28 @@
+default: help
+
+# Show help
+help:
+    @just --list
+
+# ==== codebase ====
+
+# Format using ruff format
+[group('codebase')]
+format:
+    fd --extension py --type file . | xargs uv run ruff format
+
+# Lint using ruff check
+[group('codebase')]
+lint:
+    fd --extension py --type file . | xargs uv run ruff check
+
+# Lint using ty check
+[group('codebase')]
+ty:
+    fd --extension py --type file . | xargs uv run ty check
+
+# Format and lint in sequence
+[group('codebase')]
+check: format lint
+
+
