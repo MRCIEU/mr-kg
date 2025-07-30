@@ -5,8 +5,8 @@
   "items": {
     "type": "object",
     "properties": {
-      "exposure": { "type": "string" },
-      "outcome": { "type": "string" },
+      "exposure": { "type": ["string", "null"] },
+      "outcome": { "type": ["string", "null"] },
       "beta": { "type": ["number", "null", "string"] },
       "units": { "type": ["string", "null"] },
       "odds ratio": { "type": ["number", "null", "string"] },
