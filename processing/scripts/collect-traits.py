@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from typing import List, TypedDict
 
 import pandas as pd
 from common_funcs.schema import raw_data_schema
@@ -15,6 +16,11 @@ MODEL_DIR = PROJECT_ROOT / "models"
 RAW_RESULTS_DIR = DATA_DIR / "raw" / "llm-results-aggregated"
 
 MODELS = ["llama3", "llama3-2", "deepseek-r1-distilled", "gpt-4-1", "o4-mini"]
+
+
+class ProcessModelResults(TypedDict):
+    data: List[raw_data_schema.Rawdata]
+    trait_labels: List[str]
 
 
 # make args
@@ -73,6 +79,24 @@ def get_trait_labels(data: list[raw_data_schema.Rawdata]) -> list[str]:
     return unique_traits
 
 
+# collect all results and unique them
+def process_model(model: str) -> ProcessModelResults:
+    """Process a single model and return its data and trait labels."""
+    logger.info(f"Processing model: {model}")
+    model_data_path = RAW_RESULTS_DIR / model / "processed_results_valid.json"
+    assert model_data_path.exists(), (
+        f"Model data path {model_data_path} does not exist."
+    )
+
+    with model_data_path.open("r") as f:
+        data = json.load(f)
+        trait_labels = get_trait_labels(data)
+        logger.info(
+            f"Model {model} has {len(trait_labels)} unique trait labels."
+        )
+    return {"data": data, "trait_labels": trait_labels}
+
+
 def main():
     # Parse command line arguments
     args = make_args()
@@ -94,41 +118,33 @@ def main():
         return
 
     # ===== get results ====
-    # collect all results and unique them
-    def process_model(model: str) -> list[str]:
-        """Process a single model and return its trait labels."""
-        logger.info(f"Processing model: {model}")
-        model_data_path = (
-            RAW_RESULTS_DIR / model / "processed_results_valid.json"
-        )
-        assert model_data_path.exists(), (
-            f"Model data path {model_data_path} does not exist."
-        )
 
-        with model_data_path.open("r") as f:
-            data = json.load(f)
-            trait_labels = get_trait_labels(data)
-            logger.info(
-                f"Model {model} has {len(trait_labels)} unique trait labels."
-            )
-        return trait_labels
-
-    results: dict[str, list[str]] = (
+    model_results: ProcessModelResults = (
         py_.chain(MODELS)
         .map(lambda model: (model, process_model(model)))
         .from_pairs()
         .value()
     )
-    unique_trait_labels: list[str] = py_.chain(results).values().flatten().uniq().value()
+
+    unique_trait_labels = (
+        py_.chain(model_results.values())
+        .map("trait_labels")
+        .flatten()
+        .uniq()
+        .value()
+    )
+
     logger.info(
         f"Total unique trait labels across all models: {len(unique_trait_labels)}"
     )
 
     # Create a DataFrame of unique trait labels with an index column
-    trait_df = pd.DataFrame({
-        "index": range(len(unique_trait_labels)),
-        "trait": unique_trait_labels
-    })
+    trait_df = pd.DataFrame(
+        {
+            "index": range(len(unique_trait_labels)),
+            "trait": unique_trait_labels,
+        }
+    )
 
     # write output
     output_dir = DATA_DIR / "processed" / "traits"
