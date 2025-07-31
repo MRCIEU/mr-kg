@@ -36,3 +36,6 @@ check: format lint
 collect-traits:
     uv run processing/preprocess-traits.py
 
+[group('postprocessing')]
+aggregate-embeddings:
+    uv run aggregate-embeddings.py
