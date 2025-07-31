@@ -9,6 +9,7 @@ This script processes trait labels to generate embeddings:
 
 import argparse
 import json
+from pathlib import Path
 
 import pandas as pd
 import spacy
@@ -23,7 +24,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 MODELS_DIR = PROJECT_ROOT / "models"
 MODEL_PATH = MODELS_DIR / "en_core_sci_lg-0.5.4" / "en_core_sci_lg"
 INPUT_TRAITS_PATH = DATA_DIR / "traits" / "unique_traits.csv"
-OUTPUT_VECTOR_DIR_PATH = DATA_DIR / "intermediates" / "trait_vectors"
+OUTPUT_DIR = DATA_DIR / "output"
 
 
 def make_args():
@@ -53,6 +54,13 @@ def make_args():
         type=int,
         default=0,
         help="Current array chunk ID (0-based indexing)",
+    )
+    # ---- --output-dir ----
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=str(OUTPUT_DIR),
+        help="Output directory for embeddings files",
     )
     res = parser.parse_args()
     return res
@@ -130,9 +138,10 @@ def main():
         vector = doc.vector
         record["vector"] = vector
 
-    OUTPUT_VECTOR_DIR_PATH.mkdir(parents=True, exist_ok=True)
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
     output_path = (
-        OUTPUT_VECTOR_DIR_PATH / f"trait_vectors_chunk_{args.array_id}.json"
+        output_dir / f"trait_vectors_chunk_{args.array_id}.json"
     )
     logger.info(f"Write to output file: {output_path}")
     with output_path.open("w") as f:

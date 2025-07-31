@@ -1,0 +1,9 @@
+name: mr-kg-processing
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - just
+  - pip:
+    - uv
+
