@@ -22,8 +22,13 @@ from yiutils.project_utils import find_project_root
 PROJECT_ROOT = find_project_root("docker-compose.yml")
 DATA_DIR = PROJECT_ROOT / "data"
 MODELS_DIR = PROJECT_ROOT / "models"
-MODEL_PATH = MODELS_DIR / "en_core_sci_lg-0.5.4" / "en_core_sci_lg"
-INPUT_TRAITS_PATH = DATA_DIR / "traits" / "unique_traits.csv"
+MODEL_PATH = (
+    MODELS_DIR
+    / "en_core_sci_lg-0.5.4"
+    / "en_core_sci_lg"
+    / "en_core_sci_lg-0.5.4"
+)
+INPUT_TRAITS_PATH = DATA_DIR / "processed" / "traits" / "unique_traits.csv"
 OUTPUT_DIR = DATA_DIR / "output"
 
 
@@ -135,7 +140,7 @@ def main():
     for record in tqdm(trait_records, desc="Processing traits"):
         trait_text = record["trait"]
         doc = nlp(trait_text)
-        vector = doc.vector
+        vector = list(doc.vector.astype(float))
         record["vector"] = vector
 
     output_dir = Path(args.output_dir)
