@@ -140,9 +140,7 @@ def main():
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = (
-        output_dir / f"trait_vectors_chunk_{args.array_id}.json"
-    )
+    output_path = output_dir / f"trait_vectors_chunk_{args.array_id}.json"
     logger.info(f"Write to output file: {output_path}")
     with output_path.open("w") as f:
         json.dump(trait_records, f, indent=2)
