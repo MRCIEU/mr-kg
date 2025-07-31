@@ -36,6 +36,3 @@ check: format lint
 collect-trait:
     uv run processing/preprocess-traits.py
 
-[group('processing')]
-embed:
-    # TODO sbatch file
