@@ -33,9 +33,13 @@ check: format lint
 # ==== processing ====
 
 [group('preprocessing')]
-collect-traits:
-    uv run processing/preprocess-traits.py
+preprocess-traits:
+    uv run scripts/preprocess-traits.py
+
+[group('preprocessing')]
+preprocess-efo:
+    uv run scripts/preprocess-efo.py
 
 [group('postprocessing')]
 aggregate-embeddings:
-    uv run aggregate-embeddings.py
+    uv run scripts/aggregate-embeddings.py
