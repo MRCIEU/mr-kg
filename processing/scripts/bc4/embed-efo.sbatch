@@ -7,7 +7,7 @@
 #SBATCH --time=5:00:00
 #SBATCH --mem=14G
 #SBATCH --output=../data/output/slurm-%A_%a.out
-#SBATCH --array=0
+#SBATCH --array=0-9
 
 # NOTE: sbatch --account=<account-code> <script>
 date "+%Y-%m-%dT%H-%M"
@@ -31,6 +31,8 @@ fi
 
 micromamba run -n mr-kg-processing \
   uv run scripts/embed-efo.py \
+  --array-length 5 \
+  --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \
   >"${output_log_file}" 2>&1
 
