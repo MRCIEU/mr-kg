@@ -19,7 +19,7 @@ lint:
 # Lint using ty check
 [group('codebase')]
 ty:
-    fd --extension py --type file . | xargs uv run ty check
+    uv run ty check
 
 # sanity
 [group('codebase')]

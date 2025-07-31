@@ -26,7 +26,7 @@ common_funcs = { path = "../src/common_funcs", editable = true }
 yiutils = { path = "../src/yiutils", editable = true }
 
 [tool.ty.rules]
-unresolved-import = "ignore"
+# unresolved-import = "ignore"
 
 [tool.ruff]
 line-length = 79
