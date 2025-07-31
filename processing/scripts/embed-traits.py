@@ -5,6 +5,8 @@ This script processes trait labels to generate embeddings:
 2. Uses SciSpacy models to generate embeddings
 3. Processes traits in chunks for parallel processing
 4. Outputs embeddings for downstream analysis
+
+NOTE: this should be run as part of a HPC array job.
 """
 
 import argparse

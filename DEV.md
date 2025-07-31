@@ -18,7 +18,7 @@ cd processing
 
 micromamba env create -f environment.yml
 
-TODO: uv?
+uv sync
 
 ## frontend
 
