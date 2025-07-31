@@ -34,4 +34,4 @@ check: format lint
 
 [group('preprocessing')]
 collect-trait:
-    uv run processing/collect_trait.py
+    uv run processing/preprocess-traits.py

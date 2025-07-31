@@ -21,7 +21,6 @@ from yiutils.project_utils import find_project_root
 # Project configuration
 PROJECT_ROOT = find_project_root("docker-compose.yml")
 DATA_DIR = PROJECT_ROOT / "data"
-MODEL_DIR = PROJECT_ROOT / "models"
 RAW_RESULTS_DIR = DATA_DIR / "raw" / "llm-results-aggregated"
 
 # List of models to process
