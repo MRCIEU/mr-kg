@@ -35,6 +35,7 @@ class TraitLabelResults(TypedDict):
         data: Raw data items from the model
         trait_labels: Unique trait labels extracted from this model's data
     """
+
     model: str
     data: List[raw_data_schema.Rawdata]
     trait_labels: List[str]

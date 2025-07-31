@@ -8,11 +8,14 @@ This script processes trait labels to generate embeddings:
 """
 
 import argparse
+import json
+
 import pandas as pd
 import spacy
 from loguru import logger
-from yiutils.project_utils import find_project_root
+from tqdm import tqdm
 from yiutils.chunking import calculate_chunk_start_end
+from yiutils.project_utils import find_project_root
 
 # Project configuration
 PROJECT_ROOT = find_project_root("docker-compose.yml")
@@ -20,6 +23,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 MODELS_DIR = PROJECT_ROOT / "models"
 MODEL_PATH = MODELS_DIR / "en_core_sci_lg-0.5.4" / "en_core_sci_lg"
 INPUT_TRAITS_PATH = DATA_DIR / "traits" / "unique_traits.csv"
+OUTPUT_VECTOR_DIR_PATH = DATA_DIR / "intermediates" / "trait_vectors"
 
 
 def make_args():
@@ -99,28 +103,40 @@ def main():
     start_idx, end_idx = calculate_chunk_start_end(
         chunk_id=args.array_id,
         num_chunks=args.array_length,
-        data_length=total_traits
+        data_length=total_traits,
     )
 
     if start_idx is None or end_idx is None:
-        logger.warning(f"Chunk {args.array_id} is out of range. No traits to process.")
+        logger.warning(
+            f"Chunk {args.array_id} is out of range. No traits to process."
+        )
         return
 
     logger.info(
         f"Processing chunk {args.array_id}/{args.array_length}: "
-        f"traits [{start_idx} to {end_idx }) (total: {end_idx - start_idx})"
+        f"traits [{start_idx} to {end_idx}) (total: {end_idx - start_idx})"
     )
 
     # Extract trait chunk for processing
     trait_chunk = traits_df.iloc[start_idx:end_idx]
-    trait_labels = trait_chunk['trait'].tolist()
+    trait_records = trait_chunk.to_dict("records")
 
-    logger.info(f"Chunk contains {len(trait_labels)} traits to process.")
+    logger.info(f"Chunk contains {len(trait_records)} traits to process.")
 
     # Process traits in this chunk
-    for idx, trait in enumerate(trait_labels):
-        logger.info(f"Processing trait {idx + 1}/{len(trait_labels)}: {trait}")
-        # TODO: Generate embeddings using nlp(trait) and save results
+    for record in tqdm(trait_records, desc="Processing traits"):
+        trait_text = record["trait"]
+        doc = nlp(trait_text)
+        vector = doc.vector
+        record["vector"] = vector
+
+    OUTPUT_VECTOR_DIR_PATH.mkdir(parents=True, exist_ok=True)
+    output_path = (
+        OUTPUT_VECTOR_DIR_PATH / f"trait_vectors_chunk_{args.array_id}.json"
+    )
+    logger.info(f"Write to output file: {output_path}")
+    with output_path.open("w") as f:
+        json.dump(trait_records, f, indent=2)
 
 
 if __name__ == "__main__":
