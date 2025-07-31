@@ -686,6 +686,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pydash" },
     { name = "scispacy" },
+    { name = "tqdm" },
     { name = "yiutils" },
 ]
 
@@ -704,6 +705,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.3.1" },
     { name = "pydash", specifier = ">=8.0.5" },
     { name = "scispacy", specifier = ">=0.5.5" },
+    { name = "tqdm", specifier = ">=4.67.1" },
     { name = "yiutils", editable = "../src/yiutils" },
 ]
 
