@@ -6,8 +6,8 @@
 
 ## preprocessing
 
-just collect-trait
+just collect-traits
 
 ## embed
 
-sbatch --account=<ACCOUNT-CODE> scripts/bc4/embed.sbatch
+sbatch --account=<ACCOUNT-CODE> scripts/bc4/embed-traits.sbatch

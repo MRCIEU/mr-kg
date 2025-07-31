@@ -33,6 +33,6 @@ check: format lint
 # ==== processing ====
 
 [group('preprocessing')]
-collect-trait:
+collect-traits:
     uv run processing/preprocess-traits.py
 

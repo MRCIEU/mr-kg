@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=embed
+#SBATCH --job-name=embed-traits
 #SBATCH --partition=mrcieu
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -30,7 +30,7 @@ if [ "${SLURM_ARRAY_TASK_ID}" -eq 0 ]; then
 fi
 
 micromamba run -n mr-kg-processing \
-  uv run scripts/embed.py \
+  uv run scripts/embed-traits.py \
   --array-length 5 \
   --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \
