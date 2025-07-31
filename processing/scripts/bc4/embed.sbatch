@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --job-name=embed
-#SBATCH --partition=mrcieu-gpu
+#SBATCH --partition=mrcieu
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --time=10:00:00
