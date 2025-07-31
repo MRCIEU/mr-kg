@@ -1,4 +1,5 @@
-from typing import TypedDict, Union, List, Any, Dict
+from typing import TypedDict
+
 
 class EfoTermRecord(TypedDict):
     """EFO term record"""

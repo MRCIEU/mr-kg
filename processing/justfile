@@ -14,7 +14,7 @@ format:
 # Lint using ruff check
 [group('codebase')]
 lint:
-    fd --extension py --type file . | xargs uv run ruff check
+    fd --extension py --type file . | xargs uv run ruff check --fix
 
 # Lint using ty check
 [group('codebase')]
