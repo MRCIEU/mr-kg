@@ -31,3 +31,7 @@ sanity:
 check: format lint
 
 # ==== processing ====
+
+[group('preprocessing')]
+collect-trait:
+    uv run processing/collect_trait.py
