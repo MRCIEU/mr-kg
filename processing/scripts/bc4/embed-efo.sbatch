@@ -31,7 +31,7 @@ fi
 
 micromamba run -n mr-kg-processing \
   uv run scripts/embed-efo.py \
-  --array-length 5 \
+  --array-length 10 \
   --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \
   >"${output_log_file}" 2>&1
