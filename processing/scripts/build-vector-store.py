@@ -180,76 +180,87 @@ def create_model_results_tables(
         )
     """)
 
-    # Insert data
-    result_id = 0
-    trait_id = 0
+    # Pre-collect all data to avoid manual ID management
+    model_results_data = []
+    model_traits_data = []
 
-    for model_result in model_results:
+    for result_id, model_result in enumerate(model_results):
         model_name = model_result["model"]
 
         for data_item in model_result["data"]:
             pmid = str(data_item["pmid"])
+            current_result_id = len(model_results_data)
 
-            # Insert model result record
-            conn.execute(
-                """
-                INSERT INTO model_results (id, model, pmid)
-                VALUES (?, ?, ?)
-            """,
-                (result_id, model_name, pmid),
+            # Collect model result data
+            model_results_data.append((current_result_id, model_name, pmid))
+
+            # Extract and validate trait data
+            exposure_traits = _extract_valid_traits(
+                data_item["metadata"]["exposures"], "exposure"
+            )
+            outcome_traits = _extract_valid_traits(
+                data_item["metadata"]["outcomes"], "outcome"
             )
 
-            # Insert exposure traits
-            for exposure in data_item["metadata"]["exposures"]:
-                if isinstance(exposure, dict) and all(
-                    key in exposure
-                    for key in ["id", "trait", "category", "linked_index"]
-                ):
-                    conn.execute(
-                        """
-                        INSERT INTO model_traits (id, model_result_id, trait_id, trait, category, linked_index, trait_type)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            trait_id,
-                            result_id,
-                            str(exposure.get("id")),
-                            exposure.get("trait"),
-                            exposure.get("category"),
-                            exposure.get("linked_index"),
-                            "exposure",
-                        ),
-                    )
-                    trait_id += 1
+            # Collect trait data with pre-calculated IDs
+            for trait_data in exposure_traits + outcome_traits:
+                trait_id = len(model_traits_data)
+                model_traits_data.append((
+                    trait_id,
+                    current_result_id,
+                    str(trait_data["id"]),
+                    trait_data["trait"],
+                    trait_data["category"],
+                    trait_data["linked_index"],
+                    trait_data["trait_type"]
+                ))
 
-            # Insert outcome traits
-            for outcome in data_item["metadata"]["outcomes"]:
-                if isinstance(outcome, dict) and all(
-                    key in outcome
-                    for key in ["id", "trait", "category", "linked_index"]
-                ):
-                    conn.execute(
-                        """
-                        INSERT INTO model_traits (id, model_result_id, trait_id, trait, category, linked_index, trait_type)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            trait_id,
-                            result_id,
-                            str(outcome.get("id")),
-                            outcome.get("trait"),
-                            outcome.get("category"),
-                            outcome.get("linked_index"),
-                            "outcome",
-                        ),
-                    )
-                    trait_id += 1
+    # Batch insert model results
+    logger.info(f"Inserting {len(model_results_data)} model results...")
+    conn.executemany(
+        "INSERT INTO model_results (id, model, pmid) VALUES (?, ?, ?)",
+        model_results_data
+    )
 
-            result_id += 1
+    # Batch insert model traits
+    logger.info(f"Inserting {len(model_traits_data)} model traits...")
+    conn.executemany(
+        """INSERT INTO model_traits
+           (id, model_result_id, trait_id, trait, category, linked_index, trait_type)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        model_traits_data
+    )
 
     logger.info(
-        f"✓ Model results tables created with {result_id} results and {trait_id} traits"
+        f"✓ Model results tables created with {len(model_results_data)} results and {len(model_traits_data)} traits"
     )
+
+
+def _extract_valid_traits(traits_list, trait_type: str):
+    """Extract valid traits from exposures or outcomes list.
+
+    Args:
+        traits_list: List of trait dictionaries
+        trait_type: Either 'exposure' or 'outcome'
+
+    Returns:
+        List of valid trait dictionaries with trait_type added
+    """
+    valid_traits = []
+    required_keys = ["id", "trait", "category", "linked_index"]
+
+    for trait in traits_list:
+        if isinstance(trait, dict) and all(key in trait for key in required_keys):
+            trait_data = {
+                "id": trait.get("id"),
+                "trait": trait.get("trait"),
+                "category": trait.get("category"),
+                "linked_index": trait.get("linked_index"),
+                "trait_type": trait_type
+            }
+            valid_traits.append(trait_data)
+
+    return valid_traits
 
 
 def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
