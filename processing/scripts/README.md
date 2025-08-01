@@ -14,7 +14,7 @@ The vector store contains:
 
 ### `build-vector-store.py`
 
-Creates the DuckDB database with all embeddings and model results data.
+Creates the DuckDB database with all embeddings and model results data. Includes automatic schema validation after database creation.
 
 **Usage:**
 ```bash
@@ -32,9 +32,36 @@ python scripts/build-vector-store.py --database-name my-database
 - `trait_embeddings`: trait embeddings with id, label, and 200-dim vector
 - `efo_embeddings`: EFO embeddings with id, label, and 200-dim vector  
 - `model_results`: model result metadata (model, pmid)
-- `model_traits`: trait occurrences in model results with linkings
+- `model_result_traits`: trait occurrences in model results with linkings
 - `trait_similarity_search`: view for trait-to-trait similarity
 - `trait_efo_similarity_search`: view for trait-to-EFO similarity
+
+**Schema Validation:**
+The build script automatically validates the created database against the expected schema and reports any issues.
+
+### `validate-database.py`
+
+Validates an existing database against the expected schema definitions.
+
+**Usage:**
+```bash
+# Validate database with detailed report
+python scripts/validate-database.py --database database-{timestamp}.db
+
+# Show expected schema documentation
+python scripts/validate-database.py --show-schema
+
+# Validate without detailed report
+python scripts/validate-database.py --database database-{timestamp}.db --validate-only
+```
+
+**Validation includes:**
+- Table existence and structure
+- Column types and constraints
+- Index presence
+- View definitions
+- Foreign key relationships
+- Row count reporting
 
 ### `query-vector-store.py`
 

@@ -23,6 +23,7 @@ from common_funcs.schema.embedding_schema import EmbeddingRecord
 from common_funcs.schema.processed_data_schema import ProcessModelResults
 from loguru import logger
 from yiutils.project_utils import find_project_root
+from database_schema import validate_database_schema, print_validation_report
 
 
 def make_args():
@@ -486,6 +487,20 @@ def main():
             f"  - {model_trait_count[0] if model_trait_count else 0} trait linkings"
         )
         logger.info(f"  - Database saved to: {db_path}")
+
+    # Validate database schema
+    logger.info("Validating database schema...")
+    try:
+        with duckdb.connect(str(db_path)) as conn:
+            validation_results = validate_database_schema(conn)
+            if validation_results["valid"]:
+                logger.info("[OK] Database schema validation passed")
+                print_validation_report(validation_results)
+            else:
+                logger.warning("[WARN] Database schema validation found issues")
+                print_validation_report(validation_results)
+    except Exception as e:
+        logger.error(f"Schema validation failed: {e}")
 
     return 0
 
