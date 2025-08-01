@@ -62,7 +62,7 @@ def make_args():
         "--trait-by-index",
         "-ti",
         type=int,
-        help="Find trait by linked_index",
+        help="Find trait by trait_index",
     )
     return parser.parse_args()
 
@@ -78,13 +78,18 @@ def find_similar_traits(
         limit: Number of top results to return
 
     Returns:
-        List of tuples (trait_id, trait_label, similarity_score)
+        List of tuples (trait_index, trait_label, similarity_score)
     """
+    # Use direct SQL query instead of view for better compatibility
     result = conn.execute(
         """
-        SELECT result_id, result_label, similarity
-        FROM trait_similarity_search
-        WHERE query_label = ?
+        SELECT
+            t2.trait_index as result_id,
+            t2.trait_label as result_label,
+            array_cosine_similarity(t1.vector, t2.vector) as similarity
+        FROM trait_embeddings t1
+        CROSS JOIN trait_embeddings t2
+        WHERE t1.trait_label = ? AND t1.trait_index != t2.trait_index
         ORDER BY similarity DESC
         LIMIT ?
     """,
@@ -107,11 +112,16 @@ def find_similar_efo_terms(
     Returns:
         List of tuples (efo_id, efo_label, similarity_score)
     """
+    # Use direct SQL query instead of view for better compatibility
     result = conn.execute(
         """
-        SELECT efo_id, efo_label, similarity
-        FROM trait_efo_similarity_search
-        WHERE trait_label = ?
+        SELECT
+            e.id as efo_id,
+            e.label as efo_label,
+            array_cosine_similarity(t.vector, e.vector) as similarity
+        FROM trait_embeddings t
+        CROSS JOIN efo_embeddings e
+        WHERE t.trait_label = ?
         ORDER BY similarity DESC
         LIMIT ?
     """,
@@ -121,19 +131,19 @@ def find_similar_efo_terms(
     return result
 
 
-def list_all_traits(conn: duckdb.DuckDBPyConnection) -> List[Tuple[str, str]]:
+def list_all_traits(conn: duckdb.DuckDBPyConnection) -> List[Tuple[int, str]]:
     """List all traits in the database.
 
     Args:
         conn: DuckDB connection
 
     Returns:
-        List of tuples (trait_id, trait_label)
+        List of tuples (trait_index, trait_label)
     """
     result = conn.execute("""
-        SELECT id, label
+        SELECT trait_index, trait_label
         FROM trait_embeddings
-        ORDER BY label
+        ORDER BY trait_label
     """).fetchall()
 
     return result
@@ -154,9 +164,9 @@ def list_models_stats(
         SELECT
             model,
             COUNT(DISTINCT mr.id) as num_results,
-            COUNT(DISTINCT mt.id) as num_traits
+            COUNT(DISTINCT mrt.trait_index) as num_traits
         FROM model_results mr
-        LEFT JOIN model_traits mt ON mr.id = mt.model_result_id
+        LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
         GROUP BY model
         ORDER BY model
     """).fetchall()
@@ -165,24 +175,45 @@ def list_models_stats(
 
 
 def find_trait_by_index(
-    conn: duckdb.DuckDBPyConnection, linked_index: int
-) -> List[Tuple[str, str]]:
-    """Find trait information by linked_index.
+    conn: duckdb.DuckDBPyConnection, trait_index: int
+) -> List[Tuple[str, str, str]]:
+    """Find trait information by trait_index.
 
     Args:
         conn: DuckDB connection
-        linked_index: The linked_index to search for
+        trait_index: The trait_index to search for
 
     Returns:
-        List of tuples (trait_label, category)
+        List of tuples (trait_label, trait_role, count)
     """
+    # First get the trait label
+    trait_info = conn.execute(
+        """
+        SELECT trait_label
+        FROM trait_embeddings
+        WHERE trait_index = ?
+    """,
+        (trait_index,),
+    ).fetchone()
+
+    if not trait_info:
+        return []
+
+    trait_label = trait_info[0]
+
+    # Get usage statistics
     result = conn.execute(
         """
-        SELECT DISTINCT trait, category
-        FROM model_traits
-        WHERE linked_index = ?
+        SELECT 
+            ? as trait_label,
+            trait_role,
+            COUNT(*) as count
+        FROM model_result_traits
+        WHERE trait_index = ?
+        GROUP BY trait_role
+        ORDER BY count DESC
     """,
-        (linked_index,),
+        (trait_label, trait_index),
     ).fetchall()
 
     return result
@@ -190,7 +221,7 @@ def find_trait_by_index(
 
 def get_trait_embedding_by_label(
     conn: duckdb.DuckDBPyConnection, trait_label: str
-) -> Tuple[str, List[float]] | None:
+) -> Tuple[int, List[float]] | None:
     """Get embedding vector for a specific trait label.
 
     Args:
@@ -198,13 +229,13 @@ def get_trait_embedding_by_label(
         trait_label: The trait label to search for
 
     Returns:
-        Tuple of (trait_id, embedding_vector) or None if not found
+        Tuple of (trait_index, embedding_vector) or None if not found
     """
     result = conn.execute(
         """
-        SELECT id, vector
+        SELECT trait_index, vector
         FROM trait_embeddings
-        WHERE label = ?
+        WHERE trait_label = ?
         LIMIT 1
     """,
         (trait_label,),
@@ -238,32 +269,34 @@ def main():
             logger.info("Listing models and their statistics...")
             models = list_models_stats(conn)
             print("\\nModels in database:")
-            print("Model\\t\\tResults\\tTraits")
+            print("Model\t\tResults\tTraits")
             print("-" * 40)
             for model, num_results, num_traits in models:
-                print(f"{model}\\t\\t{num_results}\\t{num_traits}")
+                print(f"{model}\t\t{num_results}\t{num_traits}")
 
         if args.list_traits:
             logger.info("Listing all traits...")
             traits = list_all_traits(conn)
-            print(f"\\nFound {len(traits)} traits:")
-            for trait_id, trait_label in traits[:50]:  # Show first 50
-                print(f"{trait_id}: {trait_label}")
+            print(f"\nFound {len(traits)} traits:")
+            for trait_index, trait_label in traits[:50]:  # Show first 50
+                print(f"{trait_index}: {trait_label}")
             if len(traits) > 50:
                 print(f"... and {len(traits) - 50} more traits")
 
         if args.trait_by_index is not None:
             logger.info(
-                f"Finding trait with linked_index {args.trait_by_index}..."
+                f"Finding trait with trait_index {args.trait_by_index}..."
             )
             traits = find_trait_by_index(conn, args.trait_by_index)
             if traits:
-                print(f"\\nTrait(s) with linked_index {args.trait_by_index}:")
-                for trait, category in traits:
-                    print(f"  - {trait} (category: {category})")
+                print(f"\nTrait with trait_index {args.trait_by_index}:")
+                for trait_label, trait_role, count in traits:
+                    print(
+                        f"  - {trait_label} (role: {trait_role}, count: {count})"
+                    )
             else:
                 print(
-                    f"\\nNo trait found with linked_index {args.trait_by_index}"
+                    f"\nNo trait found with trait_index {args.trait_by_index}"
                 )
 
         if args.query_trait:
@@ -276,9 +309,9 @@ def main():
                 # Suggest similar trait names
                 similar_names = conn.execute(
                     """
-                    SELECT label
+                    SELECT trait_label
                     FROM trait_embeddings
-                    WHERE label ILIKE ?
+                    WHERE trait_label ILIKE ?
                     LIMIT 5
                 """,
                     (f"%{args.query_trait}%",),
@@ -289,17 +322,19 @@ def main():
                     for (name,) in similar_names:
                         print(f"  - {name}")
             else:
-                trait_id, embedding = trait_result
+                trait_index, embedding = trait_result
                 similar_traits = find_similar_traits(
                     conn, args.query_trait, args.limit
                 )
                 print(
-                    f"\\nTop {len(similar_traits)} most similar traits to '{args.query_trait}':"
+                    f"\nTop {len(similar_traits)} most similar traits to '{args.query_trait}':"
                 )
-                print("Similarity\\tTrait ID\\t\\tTrait Label")
+                print("Similarity\tTrait Index\t\tTrait Label")
                 print("-" * 80)
-                for trait_id, trait_label, similarity in similar_traits:
-                    print(f"{similarity:.4f}\\t\\t{trait_id}\\t{trait_label}")
+                for trait_index, trait_label, similarity in similar_traits:
+                    print(
+                        f"{similarity:.4f}\t\t{trait_index}\t\t{trait_label}"
+                    )
 
         if args.query_efo:
             logger.info(f"Finding similar EFO terms for: {args.query_efo}")
@@ -311,9 +346,9 @@ def main():
                 # Suggest similar trait names
                 similar_names = conn.execute(
                     """
-                    SELECT label
+                    SELECT trait_label
                     FROM trait_embeddings
-                    WHERE label ILIKE ?
+                    WHERE trait_label ILIKE ?
                     LIMIT 5
                 """,
                     (f"%{args.query_efo}%",),
@@ -324,21 +359,21 @@ def main():
                     for (name,) in similar_names:
                         print(f"  - {name}")
             else:
-                trait_id, embedding = trait_result
+                trait_index, embedding = trait_result
                 similar_efo = find_similar_efo_terms(
                     conn, args.query_efo, args.limit
                 )
                 print(
-                    f"\\nTop {len(similar_efo)} most similar EFO terms to '{args.query_efo}':"
+                    f"\nTop {len(similar_efo)} most similar EFO terms to '{args.query_efo}':"
                 )
-                print("Similarity\\tEFO ID\\t\\t\\t\\t\\tEFO Label")
+                print("Similarity\tEFO ID\t\t\t\t\tEFO Label")
                 print("-" * 120)
                 for efo_id, efo_label, similarity in similar_efo:
                     # Truncate long IDs for display
                     short_id = (
                         efo_id if len(efo_id) <= 40 else efo_id[:37] + "..."
                     )
-                    print(f"{similarity:.4f}\\t\\t{short_id}\\t{efo_label}")
+                    print(f"{similarity:.4f}\t\t{short_id}\t{efo_label}")
 
     return 0
 

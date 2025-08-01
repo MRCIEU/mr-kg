@@ -15,8 +15,9 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Dict
 
+import pandas as pd
 import duckdb
 from common_funcs.schema.embedding_schema import EmbeddingRecord
 from common_funcs.schema.processed_data_schema import ProcessModelResults
@@ -62,6 +63,22 @@ def load_embeddings(file_path: Path) -> List[EmbeddingRecord]:
     return data
 
 
+def load_unique_traits(file_path: Path) -> Dict[int, str]:
+    """Load unique traits from CSV file.
+
+    Args:
+        file_path: Path to the unique_traits.csv file
+
+    Returns:
+        Dictionary mapping trait index to trait label
+    """
+    logger.info(f"Loading unique traits from: {file_path}")
+    df = pd.read_csv(file_path)
+    traits_dict = dict(zip(df["index"], df["trait"]))
+    logger.info(f"Loaded {len(traits_dict)} unique traits")
+    return traits_dict
+
+
 def load_model_results(file_path: Path) -> List[ProcessModelResults]:
     """Load processed model results from JSON file.
 
@@ -79,37 +96,58 @@ def load_model_results(file_path: Path) -> List[ProcessModelResults]:
 
 
 def create_trait_embeddings_table(
-    conn: duckdb.DuckDBPyConnection, trait_embeddings: List[EmbeddingRecord]
+    conn: duckdb.DuckDBPyConnection,
+    trait_embeddings: List[EmbeddingRecord],
+    unique_traits: Dict[int, str],
 ):
-    """Create and populate the trait embeddings table.
+    """Create and populate the trait embeddings table using unique traits as the basis.
 
     Args:
         conn: DuckDB connection
         trait_embeddings: List of trait embedding records
+        unique_traits: Dictionary mapping trait index to trait label
     """
     logger.info("Creating trait embeddings table...")
 
-    # Create table with vector column
+    # Create table with trait_index as primary key
     conn.execute("""
         CREATE TABLE trait_embeddings (
-            id VARCHAR PRIMARY KEY,
-            label VARCHAR NOT NULL,
+            trait_index INTEGER PRIMARY KEY,
+            trait_label VARCHAR NOT NULL,
             vector FLOAT[200] NOT NULL
         )
     """)
 
-    # Insert data
-    logger.info(f"Inserting {len(trait_embeddings)} trait embeddings...")
-    for record in trait_embeddings:
-        conn.execute(
-            """
-            INSERT INTO trait_embeddings (id, label, vector)
-            VALUES (?, ?, ?)
-        """,
-            (record["id"], record["label"], record["vector"]),
-        )
+    # Create a mapping from trait labels to embeddings
+    embedding_map = {
+        record["label"]: record["vector"] for record in trait_embeddings
+    }
 
-    logger.info("Trait embeddings table created and populated")
+    # Insert data using unique_traits as the basis
+    logger.info(f"Inserting {len(unique_traits)} trait embeddings...")
+    inserted_count = 0
+    missing_embeddings = []
+
+    for trait_index, trait_label in unique_traits.items():
+        if trait_label in embedding_map:
+            conn.execute(
+                """
+                INSERT INTO trait_embeddings (trait_index, trait_label, vector)
+                VALUES (?, ?, ?)
+                """,
+                (trait_index, trait_label, embedding_map[trait_label]),
+            )
+            inserted_count += 1
+        else:
+            missing_embeddings.append((trait_index, trait_label))
+
+    logger.info(
+        f"Trait embeddings table created with {inserted_count} embeddings"
+    )
+    if missing_embeddings:
+        logger.warning(
+            f"Missing embeddings for {len(missing_embeddings)} traits"
+        )
 
 
 def create_efo_embeddings_table(
@@ -149,7 +187,7 @@ def create_efo_embeddings_table(
 def create_model_results_tables(
     conn: duckdb.DuckDBPyConnection, model_results: List[ProcessModelResults]
 ):
-    """Create and populate tables for model results data.
+    """Create and populate tables for model results data focused on LinkedModelData.
 
     Args:
         conn: DuckDB connection
@@ -157,110 +195,129 @@ def create_model_results_tables(
     """
     logger.info("Creating model results tables...")
 
-    # Create main model results table
+    # Create main model results table for extracted structural data
     conn.execute("""
         CREATE TABLE model_results (
             id INTEGER PRIMARY KEY,
             model VARCHAR NOT NULL,
-            pmid VARCHAR NOT NULL
+            pmid VARCHAR NOT NULL,
+            metadata JSON NOT NULL,
+            results JSON NOT NULL
         )
     """)
 
-    # Create traits table for exposures and outcomes
+    # Create table to link model results to traits
     conn.execute("""
-        CREATE TABLE model_traits (
+        CREATE TABLE model_result_traits (
             id INTEGER PRIMARY KEY,
             model_result_id INTEGER NOT NULL,
-            trait_id VARCHAR NOT NULL,
-            trait VARCHAR NOT NULL,
-            category VARCHAR NOT NULL,
-            linked_index INTEGER NOT NULL,
-            trait_type VARCHAR NOT NULL,  -- 'exposure' or 'outcome'
-            FOREIGN KEY (model_result_id) REFERENCES model_results(id)
+            trait_index INTEGER NOT NULL,
+            trait_role VARCHAR NOT NULL,  -- 'exposure' or 'outcome'
+            trait_id_in_result VARCHAR,  -- original trait id from the model result
+            FOREIGN KEY (model_result_id) REFERENCES model_results(id),
+            FOREIGN KEY (trait_index) REFERENCES trait_embeddings(trait_index)
         )
     """)
 
-    # Pre-collect all data to avoid manual ID management
+    # Pre-collect all data
     model_results_data = []
-    model_traits_data = []
+    model_result_traits_data = []
 
-    for result_id, model_result in enumerate(model_results):
+    result_id = 0
+    trait_link_id = 0
+
+    for model_result in model_results:
         model_name = model_result["model"]
 
         for data_item in model_result["data"]:
             pmid = str(data_item["pmid"])
-            current_result_id = len(model_results_data)
+            metadata = data_item["metadata"]
+            results = data_item["results"]
 
-            # Collect model result data
-            model_results_data.append((current_result_id, model_name, pmid))
-
-            # Extract and validate trait data
-            exposure_traits = _extract_valid_traits(
-                data_item["metadata"]["exposures"], "exposure"
+            # Store the complete structural data for this PMID
+            model_results_data.append(
+                (
+                    result_id,
+                    model_name,
+                    pmid,
+                    json.dumps(metadata),
+                    json.dumps(results),
+                )
             )
-            outcome_traits = _extract_valid_traits(
-                data_item["metadata"]["outcomes"], "outcome"
-            )
 
-            # Collect trait data with pre-calculated IDs
-            for trait_data in exposure_traits + outcome_traits:
-                trait_id = len(model_traits_data)
-                model_traits_data.append((
-                    trait_id,
-                    current_result_id,
-                    str(trait_data["id"]),
-                    trait_data["trait"],
-                    trait_data["category"],
-                    trait_data["linked_index"],
-                    trait_data["trait_type"]
-                ))
+            # Extract trait linkings from exposures
+            for exposure in metadata.get("exposures", []):
+                if (
+                    isinstance(exposure, dict)
+                    and "linked_index" in exposure
+                    and exposure["linked_index"] is not None
+                ):
+                    # Check if this trait index has an embedding
+                    result = conn.execute(
+                        "SELECT COUNT(*) FROM trait_embeddings WHERE trait_index = ?",
+                        (exposure["linked_index"],),
+                    ).fetchone()
+                    has_embedding = result and result[0] > 0
+
+                    if has_embedding:
+                        model_result_traits_data.append(
+                            (
+                                trait_link_id,
+                                result_id,
+                                exposure["linked_index"],
+                                "exposure",
+                                str(exposure.get("id", "")),
+                            )
+                        )
+                        trait_link_id += 1
+
+            # Extract trait linkings from outcomes
+            for outcome in metadata.get("outcomes", []):
+                if (
+                    isinstance(outcome, dict)
+                    and "linked_index" in outcome
+                    and outcome["linked_index"] is not None
+                ):
+                    # Check if this trait index has an embedding
+                    result = conn.execute(
+                        "SELECT COUNT(*) FROM trait_embeddings WHERE trait_index = ?",
+                        (outcome["linked_index"],),
+                    ).fetchone()
+                    has_embedding = result and result[0] > 0
+
+                    if has_embedding:
+                        model_result_traits_data.append(
+                            (
+                                trait_link_id,
+                                result_id,
+                                outcome["linked_index"],
+                                "outcome",
+                                str(outcome.get("id", "")),
+                            )
+                        )
+                        trait_link_id += 1
+
+            result_id += 1
 
     # Batch insert model results
     logger.info(f"Inserting {len(model_results_data)} model results...")
     conn.executemany(
-        "INSERT INTO model_results (id, model, pmid) VALUES (?, ?, ?)",
-        model_results_data
+        "INSERT INTO model_results (id, model, pmid, metadata, results) VALUES (?, ?, ?, ?, ?)",
+        model_results_data,
     )
 
-    # Batch insert model traits
-    logger.info(f"Inserting {len(model_traits_data)} model traits...")
+    # Batch insert trait linkings
+    logger.info(f"Inserting {len(model_result_traits_data)} trait linkings...")
     conn.executemany(
-        """INSERT INTO model_traits
-           (id, model_result_id, trait_id, trait, category, linked_index, trait_type)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        model_traits_data
+        """INSERT INTO model_result_traits
+           (id, model_result_id, trait_index, trait_role, trait_id_in_result)
+           VALUES (?, ?, ?, ?, ?)""",
+        model_result_traits_data,
     )
 
     logger.info(
-        f"Model results tables created with {len(model_results_data)} results and {len(model_traits_data)} traits"
+        f"Model results tables created with {len(model_results_data)} results and {len(model_result_traits_data)} trait linkings"
     )
-
-
-def _extract_valid_traits(traits_list, trait_type: str):
-    """Extract valid traits from exposures or outcomes list.
-
-    Args:
-        traits_list: List of trait dictionaries
-        trait_type: Either 'exposure' or 'outcome'
-
-    Returns:
-        List of valid trait dictionaries with trait_type added
-    """
-    valid_traits = []
-    required_keys = ["id", "trait", "category", "linked_index"]
-
-    for trait in traits_list:
-        if isinstance(trait, dict) and all(key in trait for key in required_keys):
-            trait_data = {
-                "id": trait.get("id"),
-                "trait": trait.get("trait"),
-                "category": trait.get("category"),
-                "linked_index": trait.get("linked_index"),
-                "trait_type": trait_type
-            }
-            valid_traits.append(trait_data)
-
-    return valid_traits
 
 
 def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
@@ -275,22 +332,22 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
     conn.execute("""
         CREATE VIEW trait_similarity_search AS
         SELECT
-            t1.id as query_id,
-            t1.label as query_label,
-            t2.id as result_id,
-            t2.label as result_label,
+            t1.trait_index as query_id,
+            t1.trait_label as query_label,
+            t2.trait_index as result_id,
+            t2.trait_label as result_label,
             array_cosine_similarity(t1.vector, t2.vector) as similarity
         FROM trait_embeddings t1
         CROSS JOIN trait_embeddings t2
-        WHERE t1.id != t2.id
+        WHERE t1.trait_index != t2.trait_index
     """)
 
     # Create a view for trait-to-EFO similarity search
     conn.execute("""
         CREATE VIEW trait_efo_similarity_search AS
         SELECT
-            t.id as trait_id,
-            t.label as trait_label,
+            t.trait_index as trait_index,
+            t.trait_label as trait_label,
             e.id as efo_id,
             e.label as efo_label,
             array_cosine_similarity(t.vector, e.vector) as similarity
@@ -311,17 +368,23 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
 
     # Create indexes on commonly queried columns
     conn.execute(
-        "CREATE INDEX idx_trait_embeddings_label ON trait_embeddings(label)"
+        "CREATE INDEX idx_trait_embeddings_label ON trait_embeddings(trait_label)"
+    )
+    conn.execute(
+        "CREATE INDEX idx_trait_embeddings_index ON trait_embeddings(trait_index)"
     )
     conn.execute(
         "CREATE INDEX idx_efo_embeddings_label ON efo_embeddings(label)"
     )
-    conn.execute("CREATE INDEX idx_model_traits_trait ON model_traits(trait)")
-    conn.execute(
-        "CREATE INDEX idx_model_traits_linked_index ON model_traits(linked_index)"
-    )
     conn.execute(
         "CREATE INDEX idx_model_results_model ON model_results(model)"
+    )
+    conn.execute("CREATE INDEX idx_model_results_pmid ON model_results(pmid)")
+    conn.execute(
+        "CREATE INDEX idx_model_result_traits_trait_index ON model_result_traits(trait_index)"
+    )
+    conn.execute(
+        "CREATE INDEX idx_model_result_traits_model_result_id ON model_result_traits(model_result_id)"
     )
 
     logger.info("Indexes created")
@@ -349,11 +412,15 @@ def main():
         / "model_results"
         / "processed_model_results.json"
     )
+    unique_traits_path = (
+        DATA_DIR / "processed" / "traits" / "unique_traits.csv"
+    )
 
     for path in [
         trait_embeddings_path,
         efo_embeddings_path,
         model_results_path,
+        unique_traits_path,
     ]:
         if not path.exists():
             logger.error(f"Required file not found: {path}")
@@ -380,13 +447,14 @@ def main():
     trait_embeddings = load_embeddings(trait_embeddings_path)
     efo_embeddings = load_embeddings(efo_embeddings_path)
     model_results = load_model_results(model_results_path)
+    unique_traits = load_unique_traits(unique_traits_path)
 
     # Create database and tables
     with duckdb.connect(str(db_path)) as conn:
         logger.info("Connected to DuckDB database")
 
         # Create tables and populate data
-        create_trait_embeddings_table(conn, trait_embeddings)
+        create_trait_embeddings_table(conn, trait_embeddings, unique_traits)
         create_efo_embeddings_table(conn, efo_embeddings)
         create_model_results_tables(conn, model_results)
         create_similarity_functions(conn)
@@ -403,7 +471,7 @@ def main():
             "SELECT COUNT(*) FROM model_results"
         ).fetchone()
         model_trait_count = conn.execute(
-            "SELECT COUNT(*) FROM model_traits"
+            "SELECT COUNT(*) FROM model_result_traits"
         ).fetchone()
 
         logger.info("Database created successfully:")
@@ -415,7 +483,7 @@ def main():
             f"  - {result_count[0] if result_count else 0} model results"
         )
         logger.info(
-            f"  - {model_trait_count[0] if model_trait_count else 0} model traits"
+            f"  - {model_trait_count[0] if model_trait_count else 0} trait linkings"
         )
         logger.info(f"  - Database saved to: {db_path}")
 

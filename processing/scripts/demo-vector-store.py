@@ -22,7 +22,13 @@ def connect_to_latest_db() -> duckdb.DuckDBPyConnection:
     PROJECT_ROOT = find_project_root("docker-compose.yml")
     db_dir = PROJECT_ROOT / "data" / "db"
 
-    # Find the most recent database file
+    # First try to find the restructured database
+    restructured_db = db_dir / "restructured-vector-store.db"
+    if restructured_db.exists():
+        logger.info(f"Connecting to restructured database: {restructured_db}")
+        return duckdb.connect(str(restructured_db))
+
+    # Fall back to finding the most recent database file
     db_files = list(db_dir.glob("database-*.db"))
     if not db_files:
         raise FileNotFoundError("No database files found in data/db/")
@@ -46,7 +52,7 @@ def demo_trait_similarity_search(conn: duckdb.DuckDBPyConnection):
         # Check if trait exists
         trait_check = conn.execute(
             """
-            SELECT COUNT(*) FROM trait_embeddings WHERE label = ?
+            SELECT COUNT(*) FROM trait_embeddings WHERE trait_label = ?
         """,
             (trait,),
         ).fetchone()
@@ -84,7 +90,7 @@ def demo_efo_similarity_search(conn: duckdb.DuckDBPyConnection):
         # Check if trait exists
         trait_check = conn.execute(
             """
-            SELECT COUNT(*) FROM trait_embeddings WHERE label = ?
+            SELECT COUNT(*) FROM trait_embeddings WHERE trait_label = ?
         """,
             (trait,),
         ).fetchone()
@@ -114,14 +120,14 @@ def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
     logger.info("=== MODEL ANALYSIS DEMO ===")
 
     # Model statistics
-    print("\\nModel Statistics:")
+    print("\nModel Statistics:")
     models = conn.execute("""
         SELECT
             model,
             COUNT(DISTINCT mr.id) as papers,
-            COUNT(DISTINCT mt.trait) as unique_traits
+            COUNT(DISTINCT mrt.trait_index) as unique_traits
         FROM model_results mr
-        JOIN model_traits mt ON mr.id = mt.model_result_id
+        LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
         GROUP BY model
         ORDER BY papers DESC
     """).fetchall()
@@ -130,16 +136,17 @@ def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
         print(f"   {model}: {papers} papers, {traits} unique traits")
 
     # Most common traits across all models
-    print("\\nMost Common Traits Across Models:")
+    print("\nMost Common Traits Across Models:")
     common_traits = conn.execute("""
         SELECT
-            trait,
+            te.trait_label,
             COUNT(*) as frequency,
-            COUNT(DISTINCT model) as models_count
-        FROM model_traits mt
-        JOIN model_results mr ON mt.model_result_id = mr.id
-        GROUP BY trait
-        HAVING frequency > 50
+            COUNT(DISTINCT mr.model) as models_count
+        FROM model_result_traits mrt
+        JOIN model_results mr ON mrt.model_result_id = mr.id
+        JOIN trait_embeddings te ON mrt.trait_index = te.trait_index
+        GROUP BY te.trait_label
+        HAVING frequency > 20
         ORDER BY frequency DESC
         LIMIT 10
     """).fetchall()
@@ -149,48 +156,60 @@ def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
 
 
 def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):
-    """Demonstrate trait exploration by category."""
+    """Demonstrate trait exploration by analyzing trait usage patterns."""
     logger.info("=== TRAIT EXPLORATION DEMO ===")
 
-    # Trait categories
-    print("\\nTrait Categories:")
-    categories = conn.execute("""
+    # Trait usage by role (exposure vs outcome)
+    print("\nTrait Usage by Role:")
+    role_stats = conn.execute("""
         SELECT
-            category,
-            COUNT(DISTINCT trait) as unique_traits,
+            trait_role,
+            COUNT(DISTINCT trait_index) as unique_traits,
             COUNT(*) as total_occurrences
-        FROM model_traits
-        WHERE category != ''
-        GROUP BY category
+        FROM model_result_traits
+        GROUP BY trait_role
         ORDER BY unique_traits DESC
+    """).fetchall()
+
+    for role, unique, total in role_stats:
+        print(f"   {role}: {unique} unique traits, {total} total occurrences")
+
+    # Example: Find traits that appear as both exposures and outcomes
+    print("\nTraits used as both Exposures and Outcomes:")
+    dual_role = conn.execute("""
+        SELECT 
+            te.trait_label,
+            COUNT(CASE WHEN mrt.trait_role = 'exposure' THEN 1 END) as exposure_count,
+            COUNT(CASE WHEN mrt.trait_role = 'outcome' THEN 1 END) as outcome_count
+        FROM model_result_traits mrt
+        JOIN trait_embeddings te ON mrt.trait_index = te.trait_index
+        GROUP BY mrt.trait_index, te.trait_label
+        HAVING exposure_count > 0 AND outcome_count > 0
+        ORDER BY (exposure_count + outcome_count) DESC
         LIMIT 10
     """).fetchall()
 
-    for category, unique, total in categories:
-        print(
-            f"   {category}: {unique} unique traits, {total} total occurrences"
-        )
+    for trait, exp_count, out_count in dual_role:
+        print(f"   {trait}: {exp_count} exposures, {out_count} outcomes")
 
-    # Example: Find disease traits similar to a behavioral trait
-    print("\\nCross-Category Similarity (Behavioral -> Disease):")
-    cross_category = conn.execute("""
-        SELECT
-            tss.result_label,
-            mt_result.category as result_category,
-            tss.similarity
-        FROM trait_similarity_search tss
-        JOIN model_traits mt_query ON tss.query_label = mt_query.trait
-        JOIN model_traits mt_result ON tss.result_label = mt_result.trait
-        WHERE mt_query.category = 'behavioural'
-        AND mt_result.category LIKE '%disease%'
-        AND tss.query_label = 'coffee intake'
-        ORDER BY tss.similarity DESC
-        LIMIT 5
-    """).fetchall()
+    # Example: Find traits similar to a common trait
+    print("\nFinding traits similar to 'BMI':")
+    try:
+        similar_to_bmi = conn.execute("""
+            SELECT 
+                t2.trait_label as result_label,
+                array_cosine_similarity(t1.vector, t2.vector) as similarity
+            FROM trait_embeddings t1
+            CROSS JOIN trait_embeddings t2
+            WHERE t1.trait_label = 'BMI' AND t1.trait_index != t2.trait_index
+            ORDER BY similarity DESC
+            LIMIT 5
+        """).fetchall()
 
-    print("   Similar disease traits to 'coffee intake':")
-    for trait, category, similarity in cross_category:
-        print(f"   {similarity:.3f} - {trait} ({category})")
+        for trait, similarity in similar_to_bmi:
+            print(f"   {similarity:.3f} - {trait}")
+    except Exception:
+        print("   No similarity data available for 'BMI'")
 
 
 def main():
