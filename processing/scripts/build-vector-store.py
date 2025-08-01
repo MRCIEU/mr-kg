@@ -15,15 +15,18 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
 
-import pandas as pd
 import duckdb
+import pandas as pd
+from common_funcs.schema.database_schema import (
+    print_validation_report,
+    validate_database_schema,
+)
 from common_funcs.schema.embedding_schema import EmbeddingRecord
 from common_funcs.schema.processed_data_schema import ProcessModelResults
 from loguru import logger
 from yiutils.project_utils import find_project_root
-from database_schema import validate_database_schema, print_validation_report
 
 
 def make_args():
