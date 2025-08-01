@@ -9,6 +9,11 @@ import argparse
 from pathlib import Path
 import duckdb
 
+from common_funcs.schema.database_schema import (
+    DATABASE_SCHEMA,
+    DATABASE_INDEXES,
+    DATABASE_VIEWS,
+)
 from common_funcs.schema.database_schema_utils import (
     validate_database_schema,
     print_validation_report,
@@ -49,7 +54,11 @@ def main():
     args = make_args()
 
     if args.show_schema:
-        print(get_schema_documentation())
+        print(
+            get_schema_documentation(
+                DATABASE_SCHEMA, DATABASE_INDEXES, DATABASE_VIEWS
+            )
+        )
         return 0
 
     # Resolve database path
@@ -69,7 +78,9 @@ def main():
     # Connect to database and validate schema
     try:
         with duckdb.connect(str(db_path)) as conn:
-            validation_results = validate_database_schema(conn)
+            validation_results = validate_database_schema(
+                conn, DATABASE_SCHEMA, DATABASE_INDEXES, DATABASE_VIEWS
+            )
 
             if args.validate_only:
                 if validation_results["valid"]:

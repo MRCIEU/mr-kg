@@ -4,25 +4,124 @@ This module provides validation functions to ensure the database structure
 matches the expected schema defined in database_schema.py.
 """
 
-from typing import Dict, Any
-import duckdb
-from .database_schema import (
-    DATABASE_SCHEMA,
-    DATABASE_INDEXES,
-    DATABASE_VIEWS,
-    TableDef,
-    IndexDef,
-    ViewDef,
-)
+from typing import List, Optional, Dict, Any, TYPE_CHECKING
+from dataclasses import dataclass
+from enum import Enum
+
+if TYPE_CHECKING:
+    import duckdb
+else:
+    try:
+        import duckdb
+    except ImportError:
+        duckdb = None
+
+
+class ColumnType(Enum):
+    """Supported column types in the database schema."""
+
+    INTEGER = "INTEGER"
+    VARCHAR = "VARCHAR"
+    JSON = "JSON"
+    FLOAT_ARRAY_200 = "FLOAT[200]"
+
+
+@dataclass
+class ColumnDef:
+    """Definition of a database column."""
+
+    name: str
+    type: ColumnType
+    nullable: bool = True
+    primary_key: bool = False
+    unique: bool = False
+
+    def __str__(self) -> str:
+        parts = [f"{self.name} {self.type.value}"]
+        if self.primary_key:
+            parts.append("PRIMARY KEY")
+        elif not self.nullable:
+            parts.append("NOT NULL")
+        if self.unique and not self.primary_key:
+            parts.append("UNIQUE")
+        return " ".join(parts)
+
+
+@dataclass
+class ForeignKeyDef:
+    """Definition of a foreign key constraint."""
+
+    column: str
+    ref_table: str
+    ref_column: str
+
+    def __str__(self) -> str:
+        return f"FOREIGN KEY ({self.column}) REFERENCES {self.ref_table}({self.ref_column})"
+
+
+@dataclass
+class IndexDef:
+    """Definition of a database index."""
+
+    name: str
+    table: str
+    columns: List[str]
+    unique: bool = False
+
+    def __str__(self) -> str:
+        unique_part = "UNIQUE " if self.unique else ""
+        columns_part = ", ".join(self.columns)
+        return f"CREATE {unique_part}INDEX {self.name} ON {self.table}({columns_part})"
+
+
+@dataclass
+class ViewDef:
+    """Definition of a database view."""
+
+    name: str
+    sql: str
+
+    def __str__(self) -> str:
+        return f"CREATE VIEW {self.name} AS {self.sql}"
+
+
+@dataclass
+class TableDef:
+    """Definition of a database table."""
+
+    name: str
+    columns: List[ColumnDef]
+    foreign_keys: Optional[List[ForeignKeyDef]] = None
+    description: str = ""
+
+    def __post_init__(self):
+        if self.foreign_keys is None:
+            self.foreign_keys = []
+
+    def get_create_sql(self) -> str:
+        """Generate CREATE TABLE SQL statement."""
+        column_defs = [str(col) for col in self.columns]
+        fk_defs = [str(fk) for fk in (self.foreign_keys or [])]
+        all_defs = column_defs + fk_defs
+
+        return f"""CREATE TABLE {self.name} (
+    {",\n    ".join(all_defs)}
+)"""
 
 
 def validate_database_schema(
-    conn: duckdb.DuckDBPyConnection,
+    conn: "duckdb.DuckDBPyConnection",
+    database_schema: Dict[str, TableDef],
+    database_indexes: List[IndexDef],
+    database_views: List[ViewDef],
 ) -> Dict[str, Any]:
     """Validate that the database matches the expected schema.
 
     Args:
         conn: DuckDB connection to validate
+        database_schema: Expected database schema
+        database_indexes: Expected database indexes
+        database_views: Expected database views
 
     Returns:
         Dictionary with validation results
@@ -38,7 +137,7 @@ def validate_database_schema(
 
     try:
         # Check tables
-        for table_name, table_def in DATABASE_SCHEMA.items():
+        for table_name, table_def in database_schema.items():
             table_result = validate_table(conn, table_def)
             validation_results["tables"][table_name] = table_result
             if not table_result["valid"]:
@@ -46,14 +145,14 @@ def validate_database_schema(
                 validation_results["errors"].extend(table_result["errors"])
 
         # Check indexes
-        for index_def in DATABASE_INDEXES:
+        for index_def in database_indexes:
             index_result = validate_index(conn, index_def)
             validation_results["indexes"][index_def.name] = index_result
             if not index_result["valid"]:
                 validation_results["warnings"].extend(index_result["errors"])
 
         # Check views
-        for view_def in DATABASE_VIEWS:
+        for view_def in database_views:
             view_result = validate_view(conn, view_def)
             validation_results["views"][view_def.name] = view_result
             if not view_result["valid"]:
@@ -67,7 +166,7 @@ def validate_database_schema(
 
 
 def validate_table(
-    conn: duckdb.DuckDBPyConnection, table_def: TableDef
+    conn: "duckdb.DuckDBPyConnection", table_def: TableDef
 ) -> Dict[str, Any]:
     """Validate a single table against its definition.
 
@@ -184,7 +283,7 @@ def validate_table(
 
 
 def validate_index(
-    conn: duckdb.DuckDBPyConnection, index_def: IndexDef
+    conn: "duckdb.DuckDBPyConnection", index_def: IndexDef
 ) -> Dict[str, Any]:
     """Validate a single index against its definition.
 
@@ -227,7 +326,7 @@ def validate_index(
 
 
 def validate_view(
-    conn: duckdb.DuckDBPyConnection, view_def: ViewDef
+    conn: "duckdb.DuckDBPyConnection", view_def: ViewDef
 ) -> Dict[str, Any]:
     """Validate a single view against its definition.
 
@@ -335,8 +434,17 @@ def print_validation_report(validation_results: Dict[str, Any]) -> None:
     print("\n" + "=" * 80)
 
 
-def get_schema_documentation() -> str:
+def get_schema_documentation(
+    database_schema: Dict[str, TableDef],
+    database_indexes: List[IndexDef],
+    database_views: List[ViewDef],
+) -> str:
     """Generate documentation for the database schema.
+
+    Args:
+        database_schema: Expected database schema
+        database_indexes: Expected database indexes
+        database_views: Expected database views
 
     Returns:
         Formatted schema documentation
@@ -346,7 +454,7 @@ def get_schema_documentation() -> str:
     doc.append("=" * 80)
     doc.append("")
 
-    for table_name, table_def in DATABASE_SCHEMA.items():
+    for table_name, table_def in database_schema.items():
         doc.append(f"TABLE: {table_name}")
         doc.append("-" * 40)
         if table_def.description:
@@ -368,7 +476,7 @@ def get_schema_documentation() -> str:
 
     doc.append("INDEXES:")
     doc.append("-" * 40)
-    for index in DATABASE_INDEXES:
+    for index in database_indexes:
         unique = "UNIQUE " if index.unique else ""
         doc.append(
             f"  - {unique}{index.name}: {index.table}({', '.join(index.columns)})"
@@ -377,7 +485,7 @@ def get_schema_documentation() -> str:
     doc.append("")
     doc.append("VIEWS:")
     doc.append("-" * 40)
-    for view in DATABASE_VIEWS:
+    for view in database_views:
         doc.append(f"  - {view.name}")
 
     return "\n".join(doc)

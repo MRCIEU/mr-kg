@@ -4,101 +4,14 @@ This module defines the expected database schema. Validation utilities
 are provided in database_schema_utils.py.
 """
 
-from typing import List, Optional
-from dataclasses import dataclass
-from enum import Enum
-
-
-class ColumnType(Enum):
-    """Supported column types in the database schema."""
-
-    INTEGER = "INTEGER"
-    VARCHAR = "VARCHAR"
-    JSON = "JSON"
-    FLOAT_ARRAY_200 = "FLOAT[200]"
-
-
-@dataclass
-class ColumnDef:
-    """Definition of a database column."""
-
-    name: str
-    type: ColumnType
-    nullable: bool = True
-    primary_key: bool = False
-    unique: bool = False
-
-    def __str__(self) -> str:
-        parts = [f"{self.name} {self.type.value}"]
-        if self.primary_key:
-            parts.append("PRIMARY KEY")
-        elif not self.nullable:
-            parts.append("NOT NULL")
-        if self.unique and not self.primary_key:
-            parts.append("UNIQUE")
-        return " ".join(parts)
-
-
-@dataclass
-class ForeignKeyDef:
-    """Definition of a foreign key constraint."""
-
-    column: str
-    ref_table: str
-    ref_column: str
-
-    def __str__(self) -> str:
-        return f"FOREIGN KEY ({self.column}) REFERENCES {self.ref_table}({self.ref_column})"
-
-
-@dataclass
-class IndexDef:
-    """Definition of a database index."""
-
-    name: str
-    table: str
-    columns: List[str]
-    unique: bool = False
-
-    def __str__(self) -> str:
-        unique_part = "UNIQUE " if self.unique else ""
-        columns_part = ", ".join(self.columns)
-        return f"CREATE {unique_part}INDEX {self.name} ON {self.table}({columns_part})"
-
-
-@dataclass
-class ViewDef:
-    """Definition of a database view."""
-
-    name: str
-    sql: str
-
-    def __str__(self) -> str:
-        return f"CREATE VIEW {self.name} AS {self.sql}"
-
-
-@dataclass
-class TableDef:
-    """Definition of a database table."""
-
-    name: str
-    columns: List[ColumnDef]
-    foreign_keys: Optional[List[ForeignKeyDef]] = None
-    description: str = ""
-
-    def __post_init__(self):
-        if self.foreign_keys is None:
-            self.foreign_keys = []
-
-    def get_create_sql(self) -> str:
-        """Generate CREATE TABLE SQL statement."""
-        column_defs = [str(col) for col in self.columns]
-        fk_defs = [str(fk) for fk in (self.foreign_keys or [])]
-        all_defs = column_defs + fk_defs
-
-        return f"""CREATE TABLE {self.name} (
-    {",\n    ".join(all_defs)}
-)"""
+from .database_schema_utils import (
+    ColumnType,
+    ColumnDef,
+    ForeignKeyDef,
+    IndexDef,
+    ViewDef,
+    TableDef,
+)
 
 
 # Define the complete database schema

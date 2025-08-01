@@ -19,6 +19,11 @@ from typing import Dict, List
 
 import duckdb
 import pandas as pd
+from common_funcs.schema.database_schema import (
+    DATABASE_SCHEMA,
+    DATABASE_INDEXES,
+    DATABASE_VIEWS,
+)
 from common_funcs.schema.database_schema_utils import (
     print_validation_report,
     validate_database_schema,
@@ -550,7 +555,9 @@ def main():
     logger.info("Validating database schema...")
     try:
         with duckdb.connect(str(db_path)) as conn:
-            validation_results = validate_database_schema(conn)
+            validation_results = validate_database_schema(
+                conn, DATABASE_SCHEMA, DATABASE_INDEXES, DATABASE_VIEWS
+            )
             if validation_results["valid"]:
                 logger.info("[OK] Database schema validation passed")
                 print_validation_report(validation_results)
