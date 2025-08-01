@@ -9,7 +9,7 @@ import argparse
 from pathlib import Path
 import duckdb
 
-from common_funcs.schema.database_schema import (
+from common_funcs.schema.database_schema_utils import (
     validate_database_schema,
     print_validation_report,
     get_schema_documentation,

@@ -19,7 +19,7 @@ from typing import Dict, List
 
 import duckdb
 import pandas as pd
-from common_funcs.schema.database_schema import (
+from common_funcs.schema.database_schema_utils import (
     print_validation_report,
     validate_database_schema,
 )
