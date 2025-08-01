@@ -144,14 +144,14 @@ DATABASE_SCHEMA = {
     ),
     "model_result_traits": TableDef(
         name="model_result_traits",
-        description="Links model results to traits with their roles",
+        description="Links model results to traits based on unique_traits indices",
         columns=[
             ColumnDef(
                 "id", ColumnType.INTEGER, nullable=False, primary_key=True
             ),
             ColumnDef("model_result_id", ColumnType.INTEGER, nullable=False),
             ColumnDef("trait_index", ColumnType.INTEGER, nullable=False),
-            ColumnDef("trait_role", ColumnType.VARCHAR, nullable=False),
+            ColumnDef("trait_label", ColumnType.VARCHAR, nullable=False),
             ColumnDef("trait_id_in_result", ColumnType.VARCHAR, nullable=True),
         ],
         foreign_keys=[
@@ -181,6 +181,11 @@ DATABASE_INDEXES = [
         "idx_model_result_traits_model_result_id",
         "model_result_traits",
         ["model_result_id"],
+    ),
+    IndexDef(
+        "idx_model_result_traits_trait_label",
+        "model_result_traits",
+        ["trait_label"],
     ),
 ]
 
