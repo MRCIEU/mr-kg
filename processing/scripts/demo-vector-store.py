@@ -4,17 +4,38 @@ This script demonstrates various use cases for the vector store:
 1. Finding similar traits for given traits from model results
 2. Finding related EFO terms for traits
 3. Exploring trait linkings and model statistics
+
+Usage:
+    # Use automatic database discovery (preferred restructured-vector-store.db)
+    python demo-vector-store.py
+
+    # Use specific database file
+    python demo-vector-store.py --database restructured-vector-store.db
+    python demo-vector-store.py -db /path/to/database.db
 """
 
 import argparse
+from pathlib import Path
 
 import duckdb
+from common_funcs.schema.database_schema import (
+    DATABASE_SCHEMA,
+    DATABASE_INDEXES,
+    DATABASE_VIEWS,
+)
+from common_funcs.schema.database_schema_utils import (
+    validate_database_schema,
+)
 from loguru import logger
 from yiutils.project_utils import find_project_root
 
 
 def connect_to_latest_db() -> duckdb.DuckDBPyConnection:
     """Connect to the most recently created database.
+
+    Searches for databases in this order:
+    1. restructured-vector-store.db (preferred)
+    2. Most recent database-*.db file
 
     Returns:
         DuckDB connection to the latest database
@@ -216,6 +237,12 @@ def main():
     """Run the demo."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--database",
+        "-db",
+        type=str,
+        help="Path to the DuckDB database file (if not provided, will search for latest)",
+    )
+    parser.add_argument(
         "--skip-trait-search",
         action="store_true",
         help="Skip trait similarity search demo",
@@ -239,7 +266,35 @@ def main():
 
     try:
         # Connect to database
-        conn = connect_to_latest_db()
+        if args.database:
+            # Use specified database path
+            db_path = Path(args.database)
+            if not db_path.is_absolute():
+                PROJECT_ROOT = find_project_root("docker-compose.yml")
+                DATA_DIR = PROJECT_ROOT / "data"
+                db_path = DATA_DIR / "db" / args.database
+
+            if not db_path.exists():
+                logger.error(f"Database file not found: {db_path}")
+                return 1
+
+            logger.info(f"Connecting to specified database: {db_path}")
+            conn = duckdb.connect(str(db_path))
+        else:
+            # Use automatic discovery
+            conn = connect_to_latest_db()
+
+        # Validate database schema before running demos
+        logger.info("Validating database schema...")
+        validation_results = validate_database_schema(
+            conn, DATABASE_SCHEMA, DATABASE_INDEXES, DATABASE_VIEWS
+        )
+        if not validation_results["valid"]:
+            logger.error("Database schema validation failed")
+            for error in validation_results["errors"]:
+                logger.error(f"   {error}")
+            return 1
+        logger.info("Database schema validation passed")
 
         print("Vector Store Demo")
         print("=" * 50)

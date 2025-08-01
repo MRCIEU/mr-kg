@@ -11,6 +11,14 @@ from pathlib import Path
 from typing import List, Tuple
 
 import duckdb
+from common_funcs.schema.database_schema import (
+    DATABASE_SCHEMA,
+    DATABASE_INDEXES,
+    DATABASE_VIEWS,
+)
+from common_funcs.schema.database_schema_utils import (
+    validate_database_schema,
+)
 from loguru import logger
 from yiutils.project_utils import find_project_root
 
@@ -265,6 +273,17 @@ def main():
 
     # Connect to database and execute queries
     with duckdb.connect(str(db_path)) as conn:
+        # Validate database schema before executing queries
+        logger.info("Validating database schema...")
+        validation_results = validate_database_schema(
+            conn, DATABASE_SCHEMA, DATABASE_INDEXES, DATABASE_VIEWS
+        )
+        if not validation_results["valid"]:
+            logger.error("Database schema validation failed")
+            for error in validation_results["errors"]:
+                logger.error(f"   {error}")
+            return 1
+        logger.info("Database schema validation passed")
         if args.list_models:
             logger.info("Listing models and their statistics...")
             models = list_models_stats(conn)
