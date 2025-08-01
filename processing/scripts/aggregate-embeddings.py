@@ -86,7 +86,7 @@ def convert_trait_record(record: RawTraitRecord) -> EmbeddingRecord:
     res = {
         "id": f"trait_{record['index']}",
         "label": record["trait"],
-        "vector": record["vector"]
+        "vector": record["vector"],
     }
     return res
 
@@ -103,7 +103,7 @@ def convert_efo_record(record: RawEfoRecord) -> EmbeddingRecord:
     res = {
         "id": record["id"],
         "label": record["label"],
-        "vector": record["vector"]
+        "vector": record["vector"],
     }
     return res
 
