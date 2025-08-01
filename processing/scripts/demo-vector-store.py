@@ -41,7 +41,7 @@ def demo_trait_similarity_search(conn: duckdb.DuckDBPyConnection):
     example_traits = ["coffee intake", "diabetes", "migraine", "obesity"]
 
     for trait in example_traits:
-        print(f"\n🔍 Finding traits similar to '{trait}':")
+        print(f"\nFinding traits similar to '{trait}':")
 
         # Check if trait exists
         trait_check = conn.execute(
@@ -52,7 +52,7 @@ def demo_trait_similarity_search(conn: duckdb.DuckDBPyConnection):
         ).fetchone()
 
         if trait_check and trait_check[0] == 0:
-            print(f"   ❌ Trait '{trait}' not found in database")
+            print(f"   ERROR: Trait '{trait}' not found in database")
             continue
 
         # Get top 3 similar traits
@@ -68,7 +68,7 @@ def demo_trait_similarity_search(conn: duckdb.DuckDBPyConnection):
         ).fetchall()
 
         for label, similarity in similar:
-            print(f"   📊 {similarity:.3f} - {label}")
+            print(f"   {similarity:.3f} - {label}")
 
 
 def demo_efo_similarity_search(conn: duckdb.DuckDBPyConnection):
@@ -79,7 +79,7 @@ def demo_efo_similarity_search(conn: duckdb.DuckDBPyConnection):
     example_traits = ["coffee intake", "BMI"]
 
     for trait in example_traits:
-        print(f"\n🔍 Finding EFO terms similar to '{trait}':")
+        print(f"\nFinding EFO terms similar to '{trait}':")
 
         # Check if trait exists
         trait_check = conn.execute(
@@ -90,7 +90,7 @@ def demo_efo_similarity_search(conn: duckdb.DuckDBPyConnection):
         ).fetchone()
 
         if trait_check and trait_check[0] == 0:
-            print(f"   ❌ Trait '{trait}' not found in database")
+            print(f"   ERROR: Trait '{trait}' not found in database")
             continue
 
         # Get top 3 similar EFO terms
@@ -106,7 +106,7 @@ def demo_efo_similarity_search(conn: duckdb.DuckDBPyConnection):
         ).fetchall()
 
         for label, similarity in similar:
-            print(f"   🎯 {similarity:.3f} - {label}")
+            print(f"   {similarity:.3f} - {label}")
 
 
 def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
@@ -114,9 +114,9 @@ def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
     logger.info("=== MODEL ANALYSIS DEMO ===")
 
     # Model statistics
-    print("\\n📈 Model Statistics:")
+    print("\\nModel Statistics:")
     models = conn.execute("""
-        SELECT 
+        SELECT
             model,
             COUNT(DISTINCT mr.id) as papers,
             COUNT(DISTINCT mt.trait) as unique_traits
@@ -130,9 +130,9 @@ def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
         print(f"   {model}: {papers} papers, {traits} unique traits")
 
     # Most common traits across all models
-    print("\\n🏆 Most Common Traits Across Models:")
+    print("\\nMost Common Traits Across Models:")
     common_traits = conn.execute("""
-        SELECT 
+        SELECT
             trait,
             COUNT(*) as frequency,
             COUNT(DISTINCT model) as models_count
@@ -153,9 +153,9 @@ def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):
     logger.info("=== TRAIT EXPLORATION DEMO ===")
 
     # Trait categories
-    print("\\n📂 Trait Categories:")
+    print("\\nTrait Categories:")
     categories = conn.execute("""
-        SELECT 
+        SELECT
             category,
             COUNT(DISTINCT trait) as unique_traits,
             COUNT(*) as total_occurrences
@@ -172,9 +172,9 @@ def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):
         )
 
     # Example: Find disease traits similar to a behavioral trait
-    print("\\n🔗 Cross-Category Similarity (Behavioral → Disease):")
+    print("\\nCross-Category Similarity (Behavioral -> Disease):")
     cross_category = conn.execute("""
-        SELECT 
+        SELECT
             tss.result_label,
             mt_result.category as result_category,
             tss.similarity
@@ -190,7 +190,7 @@ def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):
 
     print("   Similar disease traits to 'coffee intake':")
     for trait, category, similarity in cross_category:
-        print(f"   🔄 {similarity:.3f} - {trait} ({category})")
+        print(f"   {similarity:.3f} - {trait} ({category})")
 
 
 def main():
@@ -222,7 +222,7 @@ def main():
         # Connect to database
         conn = connect_to_latest_db()
 
-        print("🚀 Vector Store Demo")
+        print("Vector Store Demo")
         print("=" * 50)
 
         # Run demos
@@ -238,7 +238,7 @@ def main():
         if not args.skip_trait_exploration:
             demo_trait_exploration(conn)
 
-        print("\\n✅ Demo completed successfully!")
+        print("\\nDemo completed successfully!")
 
     except Exception as e:
         logger.error(f"Demo failed: {e}")

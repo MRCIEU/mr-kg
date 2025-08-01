@@ -109,7 +109,7 @@ def create_trait_embeddings_table(
             (record["id"], record["label"], record["vector"]),
         )
 
-    logger.info("✓ Trait embeddings table created and populated")
+    logger.info("Trait embeddings table created and populated")
 
 
 def create_efo_embeddings_table(
@@ -143,7 +143,7 @@ def create_efo_embeddings_table(
             (record["id"], record["label"], record["vector"]),
         )
 
-    logger.info("✓ EFO embeddings table created and populated")
+    logger.info("EFO embeddings table created and populated")
 
 
 def create_model_results_tables(
@@ -232,7 +232,7 @@ def create_model_results_tables(
     )
 
     logger.info(
-        f"✓ Model results tables created with {len(model_results_data)} results and {len(model_traits_data)} traits"
+        f"Model results tables created with {len(model_results_data)} results and {len(model_traits_data)} traits"
     )
 
 
@@ -298,7 +298,7 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
         CROSS JOIN efo_embeddings e
     """)
 
-    logger.info("✓ Similarity search views created")
+    logger.info("Similarity search views created")
 
 
 def create_indexes(conn: duckdb.DuckDBPyConnection):
@@ -324,7 +324,7 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
         "CREATE INDEX idx_model_results_model ON model_results(model)"
     )
 
-    logger.info("✓ Indexes created")
+    logger.info("Indexes created")
 
 
 def main():
@@ -358,7 +358,7 @@ def main():
         if not path.exists():
             logger.error(f"Required file not found: {path}")
             return 1
-        logger.info(f"✓ Found required file: {path}")
+        logger.info(f"Found required file: {path}")
 
     if args.dry_run:
         logger.info("Dry run completed. All required files found.")
