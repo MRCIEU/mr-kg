@@ -70,7 +70,7 @@ def main():
     try:
         with duckdb.connect(str(db_path)) as conn:
             validation_results = validate_database_schema(conn)
-            
+
             if args.validate_only:
                 if validation_results["valid"]:
                     print("[OK] Database schema is valid")

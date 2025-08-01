@@ -497,7 +497,9 @@ def main():
                 logger.info("[OK] Database schema validation passed")
                 print_validation_report(validation_results)
             else:
-                logger.warning("[WARN] Database schema validation found issues")
+                logger.warning(
+                    "[WARN] Database schema validation found issues"
+                )
                 print_validation_report(validation_results)
     except Exception as e:
         logger.error(f"Schema validation failed: {e}")
