@@ -89,6 +89,19 @@ def make_args():
         action="store_true",
         help="List all journals in the database with paper counts",
     )
+    parser.add_argument(
+        "--query-pmid-model",
+        "-qpm",
+        type=str,
+        nargs=2,
+        metavar=("PMID", "MODEL"),
+        help="Query comprehensive analysis for a specific PMID and model",
+    )
+    parser.add_argument(
+        "--list-pmid-models",
+        action="store_true",
+        help="List all PMID-model combinations with trait counts",
+    )
     return parser.parse_args()
 
 
@@ -266,6 +279,85 @@ def list_journals_stats(
         FROM mr_pubmed_data
         GROUP BY journal
         ORDER BY paper_count DESC, journal
+    """).fetchall()
+
+    return result
+
+
+def query_pmid_model_analysis(
+    conn: duckdb.DuckDBPyConnection, pmid: str, model: str
+) -> dict:
+    """Query comprehensive analysis for a specific PMID and model.
+
+    Args:
+        conn: DuckDB connection
+        pmid: PubMed ID to query
+        model: Model name to query
+
+    Returns:
+        Dictionary with analysis data
+    """
+    # Get the main paper and model information
+    main_data = conn.execute(
+        """
+        SELECT DISTINCT
+            pmid,
+            model,
+            title,
+            abstract,
+            pub_date,
+            journal,
+            journal_issn,
+            author_affil,
+            metadata,
+            results
+        FROM pmid_model_analysis
+        WHERE pmid = ? AND model = ?
+    """,
+        (pmid, model),
+    ).fetchone()
+
+    if not main_data:
+        return {}
+
+    # Get all traits for this PMID-model combination
+    traits_data = conn.execute(
+        """
+        SELECT 
+            trait_index,
+            trait_label,
+            trait_id_in_result
+        FROM pmid_model_analysis
+        WHERE pmid = ? AND model = ? AND trait_index IS NOT NULL
+        ORDER BY trait_label
+    """,
+        (pmid, model),
+    ).fetchall()
+
+    return {"main_data": main_data, "traits": traits_data}
+
+
+def list_pmid_model_combinations(
+    conn: duckdb.DuckDBPyConnection,
+) -> List[Tuple]:
+    """List all PMID-model combinations with trait counts.
+
+    Args:
+        conn: DuckDB connection
+
+    Returns:
+        List of tuples (pmid, model, trait_count, title)
+    """
+    result = conn.execute("""
+        SELECT 
+            pmid,
+            model,
+            COUNT(DISTINCT trait_index) as trait_count,
+            MAX(title) as title
+        FROM pmid_model_analysis
+        WHERE pmid IS NOT NULL AND trait_index IS NOT NULL
+        GROUP BY pmid, model
+        ORDER BY trait_count DESC, pmid, model
     """).fetchall()
 
     return result
@@ -543,6 +635,80 @@ def main():
                 print(f"{count}\t{journal}")
             if len(journals) > 20:
                 print(f"... and {len(journals) - 20} more journals")
+
+        if args.query_pmid_model:
+            pmid, model = args.query_pmid_model
+            logger.info(
+                f"Querying PMID-model analysis for PMID: {pmid}, Model: {model}"
+            )
+            analysis = query_pmid_model_analysis(conn, pmid, model)
+
+            if analysis and analysis.get("main_data"):
+                main_data = analysis["main_data"]
+                traits = analysis["traits"]
+
+                (
+                    pmid,
+                    model,
+                    title,
+                    abstract,
+                    pub_date,
+                    journal,
+                    journal_issn,
+                    author_affil,
+                    metadata,
+                    results,
+                ) = main_data
+
+                print(f"\n=== PMID {pmid} Analysis with Model {model} ===")
+                print(f"Title: {title}")
+                print(f"Journal: {journal} ({pub_date})")
+                if journal_issn:
+                    print(f"ISSN: {journal_issn}")
+                if author_affil:
+                    print(f"Author Affiliation: {author_affil}")
+
+                print(f"\nExtracted Traits ({len(traits)} total):")
+                if traits:
+                    for trait_index, trait_label, trait_id in traits:
+                        trait_id_display = trait_id if trait_id else "N/A"
+                        print(
+                            f"  - {trait_label} (index: {trait_index}, id: {trait_id_display})"
+                        )
+                else:
+                    print("  No traits extracted")
+
+                print(f"\nAbstract:\n{abstract}")
+
+                # Note: metadata and results are JSON, could be displayed if needed
+                print(
+                    "\nNote: Full metadata and results available in JSON format"
+                )
+            else:
+                print(
+                    f"\nNo analysis data found for PMID {pmid} with model {model}"
+                )
+
+        if args.list_pmid_models:
+            logger.info("Listing all PMID-model combinations...")
+            combinations = list_pmid_model_combinations(conn)
+            print(f"\nFound {len(combinations)} PMID-model combinations:")
+            print("PMID\t\tModel\t\t\tTraits\tTitle")
+            print("-" * 120)
+            for pmid, model, trait_count, title in combinations[
+                :20
+            ]:  # Show top 20
+                truncated_title = (
+                    title[:50] + "..." if len(title) > 50 else title
+                )
+                truncated_model = (
+                    model[:15] + "..." if len(model) > 15 else model
+                )
+                print(
+                    f"{pmid}\t{truncated_model:<18}\t{trait_count}\t{truncated_title}"
+                )
+            if len(combinations) > 20:
+                print(f"... and {len(combinations) - 20} more combinations")
 
     return 0
 

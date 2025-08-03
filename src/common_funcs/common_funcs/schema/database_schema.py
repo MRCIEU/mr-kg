@@ -409,4 +409,36 @@ DATABASE_VIEWS = [
         CROSS JOIN efo_embeddings e
         """,
     ),
+    ViewDef(
+        name="pmid_model_analysis",
+        # Build process: Creates comprehensive JOIN between model_results, mr_pubmed_data, 
+        # model_result_traits, and trait_embeddings tables
+        # Built after all tables and indexes are created for optimal performance
+        # Comprehensive view combining PubMed metadata, model results, and extracted traits.
+        # Enables complete analysis of a paper's model extraction results and associated traits.
+        # Includes original PubMed data, model metadata/results, and trait information with embeddings.
+        # Useful for detailed paper analysis and cross-referencing model outputs with source data.
+        sql="""
+        SELECT
+            mr.pmid,
+            mr.model,
+            mr.id as model_result_id,
+            mr.metadata,
+            mr.results,
+            mpd.title,
+            mpd.abstract,
+            mpd.pub_date,
+            mpd.journal,
+            mpd.journal_issn,
+            mpd.author_affil,
+            mrt.trait_index,
+            mrt.trait_label,
+            mrt.trait_id_in_result,
+            te.vector as trait_vector
+        FROM model_results mr
+        LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
+        LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
+        LEFT JOIN trait_embeddings te ON mrt.trait_index = te.trait_index
+        """,
+    ),
 ]

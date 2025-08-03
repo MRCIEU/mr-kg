@@ -435,6 +435,31 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
         CROSS JOIN efo_embeddings e
     """)
 
+    # Create a comprehensive view for PMID and model analysis
+    conn.execute("""
+        CREATE VIEW pmid_model_analysis AS
+        SELECT
+            mr.pmid,
+            mr.model,
+            mr.id as model_result_id,
+            mr.metadata,
+            mr.results,
+            mpd.title,
+            mpd.abstract,
+            mpd.pub_date,
+            mpd.journal,
+            mpd.journal_issn,
+            mpd.author_affil,
+            mrt.trait_index,
+            mrt.trait_label,
+            mrt.trait_id_in_result,
+            te.vector as trait_vector
+        FROM model_results mr
+        LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
+        LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
+        LEFT JOIN trait_embeddings te ON mrt.trait_index = te.trait_index
+    """)
+
     logger.info("Similarity search views created")
 
 

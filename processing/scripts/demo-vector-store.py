@@ -253,6 +253,94 @@ def demo_pubmed_analysis(conn: duckdb.DuckDBPyConnection):
         print()  # Empty line for spacing
 
 
+def demo_pmid_model_analysis(conn: duckdb.DuckDBPyConnection):
+    """Demonstrate the comprehensive PMID and model analysis view."""
+    logger.info("=== PMID MODEL ANALYSIS DEMO ===")
+
+    # Find a few PMIDs that have model results for demonstration
+    print("\nSample PMID Analysis:")
+    sample_pmids = conn.execute("""
+        SELECT DISTINCT pmid, model, COUNT(*) as trait_count
+        FROM pmid_model_analysis
+        WHERE pmid IS NOT NULL AND trait_index IS NOT NULL
+        GROUP BY pmid, model
+        ORDER BY trait_count DESC
+        LIMIT 3
+    """).fetchall()
+
+    for pmid, model, trait_count in sample_pmids:
+        print(f"\n--- Analysis for PMID {pmid} with model {model} ---")
+
+        # Get comprehensive data for this PMID and model
+        analysis_data = conn.execute(
+            """
+            SELECT DISTINCT
+                title,
+                journal,
+                pub_date,
+                metadata,
+                results,
+                COUNT(DISTINCT trait_index) as total_traits
+            FROM pmid_model_analysis
+            WHERE pmid = ? AND model = ?
+            GROUP BY title, journal, pub_date, metadata, results
+        """,
+            (pmid, model),
+        ).fetchone()
+
+        if analysis_data:
+            title, journal, pub_date, metadata, results, total_traits = (
+                analysis_data
+            )
+            truncated_title = title[:80] + "..." if len(title) > 80 else title
+
+            print(f"Paper: {truncated_title}")
+            print(f"Journal: {journal} ({pub_date})")
+            print(f"Total extracted traits: {total_traits}")
+
+            # Get the traits for this PMID and model
+            traits_data = conn.execute(
+                """
+                SELECT DISTINCT trait_index, trait_label, trait_id_in_result
+                FROM pmid_model_analysis
+                WHERE pmid = ? AND model = ? AND trait_index IS NOT NULL
+                ORDER BY trait_label
+            """,
+                (pmid, model),
+            ).fetchall()
+
+            print("Extracted traits:")
+            for trait_index, trait_label, trait_id in traits_data[
+                :5
+            ]:  # Show first 5
+                trait_id_display = trait_id if trait_id else "N/A"
+                print(
+                    f"  - {trait_label} (index: {trait_index}, id: {trait_id_display})"
+                )
+
+            if len(traits_data) > 5:
+                print(f"  ... and {len(traits_data) - 5} more traits")
+
+    # Show statistics about the view
+    print("\nPMID Model Analysis View Statistics:")
+    view_stats = conn.execute("""
+        SELECT 
+            COUNT(DISTINCT pmid) as unique_pmids,
+            COUNT(DISTINCT model) as unique_models,
+            COUNT(DISTINCT CONCAT(pmid, '|', model)) as unique_pmid_model_pairs,
+            COUNT(DISTINCT trait_index) as unique_traits_involved
+        FROM pmid_model_analysis
+        WHERE pmid IS NOT NULL
+    """).fetchone()
+
+    if view_stats:
+        unique_pmids, unique_models, unique_pairs, unique_traits = view_stats
+        print(f"  Unique PMIDs: {unique_pmids}")
+        print(f"  Unique models: {unique_models}")
+        print(f"  PMID-model pairs: {unique_pairs}")
+        print(f"  Unique traits involved: {unique_traits}")
+
+
 def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):
     """Demonstrate trait exploration by analyzing trait usage patterns."""
     logger.info("=== TRAIT EXPLORATION DEMO ===")
@@ -344,6 +432,11 @@ def main():
         action="store_true",
         help="Skip PubMed data analysis demo",
     )
+    parser.add_argument(
+        "--skip-pmid-model-analysis",
+        action="store_true",
+        help="Skip PMID model analysis demo",
+    )
     args = parser.parse_args()
 
     try:
@@ -396,6 +489,9 @@ def main():
 
         if not args.skip_pubmed_analysis:
             demo_pubmed_analysis(conn)
+
+        if not args.skip_pmid_model_analysis:
+            demo_pmid_model_analysis(conn)
 
         print("\\nDemo completed successfully!")
 
