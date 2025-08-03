@@ -463,11 +463,13 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
         FROM model_results mr
         LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
         LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
-        GROUP BY 
+        GROUP BY
             mr.pmid, mr.model, mr.id, mr.metadata, mr.results,
-            mpd.title, mpd.abstract, mpd.pub_date, mpd.journal, 
+            mpd.title, mpd.abstract, mpd.pub_date, mpd.journal,
             mpd.journal_issn, mpd.author_affil
     """)
+
+
 
     logger.info("Similarity search views created")
 
