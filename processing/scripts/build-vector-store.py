@@ -193,14 +193,16 @@ def create_efo_embeddings_table(
     logger.info("EFO embeddings table created and populated")
 
 
-def _extract_trait_indices_from_items(items) -> set:
+def _extract_trait_indices_from_items(items) -> set[tuple[int, str]]:
     """Extract trait indices from exposure or outcome items.
 
     Args:
         items: List of exposure or outcome items (can be strings or dictionaries)
 
     Returns:
-        Set of (trait_index, trait_id_in_result) tuples
+        Set of (trait_index, trait_id_in_result) tuples where:
+        - trait_index (int): The linked index from unique_traits
+        - trait_id_in_result (str): The original trait ID from the model result
     """
     trait_indices = set()
     for item in items:
