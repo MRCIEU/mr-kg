@@ -41,7 +41,7 @@ micromamba run -n mr-kg-processing \
   --array-length 20 \
   --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \
-  --database-path "${SLURM_SUBMIT_DIR}"/../data/db/vectore_store.db \
+  --database-path "${SLURM_SUBMIT_DIR}"/../data/db/vector_store.db \
   --top-k 10 \
   --workers 8 \
   >"${output_log_file}" 2>&1
