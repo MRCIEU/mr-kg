@@ -199,7 +199,9 @@ def list_models_stats(
     return result
 
 
-def query_pubmed_by_pmid(conn: duckdb.DuckDBPyConnection, pmid: str) -> Tuple | None:
+def query_pubmed_by_pmid(
+    conn: duckdb.DuckDBPyConnection, pmid: str
+) -> Tuple | None:
     """Query PubMed data by PMID.
 
     Args:
@@ -209,11 +211,14 @@ def query_pubmed_by_pmid(conn: duckdb.DuckDBPyConnection, pmid: str) -> Tuple | 
     Returns:
         Tuple with PubMed data or None if not found
     """
-    result = conn.execute("""
+    result = conn.execute(
+        """
         SELECT pmid, title, abstract, pub_date, journal, journal_issn, author_affil
         FROM mr_pubmed_data
         WHERE pmid = ?
-    """, (pmid,)).fetchone()
+    """,
+        (pmid,),
+    ).fetchone()
 
     return result
 
@@ -231,18 +236,23 @@ def query_papers_by_journal(
     Returns:
         List of tuples with paper information
     """
-    result = conn.execute("""
+    result = conn.execute(
+        """
         SELECT pmid, title, journal, pub_date
         FROM mr_pubmed_data
         WHERE journal ILIKE ?
         ORDER BY pub_date DESC
         LIMIT ?
-    """, (f"%{journal_pattern}%", limit)).fetchall()
+    """,
+        (f"%{journal_pattern}%", limit),
+    ).fetchall()
 
     return result
 
 
-def list_journals_stats(conn: duckdb.DuckDBPyConnection) -> List[Tuple[str, int]]:
+def list_journals_stats(
+    conn: duckdb.DuckDBPyConnection,
+) -> List[Tuple[str, int]]:
     """List all journals with paper counts.
 
     Args:
@@ -477,7 +487,15 @@ def main():
             logger.info(f"Querying PubMed data for PMID: {args.query_pmid}")
             pubmed_data = query_pubmed_by_pmid(conn, args.query_pmid)
             if pubmed_data:
-                pmid, title, abstract, pub_date, journal, journal_issn, author_affil = pubmed_data
+                (
+                    pmid,
+                    title,
+                    abstract,
+                    pub_date,
+                    journal,
+                    journal_issn,
+                    author_affil,
+                ) = pubmed_data
                 print(f"\nPubMed Data for PMID {pmid}:")
                 print(f"Title: {title}")
                 print(f"Journal: {journal} ({pub_date})")
@@ -491,17 +509,29 @@ def main():
 
         if args.query_journal:
             logger.info(f"Querying papers by journal: {args.query_journal}")
-            papers = query_papers_by_journal(conn, args.query_journal, args.limit)
+            papers = query_papers_by_journal(
+                conn, args.query_journal, args.limit
+            )
             if papers:
-                print(f"\nPapers from journals matching '{args.query_journal}':")
+                print(
+                    f"\nPapers from journals matching '{args.query_journal}':"
+                )
                 print("PMID\t\tTitle\t\t\t\t\t\t\tJournal\t\t\tDate")
                 print("-" * 150)
                 for pmid, title, journal, pub_date in papers:
-                    truncated_title = title[:50] + "..." if len(title) > 50 else title
-                    truncated_journal = journal[:20] + "..." if len(journal) > 20 else journal
-                    print(f"{pmid}\t{truncated_title:<53}\t{truncated_journal:<23}\t{pub_date}")
+                    truncated_title = (
+                        title[:50] + "..." if len(title) > 50 else title
+                    )
+                    truncated_journal = (
+                        journal[:20] + "..." if len(journal) > 20 else journal
+                    )
+                    print(
+                        f"{pmid}\t{truncated_title:<53}\t{truncated_journal:<23}\t{pub_date}"
+                    )
             else:
-                print(f"\nNo papers found for journal pattern '{args.query_journal}'")
+                print(
+                    f"\nNo papers found for journal pattern '{args.query_journal}'"
+                )
 
         if args.list_journals:
             logger.info("Listing all journals...")

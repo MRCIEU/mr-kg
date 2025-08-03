@@ -465,27 +465,35 @@ def create_mr_pubmed_data_table(
     # Prepare data for batch insert
     logger.info(f"Inserting {len(mr_pubmed_data)} MR PubMed records...")
     pubmed_data_rows = []
-    
+
     for record in mr_pubmed_data:
-        pubmed_data_rows.append((
-            record["pmid"],
-            record["title"],
-            record["ab"],  # abstract
-            record["pub_date"],
-            record["journal"],
-            record.get("journal_issn", ""),  # Use get() in case field is missing
-            record.get("author_affil", "")   # Use get() in case field is missing
-        ))
+        pubmed_data_rows.append(
+            (
+                record["pmid"],
+                record["title"],
+                record["ab"],  # abstract
+                record["pub_date"],
+                record["journal"],
+                record.get(
+                    "journal_issn", ""
+                ),  # Use get() in case field is missing
+                record.get(
+                    "author_affil", ""
+                ),  # Use get() in case field is missing
+            )
+        )
 
     # Batch insert
     conn.executemany(
-        """INSERT INTO mr_pubmed_data 
+        """INSERT INTO mr_pubmed_data
            (pmid, title, abstract, pub_date, journal, journal_issn, author_affil)
            VALUES (?, ?, ?, ?, ?, ?, ?)""",
         pubmed_data_rows,
     )
 
-    logger.info(f"MR PubMed data table created with {len(pubmed_data_rows)} records")
+    logger.info(
+        f"MR PubMed data table created with {len(pubmed_data_rows)} records"
+    )
 
 
 def create_indexes(conn: duckdb.DuckDBPyConnection):
@@ -519,11 +527,17 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
     conn.execute(
         "CREATE INDEX idx_model_result_traits_trait_label ON model_result_traits(trait_label)"
     )
-    
+
     # Indexes for MR PubMed data table
-    conn.execute("CREATE INDEX idx_mr_pubmed_data_pmid ON mr_pubmed_data(pmid)")
-    conn.execute("CREATE INDEX idx_mr_pubmed_data_journal ON mr_pubmed_data(journal)")
-    conn.execute("CREATE INDEX idx_mr_pubmed_data_pub_date ON mr_pubmed_data(pub_date)")
+    conn.execute(
+        "CREATE INDEX idx_mr_pubmed_data_pmid ON mr_pubmed_data(pmid)"
+    )
+    conn.execute(
+        "CREATE INDEX idx_mr_pubmed_data_journal ON mr_pubmed_data(journal)"
+    )
+    conn.execute(
+        "CREATE INDEX idx_mr_pubmed_data_pub_date ON mr_pubmed_data(pub_date)"
+    )
 
     logger.info("Indexes created")
 
