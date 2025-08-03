@@ -29,6 +29,7 @@ from common_funcs.schema.database_schema_utils import (
     validate_database_schema,
 )
 from common_funcs.schema.embedding_schema import EmbeddingRecord
+from common_funcs.schema.mr_pubmed_schema import RawMrData
 from common_funcs.schema.processed_data_schema import ProcessModelResults
 from loguru import logger
 from yiutils.project_utils import find_project_root
@@ -101,6 +102,22 @@ def load_model_results(file_path: Path) -> List[ProcessModelResults]:
     with file_path.open("r") as f:
         data = json.load(f)
     logger.info(f"Loaded {len(data)} model result sets")
+    return data
+
+
+def load_mr_pubmed_data(file_path: Path) -> RawMrData:
+    """Load raw MR PubMed data from JSON file.
+
+    Args:
+        file_path: Path to the MR PubMed data JSON file
+
+    Returns:
+        List of raw MR PubMed records
+    """
+    logger.info(f"Loading MR PubMed data from: {file_path}")
+    with file_path.open("r") as f:
+        data = json.load(f)
+    logger.info(f"Loaded {len(data)} MR PubMed records")
     return data
 
 
@@ -421,6 +438,56 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
     logger.info("Similarity search views created")
 
 
+def create_mr_pubmed_data_table(
+    conn: duckdb.DuckDBPyConnection, mr_pubmed_data: RawMrData
+):
+    """Create and populate the MR PubMed data table.
+
+    Args:
+        conn: DuckDB connection
+        mr_pubmed_data: List of raw MR PubMed records
+    """
+    logger.info("Creating MR PubMed data table...")
+
+    # Create table
+    conn.execute("""
+        CREATE TABLE mr_pubmed_data (
+            pmid VARCHAR PRIMARY KEY,
+            title VARCHAR NOT NULL,
+            abstract VARCHAR NOT NULL,
+            pub_date VARCHAR NOT NULL,
+            journal VARCHAR NOT NULL,
+            journal_issn VARCHAR,
+            author_affil VARCHAR
+        )
+    """)
+
+    # Prepare data for batch insert
+    logger.info(f"Inserting {len(mr_pubmed_data)} MR PubMed records...")
+    pubmed_data_rows = []
+    
+    for record in mr_pubmed_data:
+        pubmed_data_rows.append((
+            record["pmid"],
+            record["title"],
+            record["ab"],  # abstract
+            record["pub_date"],
+            record["journal"],
+            record.get("journal_issn", ""),  # Use get() in case field is missing
+            record.get("author_affil", "")   # Use get() in case field is missing
+        ))
+
+    # Batch insert
+    conn.executemany(
+        """INSERT INTO mr_pubmed_data 
+           (pmid, title, abstract, pub_date, journal, journal_issn, author_affil)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        pubmed_data_rows,
+    )
+
+    logger.info(f"MR PubMed data table created with {len(pubmed_data_rows)} records")
+
+
 def create_indexes(conn: duckdb.DuckDBPyConnection):
     """Create indexes for better query performance.
 
@@ -452,6 +519,11 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
     conn.execute(
         "CREATE INDEX idx_model_result_traits_trait_label ON model_result_traits(trait_label)"
     )
+    
+    # Indexes for MR PubMed data table
+    conn.execute("CREATE INDEX idx_mr_pubmed_data_pmid ON mr_pubmed_data(pmid)")
+    conn.execute("CREATE INDEX idx_mr_pubmed_data_journal ON mr_pubmed_data(journal)")
+    conn.execute("CREATE INDEX idx_mr_pubmed_data_pub_date ON mr_pubmed_data(pub_date)")
 
     logger.info("Indexes created")
 
@@ -481,12 +553,16 @@ def main():
     unique_traits_path = (
         DATA_DIR / "processed" / "traits" / "unique_traits.csv"
     )
+    mr_pubmed_data_path = (
+        DATA_DIR / "raw" / "mr-pubmed-data" / "mr-pubmed-data.json"
+    )
 
     for path in [
         trait_embeddings_path,
         efo_embeddings_path,
         model_results_path,
         unique_traits_path,
+        mr_pubmed_data_path,
     ]:
         if not path.exists():
             logger.error(f"Required file not found: {path}")
@@ -514,6 +590,7 @@ def main():
     efo_embeddings = load_embeddings(efo_embeddings_path)
     model_results = load_model_results(model_results_path)
     unique_traits = load_unique_traits(unique_traits_path)
+    mr_pubmed_data = load_mr_pubmed_data(mr_pubmed_data_path)
 
     # Create database and tables
     with duckdb.connect(str(db_path)) as conn:
@@ -523,6 +600,7 @@ def main():
         create_trait_embeddings_table(conn, trait_embeddings, unique_traits)
         create_efo_embeddings_table(conn, efo_embeddings)
         create_model_results_tables(conn, model_results)
+        create_mr_pubmed_data_table(conn, mr_pubmed_data)
         create_similarity_functions(conn)
         create_indexes(conn)
 
@@ -539,6 +617,9 @@ def main():
         model_trait_count = conn.execute(
             "SELECT COUNT(*) FROM model_result_traits"
         ).fetchone()
+        pubmed_count = conn.execute(
+            "SELECT COUNT(*) FROM mr_pubmed_data"
+        ).fetchone()
 
         logger.info("Database created successfully:")
         logger.info(
@@ -550,6 +631,9 @@ def main():
         )
         logger.info(
             f"  - {model_trait_count[0] if model_trait_count else 0} trait linkings"
+        )
+        logger.info(
+            f"  - {pubmed_count[0] if pubmed_count else 0} MR PubMed records"
         )
         logger.info(f"  - Database saved to: {db_path}")
 

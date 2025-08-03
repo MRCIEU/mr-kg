@@ -176,6 +176,83 @@ def demo_model_analysis(conn: duckdb.DuckDBPyConnection):
         print(f"   {trait}: {freq} occurrences across {model_count} models")
 
 
+def demo_pubmed_analysis(conn: duckdb.DuckDBPyConnection):
+    """Demonstrate PubMed data analysis capabilities."""
+    logger.info("=== PUBMED DATA ANALYSIS DEMO ===")
+
+    # PubMed data statistics
+    print("\nPubMed Data Statistics:")
+    pubmed_stats = conn.execute("""
+        SELECT 
+            COUNT(*) as total_papers,
+            COUNT(DISTINCT journal) as unique_journals,
+            MIN(pub_date) as earliest_date,
+            MAX(pub_date) as latest_date
+        FROM mr_pubmed_data
+    """).fetchone()
+
+    if pubmed_stats:
+        total, journals, earliest, latest = pubmed_stats
+        print(f"   Total papers: {total}")
+        print(f"   Unique journals: {journals}")
+        print(f"   Publication date range: {earliest} to {latest}")
+
+    # Top journals by paper count
+    print("\nTop Journals by Paper Count:")
+    top_journals = conn.execute("""
+        SELECT 
+            journal,
+            COUNT(*) as paper_count
+        FROM mr_pubmed_data
+        GROUP BY journal
+        ORDER BY paper_count DESC
+        LIMIT 10
+    """).fetchall()
+
+    for journal, count in top_journals:
+        print(f"   {journal}: {count} papers")
+
+    # Papers with model results vs without
+    print("\nPapers with Model Results:")
+    coverage_stats = conn.execute("""
+        SELECT 
+            COUNT(DISTINCT mpd.pmid) as total_pubmed_papers,
+            COUNT(DISTINCT mr.pmid) as papers_with_results,
+            COUNT(DISTINCT mr.pmid) * 100.0 / COUNT(DISTINCT mpd.pmid) as coverage_percent
+        FROM mr_pubmed_data mpd
+        LEFT JOIN model_results mr ON mpd.pmid = mr.pmid
+    """).fetchone()
+
+    if coverage_stats:
+        total, with_results, coverage = coverage_stats
+        print(f"   Total PubMed papers: {total}")
+        print(f"   Papers with model results: {with_results}")
+        print(f"   Coverage: {coverage:.1f}%")
+
+    # Example: Show paper details for a few PMIDs
+    print("\nSample Paper Details:")
+    sample_papers = conn.execute("""
+        SELECT 
+            mpd.pmid,
+            mpd.title,
+            mpd.journal,
+            mpd.pub_date,
+            COUNT(mr.id) as model_result_count
+        FROM mr_pubmed_data mpd
+        LEFT JOIN model_results mr ON mpd.pmid = mr.pmid
+        GROUP BY mpd.pmid, mpd.title, mpd.journal, mpd.pub_date
+        ORDER BY model_result_count DESC, mpd.pmid
+        LIMIT 3
+    """).fetchall()
+
+    for pmid, title, journal, pub_date, result_count in sample_papers:
+        truncated_title = title[:70] + "..." if len(title) > 70 else title
+        print(f"   PMID {pmid}: {truncated_title}")
+        print(f"     Journal: {journal} ({pub_date})")
+        print(f"     Model results: {result_count}")
+        print()  # Empty line for spacing
+
+
 def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):
     """Demonstrate trait exploration by analyzing trait usage patterns."""
     logger.info("=== TRAIT EXPLORATION DEMO ===")
@@ -262,6 +339,11 @@ def main():
         action="store_true",
         help="Skip trait exploration demo",
     )
+    parser.add_argument(
+        "--skip-pubmed-analysis",
+        action="store_true",
+        help="Skip PubMed data analysis demo",
+    )
     args = parser.parse_args()
 
     try:
@@ -311,6 +393,9 @@ def main():
 
         if not args.skip_trait_exploration:
             demo_trait_exploration(conn)
+
+        if not args.skip_pubmed_analysis:
+            demo_pubmed_analysis(conn)
 
         print("\\nDemo completed successfully!")
 

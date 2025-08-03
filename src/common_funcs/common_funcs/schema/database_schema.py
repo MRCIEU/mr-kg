@@ -215,6 +215,68 @@ DATABASE_SCHEMA = {
             ForeignKeyDef("trait_index", "trait_embeddings", "trait_index"),
         ],
     ),
+    # ==== mr_pubmed_data ====
+    # Build process (create_mr_pubmed_data_table):
+    # 1. Load raw MR PubMed data from mr-pubmed-data.json
+    # 2. Create table with pmid as PRIMARY KEY
+    # 3. Insert all PubMed records directly (pmid, title, abstract, pub_date, journal, journal_issn, author_affil)
+    # Result: Complete PubMed metadata for papers that have MR analysis results
+    "mr_pubmed_data": TableDef(
+        name="mr_pubmed_data",
+        description="Raw PubMed metadata for papers with MR analysis",
+        columns=[
+            ColumnDef(
+                "pmid",
+                ColumnType.VARCHAR,
+                nullable=False,
+                primary_key=True,
+                # PubMed ID serving as unique identifier for research papers.
+                # Links to model_results.pmid to connect model outputs with source papers.
+            ),
+            ColumnDef(
+                "title",
+                ColumnType.VARCHAR,
+                nullable=False,
+                # Full title of the research paper from PubMed.
+                # Used for display and text-based searches within paper metadata.
+            ),
+            ColumnDef(
+                "abstract",
+                ColumnType.VARCHAR,
+                nullable=False,
+                # Complete abstract text from PubMed.
+                # Contains the source text that models analyze for trait extraction.
+            ),
+            ColumnDef(
+                "pub_date",
+                ColumnType.VARCHAR,
+                nullable=False,
+                # Publication date of the paper.
+                # Enables temporal analysis and filtering of research trends.
+            ),
+            ColumnDef(
+                "journal",
+                ColumnType.VARCHAR,
+                nullable=False,
+                # Name of the journal where the paper was published.
+                # Used for journal-based filtering and impact analysis.
+            ),
+            ColumnDef(
+                "journal_issn",
+                ColumnType.VARCHAR,
+                nullable=True,
+                # ISSN identifier for the journal.
+                # Enables precise journal identification and metadata linking.
+            ),
+            ColumnDef(
+                "author_affil",
+                ColumnType.VARCHAR,
+                nullable=True,
+                # Author affiliation information from PubMed.
+                # Used for institutional analysis and collaboration studies.
+            ),
+        ],
+    ),
 }
 
 # Define expected indexes for query performance optimization
@@ -277,6 +339,27 @@ DATABASE_INDEXES = [
         ["trait_label"],
         # Enables fast text-based searches within the denormalized trait labels
         # Built after trait label denormalization from trait_embeddings
+    ),
+    IndexDef(
+        "idx_mr_pubmed_data_pmid",
+        "mr_pubmed_data",
+        ["pmid"],
+        # Primary key index for fast PubMed ID lookups and joins with model_results
+        # Built after MR PubMed data insertion from mr-pubmed-data.json
+    ),
+    IndexDef(
+        "idx_mr_pubmed_data_journal",
+        "mr_pubmed_data",
+        ["journal"],
+        # Enables efficient filtering and analysis by journal name
+        # Built after complete PubMed metadata population
+    ),
+    IndexDef(
+        "idx_mr_pubmed_data_pub_date",
+        "mr_pubmed_data",
+        ["pub_date"],
+        # Supports temporal queries and publication date filtering
+        # Built after MR PubMed data table creation with date information
     ),
 ]
 

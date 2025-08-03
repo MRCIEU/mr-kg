@@ -72,6 +72,23 @@ def make_args():
         type=int,
         help="Find trait by trait_index",
     )
+    parser.add_argument(
+        "--query-pmid",
+        "-qp",
+        type=str,
+        help="Query PubMed data by PMID",
+    )
+    parser.add_argument(
+        "--query-journal",
+        "-qj",
+        type=str,
+        help="Query papers by journal name (supports partial matching)",
+    )
+    parser.add_argument(
+        "--list-journals",
+        action="store_true",
+        help="List all journals in the database with paper counts",
+    )
     return parser.parse_args()
 
 
@@ -177,6 +194,68 @@ def list_models_stats(
         LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
         GROUP BY model
         ORDER BY model
+    """).fetchall()
+
+    return result
+
+
+def query_pubmed_by_pmid(conn: duckdb.DuckDBPyConnection, pmid: str) -> Tuple | None:
+    """Query PubMed data by PMID.
+
+    Args:
+        conn: DuckDB connection
+        pmid: PubMed ID to search for
+
+    Returns:
+        Tuple with PubMed data or None if not found
+    """
+    result = conn.execute("""
+        SELECT pmid, title, abstract, pub_date, journal, journal_issn, author_affil
+        FROM mr_pubmed_data
+        WHERE pmid = ?
+    """, (pmid,)).fetchone()
+
+    return result
+
+
+def query_papers_by_journal(
+    conn: duckdb.DuckDBPyConnection, journal_pattern: str, limit: int = 10
+) -> List[Tuple]:
+    """Query papers by journal name (supports partial matching).
+
+    Args:
+        conn: DuckDB connection
+        journal_pattern: Journal name or pattern to search for
+        limit: Number of results to return
+
+    Returns:
+        List of tuples with paper information
+    """
+    result = conn.execute("""
+        SELECT pmid, title, journal, pub_date
+        FROM mr_pubmed_data
+        WHERE journal ILIKE ?
+        ORDER BY pub_date DESC
+        LIMIT ?
+    """, (f"%{journal_pattern}%", limit)).fetchall()
+
+    return result
+
+
+def list_journals_stats(conn: duckdb.DuckDBPyConnection) -> List[Tuple[str, int]]:
+    """List all journals with paper counts.
+
+    Args:
+        conn: DuckDB connection
+
+    Returns:
+        List of tuples (journal_name, paper_count)
+    """
+    result = conn.execute("""
+        SELECT journal, COUNT(*) as paper_count
+        FROM mr_pubmed_data
+        GROUP BY journal
+        ORDER BY paper_count DESC, journal
     """).fetchall()
 
     return result
@@ -393,6 +472,47 @@ def main():
                         efo_id if len(efo_id) <= 40 else efo_id[:37] + "..."
                     )
                     print(f"{similarity:.4f}\t\t{short_id}\t{efo_label}")
+
+        if args.query_pmid:
+            logger.info(f"Querying PubMed data for PMID: {args.query_pmid}")
+            pubmed_data = query_pubmed_by_pmid(conn, args.query_pmid)
+            if pubmed_data:
+                pmid, title, abstract, pub_date, journal, journal_issn, author_affil = pubmed_data
+                print(f"\nPubMed Data for PMID {pmid}:")
+                print(f"Title: {title}")
+                print(f"Journal: {journal} ({pub_date})")
+                if journal_issn:
+                    print(f"ISSN: {journal_issn}")
+                if author_affil:
+                    print(f"Author Affiliation: {author_affil}")
+                print(f"\nAbstract:\n{abstract}")
+            else:
+                print(f"\nNo PubMed data found for PMID {args.query_pmid}")
+
+        if args.query_journal:
+            logger.info(f"Querying papers by journal: {args.query_journal}")
+            papers = query_papers_by_journal(conn, args.query_journal, args.limit)
+            if papers:
+                print(f"\nPapers from journals matching '{args.query_journal}':")
+                print("PMID\t\tTitle\t\t\t\t\t\t\tJournal\t\t\tDate")
+                print("-" * 150)
+                for pmid, title, journal, pub_date in papers:
+                    truncated_title = title[:50] + "..." if len(title) > 50 else title
+                    truncated_journal = journal[:20] + "..." if len(journal) > 20 else journal
+                    print(f"{pmid}\t{truncated_title:<53}\t{truncated_journal:<23}\t{pub_date}")
+            else:
+                print(f"\nNo papers found for journal pattern '{args.query_journal}'")
+
+        if args.list_journals:
+            logger.info("Listing all journals...")
+            journals = list_journals_stats(conn)
+            print(f"\nFound {len(journals)} journals:")
+            print("Papers\tJournal")
+            print("-" * 80)
+            for journal, count in journals[:20]:  # Show top 20
+                print(f"{count}\t{journal}")
+            if len(journals) > 20:
+                print(f"... and {len(journals) - 20} more journals")
 
     return 0
 
