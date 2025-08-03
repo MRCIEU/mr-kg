@@ -450,14 +450,23 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
             mpd.journal,
             mpd.journal_issn,
             mpd.author_affil,
-            mrt.trait_index,
-            mrt.trait_label,
-            mrt.trait_id_in_result,
-            te.vector as trait_vector
+            COALESCE(
+                LIST(
+                    STRUCT_PACK(
+                        trait_index := mrt.trait_index,
+                        trait_label := mrt.trait_label,
+                        trait_id_in_result := mrt.trait_id_in_result
+                    )
+                ) FILTER (WHERE mrt.trait_index IS NOT NULL),
+                []
+            ) as traits
         FROM model_results mr
         LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
         LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
-        LEFT JOIN trait_embeddings te ON mrt.trait_index = te.trait_index
+        GROUP BY 
+            mr.pmid, mr.model, mr.id, mr.metadata, mr.results,
+            mpd.title, mpd.abstract, mpd.pub_date, mpd.journal, 
+            mpd.journal_issn, mpd.author_affil
     """)
 
     logger.info("Similarity search views created")

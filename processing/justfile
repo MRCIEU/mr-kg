@@ -43,3 +43,9 @@ preprocess-efo:
 [group('postprocessing')]
 aggregate-embeddings:
     uv run scripts/aggregate-embeddings.py
+
+# ==== database ====
+
+[group('database')]
+build-db:
+    uv run scripts/build-vector-store.py -db vector_store

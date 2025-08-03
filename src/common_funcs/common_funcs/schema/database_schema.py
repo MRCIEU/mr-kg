@@ -412,11 +412,11 @@ DATABASE_VIEWS = [
     ViewDef(
         name="pmid_model_analysis",
         # Build process: Creates comprehensive JOIN between model_results, mr_pubmed_data, 
-        # model_result_traits, and trait_embeddings tables
+        # and model_result_traits with trait aggregation
         # Built after all tables and indexes are created for optimal performance
         # Comprehensive view combining PubMed metadata, model results, and extracted traits.
-        # Enables complete analysis of a paper's model extraction results and associated traits.
-        # Includes original PubMed data, model metadata/results, and trait information with embeddings.
+        # Each row is unique per PMID-model combination with traits aggregated into a nested structure.
+        # Includes original PubMed data, model metadata/results, and all associated traits.
         # Useful for detailed paper analysis and cross-referencing model outputs with source data.
         sql="""
         SELECT
@@ -431,14 +431,23 @@ DATABASE_VIEWS = [
             mpd.journal,
             mpd.journal_issn,
             mpd.author_affil,
-            mrt.trait_index,
-            mrt.trait_label,
-            mrt.trait_id_in_result,
-            te.vector as trait_vector
+            COALESCE(
+                LIST(
+                    STRUCT_PACK(
+                        trait_index := mrt.trait_index,
+                        trait_label := mrt.trait_label,
+                        trait_id_in_result := mrt.trait_id_in_result
+                    )
+                ) FILTER (WHERE mrt.trait_index IS NOT NULL),
+                []
+            ) as traits
         FROM model_results mr
         LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
         LEFT JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
-        LEFT JOIN trait_embeddings te ON mrt.trait_index = te.trait_index
+        GROUP BY 
+            mr.pmid, mr.model, mr.id, mr.metadata, mr.results,
+            mpd.title, mpd.abstract, mpd.pub_date, mpd.journal, 
+            mpd.journal_issn, mpd.author_affil
         """,
     ),
 ]

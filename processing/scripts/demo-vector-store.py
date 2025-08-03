@@ -260,10 +260,9 @@ def demo_pmid_model_analysis(conn: duckdb.DuckDBPyConnection):
     # Find a few PMIDs that have model results for demonstration
     print("\nSample PMID Analysis:")
     sample_pmids = conn.execute("""
-        SELECT DISTINCT pmid, model, COUNT(*) as trait_count
+        SELECT pmid, model, LENGTH(traits) as trait_count
         FROM pmid_model_analysis
-        WHERE pmid IS NOT NULL AND trait_index IS NOT NULL
-        GROUP BY pmid, model
+        WHERE pmid IS NOT NULL AND LENGTH(traits) > 0
         ORDER BY trait_count DESC
         LIMIT 3
     """).fetchall()
@@ -274,52 +273,40 @@ def demo_pmid_model_analysis(conn: duckdb.DuckDBPyConnection):
         # Get comprehensive data for this PMID and model
         analysis_data = conn.execute(
             """
-            SELECT DISTINCT
+            SELECT 
                 title,
                 journal,
                 pub_date,
                 metadata,
                 results,
-                COUNT(DISTINCT trait_index) as total_traits
+                traits
             FROM pmid_model_analysis
             WHERE pmid = ? AND model = ?
-            GROUP BY title, journal, pub_date, metadata, results
         """,
             (pmid, model),
         ).fetchone()
 
         if analysis_data:
-            title, journal, pub_date, metadata, results, total_traits = (
-                analysis_data
-            )
+            title, journal, pub_date, metadata, results, traits = analysis_data
             truncated_title = title[:80] + "..." if len(title) > 80 else title
 
             print(f"Paper: {truncated_title}")
             print(f"Journal: {journal} ({pub_date})")
-            print(f"Total extracted traits: {total_traits}")
-
-            # Get the traits for this PMID and model
-            traits_data = conn.execute(
-                """
-                SELECT DISTINCT trait_index, trait_label, trait_id_in_result
-                FROM pmid_model_analysis
-                WHERE pmid = ? AND model = ? AND trait_index IS NOT NULL
-                ORDER BY trait_label
-            """,
-                (pmid, model),
-            ).fetchall()
+            print(f"Total extracted traits: {len(traits)}")
 
             print("Extracted traits:")
-            for trait_index, trait_label, trait_id in traits_data[
-                :5
-            ]:  # Show first 5
-                trait_id_display = trait_id if trait_id else "N/A"
+            for i, trait in enumerate(traits[:5]):  # Show first 5
+                trait_id_display = (
+                    trait["trait_id_in_result"]
+                    if trait["trait_id_in_result"]
+                    else "N/A"
+                )
                 print(
-                    f"  - {trait_label} (index: {trait_index}, id: {trait_id_display})"
+                    f"  - {trait['trait_label']} (index: {trait['trait_index']}, id: {trait_id_display})"
                 )
 
-            if len(traits_data) > 5:
-                print(f"  ... and {len(traits_data) - 5} more traits")
+            if len(traits) > 5:
+                print(f"  ... and {len(traits) - 5} more traits")
 
     # Show statistics about the view
     print("\nPMID Model Analysis View Statistics:")
@@ -327,18 +314,18 @@ def demo_pmid_model_analysis(conn: duckdb.DuckDBPyConnection):
         SELECT 
             COUNT(DISTINCT pmid) as unique_pmids,
             COUNT(DISTINCT model) as unique_models,
-            COUNT(DISTINCT CONCAT(pmid, '|', model)) as unique_pmid_model_pairs,
-            COUNT(DISTINCT trait_index) as unique_traits_involved
+            COUNT(*) as unique_pmid_model_pairs,
+            SUM(LENGTH(traits)) as total_trait_instances
         FROM pmid_model_analysis
         WHERE pmid IS NOT NULL
     """).fetchone()
 
     if view_stats:
-        unique_pmids, unique_models, unique_pairs, unique_traits = view_stats
+        unique_pmids, unique_models, unique_pairs, total_traits = view_stats
         print(f"  Unique PMIDs: {unique_pmids}")
         print(f"  Unique models: {unique_models}")
         print(f"  PMID-model pairs: {unique_pairs}")
-        print(f"  Unique traits involved: {unique_traits}")
+        print(f"  Total trait instances: {total_traits}")
 
 
 def demo_trait_exploration(conn: duckdb.DuckDBPyConnection):

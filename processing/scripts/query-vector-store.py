@@ -297,10 +297,10 @@ def query_pmid_model_analysis(
     Returns:
         Dictionary with analysis data
     """
-    # Get the main paper and model information
-    main_data = conn.execute(
+    # Get the comprehensive data for this PMID and model
+    result = conn.execute(
         """
-        SELECT DISTINCT
+        SELECT 
             pmid,
             model,
             title,
@@ -310,31 +310,30 @@ def query_pmid_model_analysis(
             journal_issn,
             author_affil,
             metadata,
-            results
+            results,
+            traits
         FROM pmid_model_analysis
         WHERE pmid = ? AND model = ?
     """,
         (pmid, model),
     ).fetchone()
 
-    if not main_data:
+    if not result:
         return {}
 
-    # Get all traits for this PMID-model combination
-    traits_data = conn.execute(
-        """
-        SELECT 
-            trait_index,
-            trait_label,
-            trait_id_in_result
-        FROM pmid_model_analysis
-        WHERE pmid = ? AND model = ? AND trait_index IS NOT NULL
-        ORDER BY trait_label
-    """,
-        (pmid, model),
-    ).fetchall()
-
-    return {"main_data": main_data, "traits": traits_data}
+    return {
+        "pmid": result[0],
+        "model": result[1],
+        "title": result[2],
+        "abstract": result[3],
+        "pub_date": result[4],
+        "journal": result[5],
+        "journal_issn": result[6],
+        "author_affil": result[7],
+        "metadata": result[8],
+        "results": result[9],
+        "traits": result[10],
+    }
 
 
 def list_pmid_model_combinations(
@@ -352,11 +351,10 @@ def list_pmid_model_combinations(
         SELECT 
             pmid,
             model,
-            COUNT(DISTINCT trait_index) as trait_count,
-            MAX(title) as title
+            LENGTH(traits) as trait_count,
+            title
         FROM pmid_model_analysis
-        WHERE pmid IS NOT NULL AND trait_index IS NOT NULL
-        GROUP BY pmid, model
+        WHERE pmid IS NOT NULL
         ORDER BY trait_count DESC, pmid, model
     """).fetchall()
 
@@ -643,42 +641,35 @@ def main():
             )
             analysis = query_pmid_model_analysis(conn, pmid, model)
 
-            if analysis and analysis.get("main_data"):
-                main_data = analysis["main_data"]
+            if analysis:
+                print(
+                    f"\n=== PMID {analysis['pmid']} Analysis with Model {analysis['model']} ==="
+                )
+                print(f"Title: {analysis['title']}")
+                print(
+                    f"Journal: {analysis['journal']} ({analysis['pub_date']})"
+                )
+                if analysis["journal_issn"]:
+                    print(f"ISSN: {analysis['journal_issn']}")
+                if analysis["author_affil"]:
+                    print(f"Author Affiliation: {analysis['author_affil']}")
+
                 traits = analysis["traits"]
-
-                (
-                    pmid,
-                    model,
-                    title,
-                    abstract,
-                    pub_date,
-                    journal,
-                    journal_issn,
-                    author_affil,
-                    metadata,
-                    results,
-                ) = main_data
-
-                print(f"\n=== PMID {pmid} Analysis with Model {model} ===")
-                print(f"Title: {title}")
-                print(f"Journal: {journal} ({pub_date})")
-                if journal_issn:
-                    print(f"ISSN: {journal_issn}")
-                if author_affil:
-                    print(f"Author Affiliation: {author_affil}")
-
                 print(f"\nExtracted Traits ({len(traits)} total):")
                 if traits:
-                    for trait_index, trait_label, trait_id in traits:
-                        trait_id_display = trait_id if trait_id else "N/A"
+                    for trait in traits:
+                        trait_id_display = (
+                            trait["trait_id_in_result"]
+                            if trait["trait_id_in_result"]
+                            else "N/A"
+                        )
                         print(
-                            f"  - {trait_label} (index: {trait_index}, id: {trait_id_display})"
+                            f"  - {trait['trait_label']} (index: {trait['trait_index']}, id: {trait_id_display})"
                         )
                 else:
                     print("  No traits extracted")
 
-                print(f"\nAbstract:\n{abstract}")
+                print(f"\nAbstract:\n{analysis['abstract']}")
 
                 # Note: metadata and results are JSON, could be displayed if needed
                 print(
