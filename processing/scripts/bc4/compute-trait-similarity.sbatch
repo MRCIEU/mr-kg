@@ -11,9 +11,6 @@
 #SBATCH --array=0-19
 
 # NOTE: sbatch --account=<account-code> <script>
-# This job uses read-only database access, so multiple tasks can run concurrently
-# without database conflicts. Each task processes a different chunk of PMID-model combinations.
-# Each task uses 8 CPU cores for multiprocessing within the chunk processing.
 date "+%Y-%m-%dT%H-%M"
 
 cd "${SLURM_SUBMIT_DIR}"
@@ -37,7 +34,7 @@ fi
 echo "Using database: $database_path"
 
 micromamba run -n mr-kg-processing \
-  uv run scripts/compute-trait-similarity.py \
+  uv run scripts/trait-profile/compute-trait-similarity.py \
   --array-length 20 \
   --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \

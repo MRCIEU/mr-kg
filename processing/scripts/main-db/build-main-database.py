@@ -469,8 +469,6 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
             mpd.journal_issn, mpd.author_affil
     """)
 
-
-
     logger.info("Similarity search views created")
 
 

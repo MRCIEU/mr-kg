@@ -122,7 +122,9 @@ def find_latest_database() -> Path:
     return latest_db
 
 
-def load_pmid_model_combinations(conn: duckdb.DuckDBPyConnection) -> List[Tuple]:
+def load_pmid_model_combinations(
+    conn: duckdb.DuckDBPyConnection,
+) -> List[Tuple]:
     """Load all PMID-model combinations with their traits from the database.
 
     Args:
@@ -147,7 +149,7 @@ def load_pmid_model_combinations(conn: duckdb.DuckDBPyConnection) -> List[Tuple]
 def compute_trait_profile_similarity(
     conn: duckdb.DuckDBPyConnection,
     query_traits: List[Dict],
-    similar_traits: List[Dict]
+    similar_traits: List[Dict],
 ) -> float:
     """Compute semantic similarity between two trait profiles.
 
@@ -162,8 +164,8 @@ def compute_trait_profile_similarity(
     if not query_traits or not similar_traits:
         return 0.0
 
-    query_trait_indices = [t['trait_index'] for t in query_traits]
-    similar_trait_indices = [t['trait_index'] for t in similar_traits]
+    query_trait_indices = [t["trait_index"] for t in query_traits]
+    similar_trait_indices = [t["trait_index"] for t in similar_traits]
 
     if not query_trait_indices or not similar_trait_indices:
         return 0.0
@@ -172,7 +174,8 @@ def compute_trait_profile_similarity(
     query_placeholders = ",".join("?" * len(query_trait_indices))
     similar_placeholders = ",".join("?" * len(similar_trait_indices))
 
-    sim_result = conn.execute(f"""
+    sim_result = conn.execute(
+        f"""
         SELECT AVG(max_sim) FROM (
             SELECT MAX(array_cosine_similarity(te1.vector, te2.vector)) as max_sim
             FROM trait_embeddings te1
@@ -181,12 +184,16 @@ def compute_trait_profile_similarity(
               AND te2.trait_index IN ({similar_placeholders})
             GROUP BY te1.trait_index
         )
-    """, query_trait_indices + similar_trait_indices).fetchone()
+    """,
+        query_trait_indices + similar_trait_indices,
+    ).fetchone()
 
     return sim_result[0] if sim_result and sim_result[0] else 0.0
 
 
-def compute_jaccard_similarity(query_traits: List[Dict], similar_traits: List[Dict]) -> float:
+def compute_jaccard_similarity(
+    query_traits: List[Dict], similar_traits: List[Dict]
+) -> float:
     """Compute Jaccard similarity between two trait sets.
 
     Args:
@@ -202,8 +209,8 @@ def compute_jaccard_similarity(query_traits: List[Dict], similar_traits: List[Di
     if not query_traits or not similar_traits:
         return 0.0  # One empty
 
-    query_set = set(t['trait_index'] for t in query_traits)
-    similar_set = set(t['trait_index'] for t in similar_traits)
+    query_set = set(t["trait_index"] for t in query_traits)
+    similar_set = set(t["trait_index"] for t in similar_traits)
 
     intersection = len(query_set & similar_set)
     union = len(query_set | similar_set)
@@ -241,7 +248,12 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
             if model == query_model
         ]
 
-        for similar_pmid, similar_model, similar_title, similar_traits in same_model_combinations:
+        for (
+            similar_pmid,
+            similar_model,
+            similar_title,
+            similar_traits,
+        ) in same_model_combinations:
             # Skip self-comparison
             if query_pmid == similar_pmid and query_model == similar_model:
                 continue
@@ -252,20 +264,30 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
             )
 
             # Compute Jaccard similarity
-            jaccard_sim = compute_jaccard_similarity(query_traits, similar_traits)
+            jaccard_sim = compute_jaccard_similarity(
+                query_traits, similar_traits
+            )
 
-            similarities.append({
-                "similar_pmid": similar_pmid,
-                "similar_model": similar_model,
-                "similar_title": similar_title,
-                "trait_profile_similarity": trait_profile_sim,
-                "trait_jaccard_similarity": jaccard_sim,
-                "query_trait_count": len(query_traits) if query_traits else 0,
-                "similar_trait_count": len(similar_traits) if similar_traits else 0,
-            })
+            similarities.append(
+                {
+                    "similar_pmid": similar_pmid,
+                    "similar_model": similar_model,
+                    "similar_title": similar_title,
+                    "trait_profile_similarity": trait_profile_sim,
+                    "trait_jaccard_similarity": jaccard_sim,
+                    "query_trait_count": len(query_traits)
+                    if query_traits
+                    else 0,
+                    "similar_trait_count": len(similar_traits)
+                    if similar_traits
+                    else 0,
+                }
+            )
 
         # Sort by trait profile similarity and keep top-k
-        similarities.sort(key=lambda x: x["trait_profile_similarity"], reverse=True)
+        similarities.sort(
+            key=lambda x: x["trait_profile_similarity"], reverse=True
+        )
         top_similarities = similarities[:top_k]
 
         # Create record for this query
@@ -283,7 +305,7 @@ def compute_similarities_for_chunk(
     pmid_models_chunk: List[Tuple],
     all_pmid_models: List[Tuple],
     top_k: int = 10,
-    workers: int = 4
+    workers: int = 4,
 ) -> List[Dict]:
     """Compute similarities for a chunk of PMID-model combinations using multiprocessing.
 
@@ -305,18 +327,24 @@ def compute_similarities_for_chunk(
         for query_data in pmid_models_chunk
     ]
 
-    logger.info(f"Starting multiprocessing with {workers} workers for {len(pmid_models_chunk)} queries")
+    logger.info(
+        f"Starting multiprocessing with {workers} workers for {len(pmid_models_chunk)} queries"
+    )
 
     # Use multiprocessing to compute similarities in parallel
     with multiprocessing.Pool(processes=workers) as pool:
         # Use imap for progress tracking
-        similarity_records = list(tqdm(
-            pool.imap(compute_similarities_for_single_query, worker_args),
-            total=len(worker_args),
-            desc="Computing similarities"
-        ))
+        similarity_records = list(
+            tqdm(
+                pool.imap(compute_similarities_for_single_query, worker_args),
+                total=len(worker_args),
+                desc="Computing similarities",
+            )
+        )
 
-    logger.info(f"Completed similarity computation for {len(similarity_records)} queries")
+    logger.info(
+        f"Completed similarity computation for {len(similarity_records)} queries"
+    )
     return similarity_records
 
 
@@ -381,24 +409,38 @@ def main():
         # Extract chunk for processing
         pmid_models_chunk = all_pmid_models[start_idx:end_idx]
 
-        logger.info(f"Chunk contains {len(pmid_models_chunk)} combinations to process.")
-        logger.info(f"Using {args.workers} worker processes for multiprocessing")
+        logger.info(
+            f"Chunk contains {len(pmid_models_chunk)} combinations to process."
+        )
+        logger.info(
+            f"Using {args.workers} worker processes for multiprocessing"
+        )
 
         # Compute similarities for this chunk
         start_time = time.time()
         similarity_records = compute_similarities_for_chunk(
-            db_path, pmid_models_chunk, all_pmid_models, args.top_k, args.workers
+            db_path,
+            pmid_models_chunk,
+            all_pmid_models,
+            args.top_k,
+            args.workers,
         )
 
         processing_time = time.time() - start_time
-        logger.info(f"Similarity computation completed in {processing_time:.2f} seconds")
+        logger.info(
+            f"Similarity computation completed in {processing_time:.2f} seconds"
+        )
 
         # Save results
         output_dir = Path(args.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / f"trait_similarities_chunk_{args.array_id}.json"
+        output_path = (
+            output_dir / f"trait_similarities_chunk_{args.array_id}.json"
+        )
 
-        logger.info(f"Writing {len(similarity_records)} records to: {output_path}")
+        logger.info(
+            f"Writing {len(similarity_records)} records to: {output_path}"
+        )
         with output_path.open("w") as f:
             json.dump(similarity_records, f, indent=2)
 

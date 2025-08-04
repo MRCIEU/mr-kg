@@ -30,7 +30,7 @@ if [ "${SLURM_ARRAY_TASK_ID}" -eq 0 ]; then
 fi
 
 micromamba run -n mr-kg-processing \
-  uv run scripts/embed-efo.py \
+  uv run scripts/main-processing/embed-efo.py \
   --array-length 10 \
   --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \
