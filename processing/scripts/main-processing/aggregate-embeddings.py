@@ -24,17 +24,27 @@ from yiutils.project_utils import find_project_root
 PROJECT_ROOT = find_project_root("docker-compose.yml")
 DATA_DIR = PROJECT_ROOT / "data"
 
-TRAIT_RESULTS_ID = "bc4-12431897"
-EFO_RESULTS_ID = "bc4-12432782"
-
 
 def make_args():
     """Parse command line arguments.
 
     Returns:
-        Parsed command line arguments with dry_run option
+        Parsed command line arguments with input directories and dry_run option
     """
     parser = argparse.ArgumentParser(description=__doc__)
+    # ---- input directories ----
+    parser.add_argument(
+        "--trait-results-dir",
+        type=Path,
+        required=True,
+        help="Directory containing trait embedding results",
+    )
+    parser.add_argument(
+        "--efo-results-dir",
+        type=Path,
+        required=True,
+        help="Directory containing EFO embedding results",
+    )
     # ---- --dry-run ----
     parser.add_argument(
         "--dry-run",
@@ -123,14 +133,14 @@ def main():
 
     # ==== init ====
     # Check trait results directory
-    trait_results_dir = DATA_DIR / "output" / TRAIT_RESULTS_ID / "results"
+    trait_results_dir = args.trait_results_dir
     if trait_results_dir.exists():
         logger.info(f"✓ Trait results directory exists: {trait_results_dir}")
     else:
         logger.error(f"✗ Trait results directory missing: {trait_results_dir}")
 
     # Check EFO results directory
-    efo_results_dir = DATA_DIR / "output" / EFO_RESULTS_ID / "results"
+    efo_results_dir = args.efo_results_dir
     if efo_results_dir.exists():
         logger.info(f"✓ EFO results directory exists: {efo_results_dir}")
     else:
@@ -146,7 +156,6 @@ def main():
     # ---- read raw trait data ----
     logger.info("Reading trait embedding data...")
 
-    trait_results_dir = DATA_DIR / "output" / TRAIT_RESULTS_ID / "results"
     logger.info(f"Reading trait embeddings from: {trait_results_dir}")
 
     trait_files = list(trait_results_dir.glob("trait_vectors_chunk_*.json"))
@@ -160,7 +169,6 @@ def main():
     # ---- read raw efo data ----
     logger.info("Reading EFO embedding data...")
 
-    efo_results_dir = DATA_DIR / "output" / EFO_RESULTS_ID / "results"
     logger.info(f"Reading EFO embeddings from: {efo_results_dir}")
 
     efo_files = list(efo_results_dir.glob("efo_vectors_chunk_*.json"))

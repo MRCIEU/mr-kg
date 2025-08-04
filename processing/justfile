@@ -51,7 +51,10 @@ preprocess-efo:
 
 [group('main-processing')]
 aggregate-embeddings:
-    uv run scripts/main-processing/aggregate-embeddings.py
+    #!/bin/bash
+    uv run scripts/main-processing/aggregate-embeddings.py \
+        --trait-results-dir {{PROJECT_ROOT}}/data/output/bc4-12431897/results \
+        --efo-results-dir {{PROJECT_ROOT}}/data/output/bc4-12432782/results
 
 # ==== main database ====
 
@@ -61,5 +64,9 @@ build-main-db:
 
 # ==== trait profile similarity database ====
 
-# [group('trait-profile')]
-# TODO: input data path
+[group('trait-profile')]
+aggregate-trait-similarities:
+    #!/bin/bash
+    uv run scripts/trait-profile/aggregate-trait-similarities.py \
+        --input-dir {{PROJECT_ROOT}}/data/output/bc4-12440505/results \
+        --expected-chunks 20

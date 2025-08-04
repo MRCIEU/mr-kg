@@ -160,9 +160,9 @@ def main():
     if args.output_path:
         output_path = Path(args.output_path)
     else:
-        output_dir = DATA_DIR / "processed" / "similarities"
+        output_dir = DATA_DIR / "processed" / "trait-profile-similarities"
         output_dir.mkdir(parents=True, exist_ok=True)
-        output_path = output_dir / "trait_similarities.json"
+        output_path = output_dir / "trait-profile-similarities.json"
 
     # Save aggregated results
     logger.info(f"Saving aggregated results to: {output_path}")
