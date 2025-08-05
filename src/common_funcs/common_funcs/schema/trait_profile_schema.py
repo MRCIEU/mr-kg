@@ -79,7 +79,6 @@ TRAIT_PROFILE_SCHEMA = {
             ),
         ],
     ),
-    
     # ==== trait_similarities ====
     # Build process (create_trait_similarities_table):
     # 1. For each query record, extract top_similarities list (max 10 entries)
@@ -196,7 +195,6 @@ TRAIT_PROFILE_INDEXES = [
         # Compound index for unique constraint enforcement and fast lookup
         # Built after query_combinations table to support UNIQUE constraint
     ),
-    
     # Trait similarities indexes
     IndexDef(
         "idx_trait_similarities_query_id",

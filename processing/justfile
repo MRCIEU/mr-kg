@@ -20,24 +20,16 @@ sanity:
     echo "\$ACCOUNT_CODE: ${ACCOUNT_CODE}"
     uv run scripts/sanity.py
 
-# Format using ruff format
+# ruff format and ruff check
 [group('codebase')]
-format:
-    @echo "{{PY_FILES}}" | xargs -n1 -I{} sh -c 'echo "Formatting: {}" && uv run ruff format "{}"'
-
-# Lint using ruff check
-[group('codebase')]
-lint:
-    @echo "{{PY_FILES}}" | xargs -n1 -I{} sh -c 'echo "Linting: {}" && uv run ruff check --fix "{}"'
+ruff:
+    @echo "{{PY_FILES}}" | tr '\n' ' ' | xargs uv run ruff format
+    @echo "{{PY_FILES}}" | tr '\n' ' ' | xargs uv run ruff check --fix
 
 # Lint using ty check
 [group('codebase')]
 ty:
     uv run ty check
-
-# Format and lint in sequence
-[group('codebase')]
-check: format lint
 
 # ==== main-processing ====
 

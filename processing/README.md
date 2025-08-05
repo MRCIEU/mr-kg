@@ -52,4 +52,4 @@ just build-trait-profile-db
 
 # `.env` specification
 
-ACCOUNT_CODE: HPC account code
+`ACCOUNT_CODE`: HPC account code

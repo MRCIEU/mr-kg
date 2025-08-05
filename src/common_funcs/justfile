@@ -8,21 +8,11 @@ help:
 
 # Format using ruff format
 [group('codebase')]
-format:
-    fd --extension py --type file . | xargs uv run ruff format
-
-# Lint using ruff check
-[group('codebase')]
-lint:
-    fd --extension py --type file . | xargs uv run ruff check --fix
+ruff:
+    uv run ruff format
+    uv run ruff check --fix
 
 # Lint using ty check
 [group('codebase')]
 ty:
     uv run ty check
-
-# Format and lint in sequence
-[group('codebase')]
-check: format lint
-
-

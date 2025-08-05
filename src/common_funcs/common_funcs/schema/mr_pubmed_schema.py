@@ -1,7 +1,9 @@
 from typing import TypedDict
 
+
 class RawMrPubmedRecord(TypedDict):
     """Raw PubMed record"""
+
     # PubMed ID
     pmid: str
     # abstract
@@ -16,5 +18,6 @@ class RawMrPubmedRecord(TypedDict):
     journal: str
     # Author affiliation
     author_affil: str
+
 
 RawMrData = list[RawMrPubmedRecord]

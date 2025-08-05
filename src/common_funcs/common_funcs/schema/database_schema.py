@@ -411,7 +411,7 @@ DATABASE_VIEWS = [
     ),
     ViewDef(
         name="pmid_model_analysis",
-        # Build process: Creates comprehensive JOIN between model_results, mr_pubmed_data, 
+        # Build process: Creates comprehensive JOIN between model_results, mr_pubmed_data,
         # and model_result_traits with trait aggregation
         # Built after all tables and indexes are created for optimal performance
         # Comprehensive view combining PubMed metadata, model results, and extracted traits.
