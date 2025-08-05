@@ -10,23 +10,46 @@ Overarching steps
 
 ## main processing
 
+Preprocess traits and efo data
+```
+just preprocess-traits preprocess-efo
+```
+
+Perform embeddings
+```
+just embed-traits embed-efo
+```
+
+aggregate embeddings
+```
+just aggregate-embeddings
+```
+
 ## building main database
+
+```
+just build-main-db
+```
 
 ## building the trait profile database
 
---- legacy steps
+compute the trait profile similarities
+```
+just compute-trait-similarities
+```
 
-TODO: incorporate
+aggregate trait similarities
+```
+just aggregate-trait-similarities
+```
 
-# processing steps
+build trait profile db
+```
+just build-trait-profile-db
+```
 
-## preprocessing
+---
 
-just preprocess-traits
+# `.env` specification
 
-## processing
-
-sbatch --account=<ACCOUNT-CODE> scripts/bc4/embed-traits.sbatch
-sbatch --account=<ACCOUNT-CODE> scripts/bc4/embed-efo.sbatch
-
-## postpreocessing
+ACCOUNT_CODE: HPC account code

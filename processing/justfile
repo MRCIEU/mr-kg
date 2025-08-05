@@ -1,6 +1,7 @@
-default: help
+set dotenv-load
 
 # Show help
+default: help
 help:
     @just --list
 
@@ -16,6 +17,7 @@ sanity:
     #!/bin/bash
     echo "PROJECT_ROOT: {{PROJECT_ROOT}}"
     echo "PY_FILES: {{PY_FILES}}"
+    echo "\$ACCOUNT_CODE: ${ACCOUNT_CODE}"
     uv run scripts/sanity.py
 
 # Format using ruff format
@@ -47,11 +49,18 @@ preprocess-traits:
 preprocess-efo:
     uv run scripts/main-processing/preprocess-efo.py
 
-# NOTE: for embedding, use sbatch
+[group('main-processing'), group('hpc')]
+embed-traits:
+    sbatch --acount=${ACCOUNT_CODE} scripts/bc4/embed-traits.sbatch
+
+[group('main-processing'), group('hpc')]
+embed-efo:
+    sbatch --acount=${ACCOUNT_CODE} scripts/bc4/embed-efo.sbatch
 
 [group('main-processing')]
 aggregate-embeddings:
     #!/bin/bash
+    # NOTE: note about the hardcoded path with hpc experiements
     uv run scripts/main-processing/aggregate-embeddings.py \
         --trait-results-dir {{PROJECT_ROOT}}/data/output/bc4-12431897/results \
         --efo-results-dir {{PROJECT_ROOT}}/data/output/bc4-12432782/results
@@ -64,9 +73,18 @@ build-main-db:
 
 # ==== trait profile similarity database ====
 
+[group('trait-profile'), group('hpc')]
+compute-trait-similarities:
+    sbatch --acount=${ACCOUNT_CODE} scripts/bc4/compute-trait-similarity.sbatch
+
 [group('trait-profile')]
 aggregate-trait-similarities:
     #!/bin/bash
+    # NOTE: note about the hardcoded path with hpc experiement
     uv run scripts/trait-profile/aggregate-trait-similarities.py \
         --input-dir {{PROJECT_ROOT}}/data/output/bc4-12440505/results \
         --expected-chunks 20
+
+[group('trait-profile')]
+build-trait-profile-db:
+    uv run scripts/trait-profile/build-trait-profile-database.py -db trait_profile_db

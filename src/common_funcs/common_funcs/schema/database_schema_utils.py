@@ -23,6 +23,7 @@ class ColumnType(Enum):
     INTEGER = "INTEGER"
     VARCHAR = "VARCHAR"
     JSON = "JSON"
+    DOUBLE = "DOUBLE"
     FLOAT_ARRAY_200 = "FLOAT[200]"
 
 
