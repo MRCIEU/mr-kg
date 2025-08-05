@@ -33,6 +33,7 @@ def make_args():
         Parsed command line arguments
     """
     parser = argparse.ArgumentParser(description=__doc__)
+    # ---- --input-file ----
     parser.add_argument(
         "--input-file",
         type=Path,
@@ -42,17 +43,39 @@ def make_args():
         / "trait-profile-similarities"
         / "trait-profile-similarities.json",
     )
+    # ---- --dry-run ----
     parser.add_argument(
         "--dry-run",
         "-n",
         action="store_true",
         help="Perform a dry run without actually creating the database",
     )
+    # ---- --database-name ----
     parser.add_argument(
         "--database-name",
         "-db",
         type=str,
         help="Custom database name (without .db extension). If not provided, uses timestamp",
+    )
+    # ---- --skip-indexes ----
+    parser.add_argument(
+        "--skip-indexes",
+        action="store_true",
+        help="Skip index creation (useful for troubleshooting)",
+    )
+    # ---- --memory-limit ----
+    parser.add_argument(
+        "--memory-limit",
+        type=str,
+        default="4GB",
+        help="Memory limit for DuckDB (default: 4GB)",
+    )
+    # ---- --force-write ----
+    parser.add_argument(
+        "--force-write",
+        action="store_true",
+        default=False,
+        help="Remove existing database and create a new one if database already exists",
     )
     return parser.parse_args()
 
@@ -177,9 +200,9 @@ def create_trait_similarities_table(
         f"Inserting {len(similarities_data)} similarity relationships..."
     )
     conn.executemany(
-        """INSERT INTO trait_similarities 
+        """INSERT INTO trait_similarities
            (id, query_combination_id, similar_pmid, similar_model, similar_title,
-            trait_profile_similarity, trait_jaccard_similarity, 
+            trait_profile_similarity, trait_jaccard_similarity,
             query_trait_count, similar_trait_count)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         similarities_data,
@@ -198,35 +221,72 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
     """
     logger.info("Creating indexes...")
 
-    # Indexes for query_combinations table
-    conn.execute(
-        "CREATE INDEX idx_query_combinations_pmid ON query_combinations(pmid)"
-    )
-    conn.execute(
-        "CREATE INDEX idx_query_combinations_model ON query_combinations(model)"
-    )
-    conn.execute(
-        "CREATE INDEX idx_query_combinations_pmid_model ON query_combinations(pmid, model)"
+    # Define indexes in order of priority (most important first)
+    # Note: Float indexes are excluded due to known DuckDB issues with ARTOperator
+    indexes = [
+        ("idx_query_combinations_pmid", "query_combinations(pmid)"),
+        ("idx_query_combinations_model", "query_combinations(model)"),
+        (
+            "idx_trait_similarities_query_id",
+            "trait_similarities(query_combination_id)",
+        ),
+        (
+            "idx_trait_similarities_similar_pmid",
+            "trait_similarities(similar_pmid)",
+        ),
+        (
+            "idx_trait_similarities_similar_model",
+            "trait_similarities(similar_model)",
+        ),
+        (
+            "idx_query_combinations_pmid_model",
+            "query_combinations(pmid, model)",
+        ),
+        # Float indexes commented out due to DuckDB ARTOperator issues
+        # These can cause database corruption in some versions of DuckDB
+        # (
+        #     "idx_trait_similarities_trait_profile_sim",
+        #     "trait_similarities(trait_profile_similarity)",
+        # ),
+        # (
+        #     "idx_trait_similarities_jaccard_sim",
+        #     "trait_similarities(trait_jaccard_similarity)",
+        # ),
+    ]
+
+    logger.info(
+        f"Creating {len(indexes)} indexes (skipping float indexes due to DuckDB limitations)..."
     )
 
-    # Indexes for trait_similarities table
-    conn.execute(
-        "CREATE INDEX idx_trait_similarities_query_id ON trait_similarities(query_combination_id)"
-    )
-    conn.execute(
-        "CREATE INDEX idx_trait_similarities_similar_pmid ON trait_similarities(similar_pmid)"
-    )
-    conn.execute(
-        "CREATE INDEX idx_trait_similarities_similar_model ON trait_similarities(similar_model)"
-    )
-    conn.execute(
-        "CREATE INDEX idx_trait_similarities_trait_profile_sim ON trait_similarities(trait_profile_similarity)"
-    )
-    conn.execute(
-        "CREATE INDEX idx_trait_similarities_jaccard_sim ON trait_similarities(trait_jaccard_similarity)"
+    successful_indexes = 0
+    failed_indexes = []
+
+    for index_name, index_definition in indexes:
+        try:
+            logger.info(f"Creating index: {index_name}")
+            conn.execute(f"CREATE INDEX {index_name} ON {index_definition}")
+            successful_indexes += 1
+            logger.info(f"✓ Successfully created index: {index_name}")
+
+        except Exception as e:
+            error_msg = str(e)
+            logger.error(f"✗ Failed to create index {index_name}: {error_msg}")
+            failed_indexes.append((index_name, error_msg))
+
+            # For any error, log and continue with next index
+            logger.warning("Continuing with next index...")
+            continue
+
+    logger.info(
+        f"Index creation completed: {successful_indexes} successful, {len(failed_indexes)} failed"
     )
 
-    logger.info("Indexes created")
+    if failed_indexes:
+        logger.warning("Failed indexes:")
+        for index_name, error in failed_indexes:
+            logger.warning(f"  - {index_name}: {error}")
+
+    return successful_indexes, failed_indexes
 
 
 def create_views(conn: duckdb.DuckDBPyConnection):
@@ -252,7 +312,7 @@ def create_views(conn: duckdb.DuckDBPyConnection):
             ts.trait_profile_similarity,
             ts.trait_jaccard_similarity,
             RANK() OVER (
-                PARTITION BY qc.id 
+                PARTITION BY qc.id
                 ORDER BY ts.trait_profile_similarity DESC
             ) as similarity_rank
         FROM query_combinations qc
@@ -389,6 +449,18 @@ def main():
     db_path = DATA_DIR / "db" / db_name
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Handle existing database if force-write is enabled
+    if db_path.exists():
+        if args.force_write:
+            logger.info(f"Removing existing database: {db_path}")
+            db_path.unlink()
+        else:
+            logger.error(f"Database already exists: {db_path}")
+            logger.error(
+                "Use --force-write to overwrite or choose a different --database-name"
+            )
+            return 1
+
     logger.info(f"Creating database: {db_path}")
 
     # Load data
@@ -398,10 +470,36 @@ def main():
     with duckdb.connect(str(db_path)) as conn:
         logger.info("Connected to DuckDB database")
 
+        # Configure DuckDB for better performance and memory management
+        logger.info(f"Setting memory limit to {args.memory_limit}")
+        conn.execute(f"SET memory_limit='{args.memory_limit}'")
+        conn.execute("SET threads=4")
+        conn.execute("SET enable_progress_bar=true")
+
+        # Additional configurations for stability
+        conn.execute(
+            "SET checkpoint_threshold='1GB'"
+        )  # More frequent checkpoints
+
+        logger.info("DuckDB configuration completed")
+
         # Create tables and populate data
         create_query_combinations_table(conn, trait_profile_data)
         create_trait_similarities_table(conn, trait_profile_data)
-        create_indexes(conn)
+
+        # Create indexes (with error handling)
+        if args.skip_indexes:
+            logger.info("Skipping index creation as requested")
+        else:
+            successful_indexes, failed_indexes = create_indexes(conn)
+            if failed_indexes:
+                logger.warning(
+                    "Some indexes failed to create, but continuing with database creation"
+                )
+            logger.info(
+                f"Index creation summary: {successful_indexes} successful, {len(failed_indexes)} failed"
+            )
+
         create_views(conn)
 
         # Validate the database

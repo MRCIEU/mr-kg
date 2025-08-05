@@ -79,4 +79,7 @@ aggregate-trait-similarities:
 
 [group('trait-profile')]
 build-trait-profile-db:
-    uv run scripts/trait-profile/build-trait-profile-database.py -db trait_profile_db
+    uv run scripts/trait-profile/build-trait-profile-database.py \
+        -db trait_profile_db \
+        --memory-limit 8GB \
+        --force-write
