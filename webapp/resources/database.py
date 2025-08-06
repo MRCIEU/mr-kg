@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 from typing import List, Optional
 
-from funcs.utils import get_database_paths
+from common_funcs.database_utils.utils import get_database_paths
 
 
 @st.cache_resource

@@ -83,3 +83,10 @@ build-trait-profile-db:
         -db trait_profile_db \
         --memory-limit 8GB \
         --force-write
+
+# ==== postprocessing ====
+
+[group('postprocessing')]
+describe-db:
+    uv run scripts/postprocessing/describe-db.py \
+        > {{PROJECT_ROOT}}/data/assets/database_schema/database_info.txt
