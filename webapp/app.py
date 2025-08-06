@@ -84,9 +84,9 @@ def main():
 
     st.markdown("""
     **Available Views:**
-    - **About**: Further details about the resource
-    - **Model Analysis**: Browse extracted data and filter by traits
-    - **Trait Similarities**: Explore studies with similar trait profiles
+    - `about`: Further details about the resource
+    - `trait_similarities`: Explore studies with similar trait profiles
+    - `explore_traits`: Explore and filter trait labels from model results
     """)
 
 
