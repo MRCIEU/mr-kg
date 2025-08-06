@@ -7,10 +7,8 @@ This application provides an interactive interface to explore:
 """
 
 import argparse
-from pathlib import Path
+from resources.database import setup_database_paths
 import streamlit as st
-
-from yiutils.project_utils import find_project_root
 
 
 def make_args():
@@ -28,33 +26,6 @@ def make_args():
         help="Deployment profile: 'local' for local development, 'docker' for containerised deployment",
     )
     return parser.parse_args()
-
-
-def setup_database_paths(profile: str):
-    """Set up database paths based on deployment profile."""
-    if profile == "local":
-        project_root = find_project_root("docker-compose.yml")
-    else:  # docker
-        # TODO: config this for docker
-        project_root = Path("/app")
-
-    vector_store_db_path = project_root / "data" / "db" / "vector_store.db"
-    trait_profile_db_path = (
-        project_root / "data" / "db" / "trait_profile_db.db"
-    )
-
-    if not vector_store_db_path.exists():
-        raise FileNotFoundError(
-            f"Vector store database not found at: {vector_store_db_path}"
-        )
-
-    if not trait_profile_db_path.exists():
-        raise FileNotFoundError(
-            f"Trait profile database not found at: {trait_profile_db_path}"
-        )
-
-    st.session_state.vector_store_db = vector_store_db_path
-    st.session_state.trait_profile_db = trait_profile_db_path
 
 
 def main():

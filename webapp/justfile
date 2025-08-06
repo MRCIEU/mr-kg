@@ -24,7 +24,10 @@ ty:
 
 # ==== sanity ====
 
-# TODO: add sanity checks
+# Describe the structure of both DuckDB databases, NOTE: local setup
+[group('sanity')]
+describe-db:
+    uv run python -m utils.describe_db
 
 # ==== webapp ====
 

@@ -20,7 +20,7 @@ def get_all_trait_labels() -> pd.DataFrame:
     ORDER BY trait_label
     """
     result = vector_conn.execute(query).fetchall()
-    return pd.DataFrame(result, columns=['trait_label'])
+    return pd.DataFrame(result, columns=["trait_label"])
 
 
 @st.cache_data
@@ -31,17 +31,14 @@ def filter_traits(trait_df: pd.DataFrame, filter_text: str) -> pd.DataFrame:
 
     # Case-insensitive filtering
     filtered_df = trait_df[
-        trait_df['trait_label'].str.contains(filter_text, case=False, na=False)
+        trait_df["trait_label"].str.contains(filter_text, case=False, na=False)
     ]
     return filtered_df
 
 
 def main():
     """Main function for the explore traits page."""
-    st.set_page_config(
-        page_title="Explore Traits - MR-KG",
-        layout="wide"
-    )
+    st.set_page_config(page_title="Explore Traits - MR-KG", layout="wide")
 
     st.title("Explore Traits")
     st.markdown("""
@@ -65,7 +62,7 @@ def main():
         filter_text = st.text_input(
             "Filter traits:",
             placeholder="Type to filter trait labels...",
-            help="Search is case-insensitive and searches within trait labels"
+            help="Search is case-insensitive and searches within trait labels",
         )
 
         # Apply filtering
@@ -76,7 +73,9 @@ def main():
         filtered_count = len(filtered_traits)
 
         if filter_text:
-            st.info(f"Showing {filtered_count} of {total_traits} traits matching '{filter_text}'")
+            st.info(
+                f"Showing {filtered_count} of {total_traits} traits matching '{filter_text}'"
+            )
         else:
             st.info(f"Showing all {total_traits} unique trait labels")
 
@@ -89,12 +88,12 @@ def main():
                     "trait_label": st.column_config.TextColumn(
                         "Trait Label",
                         help="Unique trait labels extracted from model results",
-                        width="large"
+                        width="large",
                     )
                 },
                 use_container_width=True,
                 height=600,
-                hide_index=True
+                hide_index=True,
             )
         else:
             st.warning("No traits found matching the filter criteria.")
