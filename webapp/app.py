@@ -10,12 +10,6 @@ import argparse
 from pathlib import Path
 import streamlit as st
 
-# # Add the app directory to Python path to enable absolute imports
-# app_dir = Path(__file__).parent
-# if str(app_dir) not in sys.path:
-#     sys.path.insert(0, str(app_dir))
-
-from pages import show_model_analysis, show_trait_similarities, show_about
 from yiutils.project_utils import find_project_root
 
 
@@ -86,31 +80,14 @@ def main():
     st.markdown("""
     Explore structural PubMed literature data extracted by large language models.
     This tool provides insights into trait relationships and similar studies.
-
-    **Current Database Status:**
-    - Main analysis data: 26,165 model results
-    - Trait relationships: 114,276 trait links
-    - Similarity data: 248,560 trait profile comparisons
     """)
 
-    # Sidebar for navigation
-    st.sidebar.title("Navigation")
-    st.sidebar.markdown("""
+    st.markdown("""
     **Available Views:**
+    - **About**: Further details about the resource
     - **Model Analysis**: Browse extracted data and filter by traits
     - **Trait Similarities**: Explore studies with similar trait profiles
     """)
-
-    page = st.sidebar.selectbox(
-        "Choose a view:", ["Model Analysis", "Trait Similarities", "About"]
-    )
-
-    if page == "Model Analysis":
-        show_model_analysis()
-    elif page == "Trait Similarities":
-        show_trait_similarities()
-    elif page == "About":
-        show_about()
 
 
 if __name__ == "__main__":
