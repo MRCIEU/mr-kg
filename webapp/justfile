@@ -31,9 +31,9 @@ ty:
 # Run the streamlit web app, local setup
 [group('webapp')]
 local-run:
-    uv run streamlit run app/app.py -- --profile local
+    uv run streamlit run app.py -- --profile local
 
-# Run the streamlit web app, docker setup
-[group('webapp')]
-docker-run:
-    uv run streamlit run app/app.py -- --profile docker
+# # Run the streamlit web app, docker setup
+# [group('webapp')]
+# docker-run:
+#     uv run streamlit run app.app.py -- --profile docker

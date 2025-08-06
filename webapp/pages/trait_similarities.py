@@ -1,7 +1,7 @@
 """Trait similarities page for the MR-KG web app."""
 
 import streamlit as st
-from app.resources.database import get_trait_similarity_data
+from resources.database import get_trait_similarity_data
 
 
 def show_trait_similarities():

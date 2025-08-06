@@ -1,8 +1,8 @@
 """Model analysis page for the MR-KG web app."""
 
 import streamlit as st
-from app.resources.database import get_available_traits, get_pmid_model_data
-from app.funcs.utils import format_traits_display, safe_format_traits
+from resources.database import get_available_traits, get_pmid_model_data
+from funcs.utils import format_traits_display, safe_format_traits
 
 
 def show_model_analysis():

@@ -30,7 +30,7 @@ fileWatcherType = "auto"
 cookieSecret = "mr-kg-webapp-secret"
 
 # If false, will attempt to open a browser window on start.
-headless = false
+headless = true
 
 # Automatically rerun script when the file is modified on disk.
 runOnSave = true

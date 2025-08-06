@@ -7,10 +7,15 @@ This application provides an interactive interface to explore:
 """
 
 import argparse
-import streamlit as st
 from pathlib import Path
-from app.pages import show_model_analysis, show_trait_similarities, show_about
+import streamlit as st
 
+# # Add the app directory to Python path to enable absolute imports
+# app_dir = Path(__file__).parent
+# if str(app_dir) not in sys.path:
+#     sys.path.insert(0, str(app_dir))
+
+from pages import show_model_analysis, show_trait_similarities, show_about
 from yiutils.project_utils import find_project_root
 
 
