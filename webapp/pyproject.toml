@@ -1,0 +1,29 @@
+[project]
+name = "webapp"
+version = "0.1.0"
+description = "Streamlit web app for demonstrating structural PubMed literature data"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "common_funcs",
+    "duckdb>=1.3.2",
+    "streamlit>=1.40.0",
+    "watchdog>=6.0.0",
+    "yiutils",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.5",
+    "ty>=0.0.1a16",
+]
+
+[tool.uv.sources]
+common_funcs = { path = "../src/common_funcs", editable = true }
+yiutils = { path = "../src/yiutils", editable = true }
+
+[tool.ty.rules]
+# unresolved-import = "ignore"
+
+[tool.ruff]
+line-length = 79

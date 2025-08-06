@@ -1,0 +1,39 @@
+set dotenv-load
+
+# Show help
+default: help
+help:
+    @just --list
+
+# ==== variables ====
+PROJECT_ROOT := `dirname $(pwd)`
+PY_FILES := `fd --extension py --type file .`
+
+# ==== codebase ====
+
+# ruff format and ruff check
+[group('codebase')]
+ruff:
+    @echo "{{PY_FILES}}" | tr '\n' ' ' | xargs uv run ruff format
+    @echo "{{PY_FILES}}" | tr '\n' ' ' | xargs uv run ruff check --fix
+
+# Lint using ty check
+[group('codebase')]
+ty:
+    uv run ty check
+
+# ==== sanity ====
+
+# TODO: add sanity checks
+
+# ==== webapp ====
+
+# Run the streamlit web app, local setup
+[group('webapp')]
+local-run:
+    uv run streamlit run app/app.py -- --profile local
+
+# Run the streamlit web app, docker setup
+[group('webapp')]
+docker-run:
+    uv run streamlit run app/app.py -- --profile docker
