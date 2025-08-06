@@ -13,7 +13,7 @@ and provides detailed information about their structure, including:
 # Import after path setup
 import duckdb
 
-from resources.database import get_database_paths
+from funcs.utils import get_database_paths
 
 
 def print_section_header(title: str, char: str = "="):
