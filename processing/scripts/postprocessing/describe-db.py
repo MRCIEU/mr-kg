@@ -154,7 +154,7 @@ def describe_database(conn, db_name: str):
         db_info = conn.execute("PRAGMA database_list").fetchall()
         if db_info:
             for db in db_info:
-                print(f"Database: {db[1]} (File: {db[2]})")
+                print(f"Database: {db[1]}")
     except Exception as e:
         print(f"Could not get database metadata: {e}")
 

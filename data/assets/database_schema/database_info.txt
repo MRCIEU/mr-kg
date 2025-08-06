@@ -12,7 +12,7 @@ DuckDB Version: v1.3.2
 ----------------------------------------
 TABLES
 ----------------------------------------
-Found 8 tables:
+Found 9 tables:
   - efo_embeddings
     Rows: 67,270
   - model_result_traits
@@ -29,17 +29,21 @@ Found 8 tables:
     Rows: 25,385
   - trait_similarity_search
     Rows: 644,372,840
+  - trait_stats
+    Rows: 25,385
 
 ----------------------------------------
 VIEWS
 ----------------------------------------
-Found 3 views:
+Found 4 views:
   - pmid_model_analysis
     Rows: 26,165
   - trait_efo_similarity_search
     Rows: 1,707,648,950
   - trait_similarity_search
     Rows: 644,372,840
+  - trait_stats
+    Rows: 25,385
 
 ----------------------------------------
 TABLE SCHEMAS
@@ -113,6 +117,12 @@ TABLE SCHEMAS
     result_id: INTEGER NULL (PRIMARY KEY)
     result_label: VARCHAR NULL
     similarity: FLOAT NULL
+
+📋 Table: trait_stats
+  Columns:
+    trait_index: INTEGER NULL
+    trait_label: VARCHAR NULL
+    appearance_count: BIGINT NULL
 
 ----------------------------------------
 INDEXES

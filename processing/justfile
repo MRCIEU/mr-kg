@@ -61,7 +61,9 @@ aggregate-embeddings:
 
 [group('main-database')]
 build-main-db:
-    uv run scripts/main-db/build-vector-store.py -db vector_store
+    uv run scripts/main-db/build-main-database.py \
+        -db vector_store \
+        --force-write
 
 # ==== trait profile similarity database ====
 

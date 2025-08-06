@@ -12,15 +12,15 @@ from resources.database import get_database_connections
 
 @st.cache_data
 def get_all_trait_labels() -> pd.DataFrame:
-    """Get all unique trait labels from the model_result_traits table."""
+    """Get all unique trait labels from the trait_stats view."""
     vector_conn, _ = get_database_connections()
     query = """
-    SELECT DISTINCT trait_label
-    FROM model_result_traits
-    ORDER BY trait_label
+    SELECT trait_label, appearance_count
+    FROM trait_stats
+    ORDER BY appearance_count DESC
     """
     result = vector_conn.execute(query).fetchall()
-    return pd.DataFrame(result, columns=["trait_label"])
+    return pd.DataFrame(result, columns=["trait_label", "appearance_count"])
 
 
 @st.cache_data
@@ -36,7 +36,7 @@ def filter_traits(trait_df: pd.DataFrame, filter_text: str) -> pd.DataFrame:
     return filtered_df
 
 
-def render_trait_item(trait_label: str, idx: int) -> None:
+def render_trait_item(trait_label: str, appearance_count: int, idx: int) -> None:
     """Render a single trait item with select button."""
     with st.container():
         col1, col2 = st.columns([4, 1])
@@ -45,8 +45,10 @@ def render_trait_item(trait_label: str, idx: int) -> None:
             # Check if this is the selected trait and highlight it
             if st.session_state.selected_trait == trait_label:
                 st.markdown(f"🔹 **{trait_label}** _(selected)_")
+                st.markdown(f"<small style='color: #666;'>Appears {appearance_count:,} times</small>", unsafe_allow_html=True)
             else:
                 st.markdown(f"• {trait_label}")
+                st.markdown(f"<small style='color: #666;'>Appears {appearance_count:,} times</small>", unsafe_allow_html=True)
 
         with col2:
             button_label = (
@@ -93,7 +95,8 @@ def render_trait_list(
 
             for idx, (_, row) in enumerate(filtered_traits.iterrows()):
                 trait_label = row["trait_label"]
-                render_trait_item(trait_label, idx)
+                appearance_count = row["appearance_count"]
+                render_trait_item(trait_label, appearance_count, idx)
     else:
         render_no_results_message(filter_text)
 

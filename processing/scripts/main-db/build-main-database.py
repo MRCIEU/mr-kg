@@ -54,6 +54,12 @@ def make_args():
         type=str,
         help="Custom database name (without .db extension). If not provided, uses timestamp",
     )
+    parser.add_argument(
+        "--force-write",
+        "-f",
+        action="store_true",
+        help="Remove the database if it exists before creating a new one",
+    )
     return parser.parse_args()
 
 
@@ -469,6 +475,18 @@ def create_similarity_functions(conn: duckdb.DuckDBPyConnection):
             mpd.journal_issn, mpd.author_affil
     """)
 
+    # Create a view for trait statistics
+    conn.execute("""
+        CREATE VIEW trait_stats AS
+        SELECT
+            trait_index,
+            trait_label,
+            COUNT(*) as appearance_count
+        FROM model_result_traits
+        GROUP BY trait_index, trait_label
+        ORDER BY appearance_count DESC
+    """)
+
     logger.info("Similarity search views created")
 
 
@@ -630,6 +648,17 @@ def main():
 
     db_path = DATA_DIR / "db" / db_name
     db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Handle force write - remove existing database
+    if args.force_write and db_path.exists():
+        logger.info(f"Force write enabled. Removing existing database: {db_path}")
+        db_path.unlink()
+
+    # Check if database already exists (unless force write was used)
+    if db_path.exists():
+        logger.error(f"Database already exists: {db_path}")
+        logger.error("Use --force-write to overwrite existing database")
+        return 1
 
     logger.info(f"Creating database: {db_path}")
 
