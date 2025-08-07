@@ -69,9 +69,7 @@ def main():
 
     st.markdown("""
     **Available Views:**
-    - `about`: Further details about the resource
-    - `trait_similarities`: Explore studies with similar trait profiles
-    - `explore_traits`: Explore and filter trait labels from model results
+    - [`explore_traits`](/explore_traits): start from here to choose traits of interest
     """)
 
 
