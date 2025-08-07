@@ -28,6 +28,18 @@ def make_args():
     return parser.parse_args()
 
 
+def init(args):
+    MODELS = [
+        "llama3",
+        "llama3-2",
+        "deepseek-r1-distilled",
+        "gpt-4-1",
+        "o4-mini",
+    ]
+    if "models" not in st.session_state:
+        st.session_state.models = MODELS
+
+
 def main():
     """Main application."""
     args = make_args()
@@ -39,6 +51,8 @@ def main():
         or "trait_profile_db" not in st.session_state
     ):
         setup_database_paths(args.profile)
+
+    init(args)
 
     st.set_page_config(
         page_title="MR-KG Literature Explorer",

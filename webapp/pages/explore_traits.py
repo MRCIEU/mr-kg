@@ -49,6 +49,41 @@ def get_trait_data(filter_text: str = "") -> pd.DataFrame:
         return search_traits(filter_text)
 
 
+@st.cache_data
+def get_studies_for_trait_and_model(
+    trait_label: str, model: str
+) -> pd.DataFrame:
+    """Get studies that contain the specified trait from the specified model."""
+    vector_conn, _ = get_database_connections()
+    query = """
+    SELECT DISTINCT
+        mr.id as model_result_id,
+        mr.pmid,
+        pubmed.title,
+        pubmed.journal,
+        pubmed.pub_date,
+        mr.metadata
+    FROM model_results mr
+    JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
+    LEFT JOIN mr_pubmed_data pubmed ON mr.pmid = pubmed.pmid
+    WHERE mrt.trait_label = ? 
+    AND mr.model = ?
+    ORDER BY pubmed.pub_date DESC, mr.pmid
+    """
+    result = vector_conn.execute(query, [trait_label, model]).fetchall()
+    return pd.DataFrame(
+        result,
+        columns=[
+            "model_result_id",
+            "pmid",
+            "title",
+            "journal",
+            "pub_date",
+            "metadata",
+        ],
+    )
+
+
 def render_trait_item(
     trait_label: str, appearance_count: int, idx: int
 ) -> None:
@@ -85,9 +120,15 @@ def render_trait_item(
                 if st.session_state.selected_trait == trait_label:
                     # If already selected, deselect
                     st.session_state.selected_trait = None
+                    st.session_state.show_results = False
+                    st.session_state.expand_panels = True
                 else:
                     # Select this trait
                     st.session_state.selected_trait = trait_label
+                    st.session_state.show_results = (
+                        False  # Reset results when selecting new trait
+                    )
+                    # Keep panels open when selecting a trait
                 st.rerun()
 
         # Add a subtle separator
@@ -151,12 +192,97 @@ def render_selected_trait_details() -> None:
     # Add a clear button
     if st.button("Clear Selection"):
         st.session_state.selected_trait = None
+        st.session_state.show_results = False
+        st.session_state.expand_panels = (
+            True  # Reopen expansion panels when clearing
+        )
         st.rerun()
 
-    # Placeholder for future trait analysis features
+    # Model selection dropdown
     st.markdown("---")
-    st.subheader("Trait Analysis")
-    st.info("Analysis features for this trait will be added here.")
+    st.subheader("Model Selection")
+
+    selected_model = st.selectbox(
+        "Select a model:",
+        options=st.session_state.models,
+        index=st.session_state.models.index(st.session_state.selected_model)
+        if st.session_state.selected_model in st.session_state.models
+        else 0,
+        key="model_selector",
+    )
+
+    # Update session state when model changes
+    if selected_model != st.session_state.selected_model:
+        st.session_state.selected_model = selected_model
+
+    # Show extracted results button
+    if st.button("Show Extracted Results", type="primary"):
+        st.session_state.show_results = True
+        st.session_state.expand_panels = False  # Close expansion panels
+        st.rerun()
+
+    # Don't display results here anymore - they'll be shown outside the expansion panels
+
+
+def render_trait_results(trait_label: str, model: str) -> None:
+    """Render the list of studies containing the selected trait from the selected model."""
+    st.markdown("---")
+    st.subheader("Extracted Results")
+    st.markdown(
+        f"Studies where **{model}** extracted the trait: **{trait_label}**"
+    )
+
+    try:
+        # Get the studies data
+        studies_df = get_studies_for_trait_and_model(trait_label, model)
+
+        if studies_df.empty:
+            st.warning(
+                f"No studies found where {model} extracted the trait '{trait_label}'"
+            )
+            return
+
+        st.info(f"Found {len(studies_df)} studies")
+
+        # Display studies in a scrollable container
+        with st.container(height=400):
+            for idx, (_, row) in enumerate(studies_df.iterrows()):
+                with st.expander(
+                    f"Study {idx + 1}: {row['pmid']} {row['title']}", expanded=False
+                ):
+                    st.markdown(f"**PMID:** {row['pmid']}")
+
+                    if pd.notna(row["title"]):
+                        st.markdown(f"**Title:** {row['title']}")
+
+                    if pd.notna(row["journal"]):
+                        st.markdown(f"**Journal:** {row['journal']}")
+
+                    if pd.notna(row["pub_date"]):
+                        st.markdown(f"**Publication Date:** {row['pub_date']}")
+
+                    # Add a link to PubMed if PMID is available
+                    if pd.notna(row["pmid"]):
+                        pubmed_url = (
+                            f"https://pubmed.ncbi.nlm.nih.gov/{row['pmid']}/"
+                        )
+                        st.markdown(
+                            f"**PubMed Link:** [View on PubMed]({pubmed_url})"
+                        )
+
+                    # Show metadata if available
+                    if pd.notna(row["metadata"]) and row["metadata"]:
+                        with st.expander("Model Metadata", expanded=False):
+                            st.json(row["metadata"])
+
+    except Exception as e:
+        st.error(f"Error loading study results: {str(e)}")
+
+    # Add button to hide results
+    if st.button("Hide Results"):
+        st.session_state.show_results = False
+        st.session_state.expand_panels = True  # Reopen expansion panels
+        st.rerun()
 
 
 def render_right_column() -> None:
@@ -195,16 +321,51 @@ def main():
     if "selected_trait" not in st.session_state:
         st.session_state.selected_trait = None
 
-    # Create two columns layout
-    left_col, right_col = st.columns([1, 1])
+    # Initialize session state for models
+    if "models" not in st.session_state:
+        st.session_state.models = [
+            "gpt-4-1",
+            "gpt-3.5-turbo",
+            "claude-3",
+            "gemini-pro",
+        ]
 
-    # Render left column (trait list and filtering)
-    with left_col:
-        render_left_column()
+    # Initialize session state for selected model
+    if "selected_model" not in st.session_state:
+        st.session_state.selected_model = "gpt-4-1"
 
-    # Render right column (selected trait details)
-    with right_col:
-        render_right_column()
+    # Initialize session state for showing results
+    if "show_results" not in st.session_state:
+        st.session_state.show_results = False
+
+    # Initialize session state for expansion panels
+    if "expand_panels" not in st.session_state:
+        st.session_state.expand_panels = True
+
+    # Create expansion panels for the main interface
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        with st.expander(
+            "🔍 Trait Selection", expanded=st.session_state.expand_panels
+        ):
+            render_left_column()
+
+    with col2:
+        with st.expander(
+            "⚙️ Trait Analysis", expanded=st.session_state.expand_panels
+        ):
+            render_right_column()
+
+    # Display extracted results outside of expansion panels
+    if (
+        st.session_state.get("show_results", False)
+        and st.session_state.selected_trait
+        and st.session_state.selected_model
+    ):
+        render_trait_results(
+            st.session_state.selected_trait, st.session_state.selected_model
+        )
 
 
 if __name__ == "__main__":
