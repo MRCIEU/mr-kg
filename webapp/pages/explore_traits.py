@@ -84,6 +84,77 @@ def get_studies_for_trait_and_model(
     )
 
 
+@st.cache_data
+def get_study_trait_count(pmid: str, model: str) -> int:
+    """Get the number of traits extracted for a specific study and model."""
+    vector_conn, _ = get_database_connections()
+    query = """
+    SELECT COUNT(*) as trait_count
+    FROM model_results mr
+    JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
+    WHERE mr.pmid = ? AND mr.model = ?
+    """
+    result = vector_conn.execute(query, [pmid, model]).fetchone()
+    return result[0] if result else 0
+
+
+@st.cache_data
+def get_similar_studies_count(pmid: str, model: str) -> int:
+    """Get the number of studies with similar trait profiles."""
+    _, trait_profile_conn = get_database_connections()
+    query = """
+    SELECT COUNT(*) as similar_count
+    FROM top_similarity_pairs tsp
+    WHERE tsp.query_pmid = ? AND tsp.model = ?
+    """
+    result = trait_profile_conn.execute(query, [pmid, model]).fetchone()
+    return result[0] if result else 0
+
+
+@st.cache_data
+def get_study_traits_list(pmid: str, model: str) -> pd.DataFrame:
+    """Get the list of traits extracted for a specific study and model."""
+    vector_conn, _ = get_database_connections()
+    query = """
+    SELECT mrt.trait_label
+    FROM model_results mr
+    JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
+    WHERE mr.pmid = ? AND mr.model = ?
+    ORDER BY mrt.trait_label
+    """
+    result = vector_conn.execute(query, [pmid, model]).fetchall()
+    return pd.DataFrame(result, columns=["trait_label"])
+
+
+@st.cache_data
+def get_similar_studies_list(
+    pmid: str, model: str, limit: int = 5
+) -> pd.DataFrame:
+    """Get a list of studies with similar trait profiles."""
+    _, trait_profile_conn = get_database_connections()
+    query = """
+    SELECT 
+        tsp.similar_pmid,
+        tsp.similar_title,
+        tsp.trait_profile_similarity,
+        tsp.trait_jaccard_similarity
+    FROM top_similarity_pairs tsp
+    WHERE tsp.query_pmid = ? AND tsp.model = ?
+    ORDER BY tsp.trait_profile_similarity DESC
+    LIMIT ?
+    """
+    result = trait_profile_conn.execute(query, [pmid, model, limit]).fetchall()
+    return pd.DataFrame(
+        result,
+        columns=[
+            "similar_pmid",
+            "similar_title",
+            "trait_profile_similarity",
+            "trait_jaccard_similarity",
+        ],
+    )
+
+
 def render_trait_item(
     trait_label: str, appearance_count: int, idx: int
 ) -> None:
@@ -244,36 +315,90 @@ def render_trait_results(trait_label: str, model: str) -> None:
 
         st.info(f"Found {len(studies_df)} studies")
 
-        # Display studies in a scrollable container
-        with st.container(height=400):
-            for idx, (_, row) in enumerate(studies_df.iterrows()):
-                with st.expander(
-                    f"Study {idx + 1}: {row['pmid']} {row['title']}", expanded=False
-                ):
-                    st.markdown(f"**PMID:** {row['pmid']}")
+        # Display studies with "Explore Results" buttons
+        for idx, (_, row) in enumerate(studies_df.iterrows()):
+            # Get additional metrics for this study
+            trait_count = get_study_trait_count(row["pmid"], model)
+            similar_count = get_similar_studies_count(row["pmid"], model)
 
+            with st.container():
+                col1, col2 = st.columns([4, 1])
+
+                with col1:
+                    st.markdown(f"**Study {idx + 1}:** {row['pmid']}")
                     if pd.notna(row["title"]):
-                        st.markdown(f"**Title:** {row['title']}")
-
-                    if pd.notna(row["journal"]):
-                        st.markdown(f"**Journal:** {row['journal']}")
-
-                    if pd.notna(row["pub_date"]):
-                        st.markdown(f"**Publication Date:** {row['pub_date']}")
-
-                    # Add a link to PubMed if PMID is available
-                    if pd.notna(row["pmid"]):
-                        pubmed_url = (
-                            f"https://pubmed.ncbi.nlm.nih.gov/{row['pmid']}/"
-                        )
                         st.markdown(
-                            f"**PubMed Link:** [View on PubMed]({pubmed_url})"
+                            f"_{row['title'][:100]}..._"
+                            if len(str(row["title"])) > 100
+                            else f"_{row['title']}_"
                         )
+                    if pd.notna(row["journal"]):
+                        st.markdown(f"📰 {row['journal']}")
+                    if pd.notna(row["pub_date"]):
+                        st.markdown(f"📅 {row['pub_date']}")
 
-                    # Show metadata if available
-                    if pd.notna(row["metadata"]) and row["metadata"]:
-                        with st.expander("Model Metadata", expanded=False):
-                            st.json(row["metadata"])
+                    # Add trait count and similar studies count with expanders
+                    col_metrics1, col_metrics2 = st.columns([1, 1])
+                    with col_metrics1:
+                        with st.expander(
+                            f"🏷️ **{trait_count}** traits", expanded=False
+                        ):
+                            if trait_count > 0:
+                                traits_list = get_study_traits_list(
+                                    row["pmid"], model
+                                )
+                                for _, trait_row in traits_list.iterrows():
+                                    st.markdown(
+                                        f"• {trait_row['trait_label']}"
+                                    )
+                            else:
+                                st.markdown("No traits found")
+
+                    with col_metrics2:
+                        with st.expander(
+                            f"🔗 **{similar_count}** similar studies (by trait profile)",
+                            expanded=False,
+                        ):
+                            if similar_count > 0:
+                                similar_list = get_similar_studies_list(
+                                    row["pmid"], model
+                                )
+                                for _, sim_row in similar_list.iterrows():
+                                    similarity_score = f"{sim_row['trait_profile_similarity']:.3f}"
+                                    title_short = (
+                                        sim_row["similar_title"][:50] + "..."
+                                        if pd.notna(sim_row["similar_title"])
+                                        and len(str(sim_row["similar_title"]))
+                                        > 50
+                                        else sim_row["similar_title"]
+                                    )
+                                    st.markdown(
+                                        f"• **{sim_row['similar_pmid']}** (sim: {similarity_score})"
+                                    )
+                                    if pd.notna(title_short):
+                                        st.markdown(f"  _{title_short}_")
+                            else:
+                                st.markdown("No similar studies found")
+
+                with col2:
+                    if st.button(
+                        "Explore Results",
+                        key=f"explore_{idx}_{row['pmid']}",
+                        use_container_width=True,
+                        type="primary",
+                    ):
+                        # Store the selected study data for the explore_results page
+                        st.session_state.explore_pmid = row["pmid"]
+                        st.session_state.explore_model = model
+                        st.session_state.explore_trait = trait_label
+                        st.session_state.explore_title = row["title"]
+                        st.session_state.explore_journal = row["journal"]
+                        st.session_state.explore_pub_date = row["pub_date"]
+                        st.session_state.explore_metadata = row["metadata"]
+                        # Navigate to explore_results page
+                        st.switch_page("pages/explore_results.py")
+
+                st.markdown("---")
 
     except Exception as e:
         st.error(f"Error loading study results: {str(e)}")
