@@ -11,32 +11,47 @@ from resources.database import get_database_connections
 
 
 @st.cache_data
-def get_all_trait_labels() -> pd.DataFrame:
-    """Get all unique trait labels from the trait_stats view."""
+def get_top_trait_labels(limit: int = 50) -> pd.DataFrame:
+    """Get the top N trait labels ordered by appearance count."""
     vector_conn, _ = get_database_connections()
     query = """
     SELECT trait_label, appearance_count
     FROM trait_stats
     ORDER BY appearance_count DESC
+    LIMIT ?
     """
-    result = vector_conn.execute(query).fetchall()
+    result = vector_conn.execute(query, [limit]).fetchall()
     return pd.DataFrame(result, columns=["trait_label", "appearance_count"])
 
 
 @st.cache_data
-def filter_traits(trait_df: pd.DataFrame, filter_text: str) -> pd.DataFrame:
-    """Filter traits based on user input."""
+def search_traits(filter_text: str, limit: int = 100) -> pd.DataFrame:
+    """Search for traits matching the filter text using database query."""
+    vector_conn, _ = get_database_connections()
+    query = """
+    SELECT trait_label, appearance_count
+    FROM trait_stats
+    WHERE trait_label ILIKE ?
+    ORDER BY appearance_count DESC
+    LIMIT ?
+    """
+    # Use SQL ILIKE for case-insensitive pattern matching
+    search_pattern = f"%{filter_text}%"
+    result = vector_conn.execute(query, [search_pattern, limit]).fetchall()
+    return pd.DataFrame(result, columns=["trait_label", "appearance_count"])
+
+
+def get_trait_data(filter_text: str = "") -> pd.DataFrame:
+    """Get trait data based on filter text - either top traits or filtered results."""
     if not filter_text:
-        return trait_df
-
-    # Case-insensitive filtering
-    filtered_df = trait_df[
-        trait_df["trait_label"].str.contains(filter_text, case=False, na=False)
-    ]
-    return filtered_df
+        return get_top_trait_labels()
+    else:
+        return search_traits(filter_text)
 
 
-def render_trait_item(trait_label: str, appearance_count: int, idx: int) -> None:
+def render_trait_item(
+    trait_label: str, appearance_count: int, idx: int
+) -> None:
     """Render a single trait item with select button."""
     with st.container():
         col1, col2 = st.columns([4, 1])
@@ -45,10 +60,16 @@ def render_trait_item(trait_label: str, appearance_count: int, idx: int) -> None
             # Check if this is the selected trait and highlight it
             if st.session_state.selected_trait == trait_label:
                 st.markdown(f"🔹 **{trait_label}** _(selected)_")
-                st.markdown(f"<small style='color: #666;'>Appears {appearance_count:,} times</small>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<small style='color: #666;'>Appears {appearance_count:,} times</small>",
+                    unsafe_allow_html=True,
+                )
             else:
                 st.markdown(f"• {trait_label}")
-                st.markdown(f"<small style='color: #666;'>Appears {appearance_count:,} times</small>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<small style='color: #666;'>Appears {appearance_count:,} times</small>",
+                    unsafe_allow_html=True,
+                )
 
         with col2:
             button_label = (
@@ -73,45 +94,27 @@ def render_trait_item(trait_label: str, appearance_count: int, idx: int) -> None
         st.markdown("---", unsafe_allow_html=True)
 
 
-def render_trait_list(
-    filtered_traits: pd.DataFrame, total_traits: int, filter_text: str
-) -> None:
-    """Render the trait list section with filtering and selection."""
-    filtered_count = len(filtered_traits)
-
-    # Display results summary
-    if filter_text:
-        st.info(
-            f"Showing {filtered_count} of {total_traits} traits matching '{filter_text}'"
-        )
-    else:
-        st.info(f"Showing all {total_traits} unique trait labels")
-
+def render_trait_list(trait_df: pd.DataFrame) -> None:
+    """Render the trait list section with selection."""
     # Display trait table with buttons
-    if not filtered_traits.empty:
+    if not trait_df.empty:
         # Create a container for the trait list with scrolling
         with st.container(height=600):
             st.markdown("**Click 'Select' to view trait details →**")
 
-            for idx, (_, row) in enumerate(filtered_traits.iterrows()):
+            for idx, (_, row) in enumerate(trait_df.iterrows()):
                 trait_label = row["trait_label"]
                 appearance_count = row["appearance_count"]
                 render_trait_item(trait_label, appearance_count, idx)
     else:
-        render_no_results_message(filter_text)
-
-
-def render_no_results_message(filter_text: str) -> None:
-    """Render message when no traits match the filter."""
-    st.warning("No traits found matching the filter criteria.")
-    if filter_text:
+        st.warning("No traits found matching the filter criteria.")
         st.markdown("**Try:**")
         st.markdown("- Checking your spelling")
         st.markdown("- Using fewer or different keywords")
-        st.markdown("- Clearing the filter to see all traits")
+        st.markdown("- Clearing the filter to see top traits")
 
 
-def render_left_column(trait_df: pd.DataFrame) -> None:
+def render_left_column() -> None:
     """Render the left column with trait filtering and selection."""
     st.header("Trait Labels")
 
@@ -122,12 +125,23 @@ def render_left_column(trait_df: pd.DataFrame) -> None:
         help="Search is case-insensitive and searches within trait labels",
     )
 
-    # Apply filtering
-    filtered_traits = filter_traits(trait_df, filter_text)
-    total_traits = len(trait_df)
+    # Get trait data based on filter
+    try:
+        trait_df = get_trait_data(filter_text)
+    except Exception as e:
+        st.error(f"Error loading trait data: {str(e)}")
+        return
+
+    # Display results summary
+    if filter_text:
+        st.info(
+            f"Found {len(trait_df)} traits matching '{filter_text}' (showing up to 100)"
+        )
+    else:
+        st.info("Showing top 50 most frequent trait labels")
 
     # Render trait list
-    render_trait_list(filtered_traits, total_traits, filter_text)
+    render_trait_list(trait_df)
 
 
 def render_selected_trait_details() -> None:
@@ -181,19 +195,12 @@ def main():
     if "selected_trait" not in st.session_state:
         st.session_state.selected_trait = None
 
-    # Load trait data
-    try:
-        trait_df = get_all_trait_labels()
-    except Exception as e:
-        st.error(f"Error loading trait data: {str(e)}")
-        return
-
     # Create two columns layout
     left_col, right_col = st.columns([1, 1])
 
     # Render left column (trait list and filtering)
     with left_col:
-        render_left_column(trait_df)
+        render_left_column()
 
     # Render right column (selected trait details)
     with right_col:
