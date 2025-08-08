@@ -7,15 +7,15 @@ help:
 
 # ==== variables ====
 PROJECT_ROOT := `dirname $(pwd)`
-PY_FILES := `fd --extension py --type file .`
+PY_FILES := `fd --extension py --type file . | tr '\n' ' '`
 
 # ==== codebase ====
 
 # ruff format and ruff check
 [group('codebase')]
 ruff:
-    @echo "{{PY_FILES}}" | tr '\n' ' ' | xargs uv run ruff format
-    @echo "{{PY_FILES}}" | tr '\n' ' ' | xargs uv run ruff check --fix
+    @echo "{{PY_FILES}}" | xargs uv run ruff format
+    @echo "{{PY_FILES}}" | xargs uv run ruff check --fix
 
 # Lint using ty check
 [group('codebase')]

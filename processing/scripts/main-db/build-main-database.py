@@ -651,7 +651,9 @@ def main():
 
     # Handle force write - remove existing database
     if args.force_write and db_path.exists():
-        logger.info(f"Force write enabled. Removing existing database: {db_path}")
+        logger.info(
+            f"Force write enabled. Removing existing database: {db_path}"
+        )
         db_path.unlink()
 
     # Check if database already exists (unless force write was used)
