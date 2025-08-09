@@ -3,7 +3,7 @@ set dotenv-load
 # Show help
 default: help
 help:
-    @just --list
+    @just --list --unsorted
 
 # ==== variables ====
 PROJECT_ROOT := `dirname $(pwd)`
@@ -43,11 +43,11 @@ preprocess-efo:
 
 [group('main-processing'), group('hpc')]
 embed-traits:
-    sbatch --acount=${ACCOUNT_CODE} scripts/bc4/embed-traits.sbatch
+    sbatch --account=${ACCOUNT_CODE} scripts/bc4/embed-traits.sbatch
 
 [group('main-processing'), group('hpc')]
 embed-efo:
-    sbatch --acount=${ACCOUNT_CODE} scripts/bc4/embed-efo.sbatch
+    sbatch --account=${ACCOUNT_CODE} scripts/bc4/embed-efo.sbatch
 
 [group('main-processing')]
 aggregate-embeddings:
@@ -69,7 +69,7 @@ build-main-db:
 
 [group('trait-profile'), group('hpc')]
 compute-trait-similarities:
-    sbatch --acount=${ACCOUNT_CODE} scripts/bc4/compute-trait-similarity.sbatch
+    sbatch --account=${ACCOUNT_CODE} scripts/bc4/compute-trait-similarity.sbatch
 
 [group('trait-profile')]
 aggregate-trait-similarities:
