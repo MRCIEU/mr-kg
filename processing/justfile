@@ -54,7 +54,7 @@ aggregate-embeddings:
     #!/bin/bash
     # NOTE: note about the hardcoded path with hpc experiements
     uv run scripts/main-processing/aggregate-embeddings.py \
-        --trait-results-dir {{PROJECT_ROOT}}/data/output/bc4-12431897/results \
+        --trait-results-dir {{PROJECT_ROOT}}/data/output/bc4-12467639/results \
         --efo-results-dir {{PROJECT_ROOT}}/data/output/bc4-12432782/results
 
 # ==== main database ====
