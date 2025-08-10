@@ -5,18 +5,6 @@ import pandas as pd
 import streamlit as st
 from typing import List, Optional
 
-from common_funcs.database_utils.utils import get_database_paths
-
-
-@st.cache_resource
-def setup_database_paths(profile: str = "local") -> None:
-    """Set up database paths based on deployment profile."""
-    vector_store_db_path, trait_profile_db_path = get_database_paths(profile)
-    if "vector_store_db" not in st.session_state:
-        st.session_state.vector_store_db = vector_store_db_path
-    if "trait_profile_db" not in st.session_state:
-        st.session_state.trait_profile_db = trait_profile_db_path
-
 
 @st.cache_resource
 def get_database_connections():

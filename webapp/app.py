@@ -7,7 +7,7 @@ This application provides an interactive interface to explore:
 """
 
 import argparse
-from resources.database import setup_database_paths
+from common_funcs.database_utils.utils import get_database_paths
 import streamlit as st
 
 
@@ -38,19 +38,21 @@ def init(args):
     ]
     if "models" not in st.session_state:
         st.session_state.models = MODELS
+    # Set up database paths in session state
+    vector_store_db_path, trait_profile_db_path = get_database_paths(
+        args.profile
+    )
+    print(vector_store_db_path, trait_profile_db_path)
+    if "vector_store_db" not in st.session_state:
+        st.session_state.vector_store_db = vector_store_db_path
+    if "trait_profile_db" not in st.session_state:
+        st.session_state.trait_profile_db = trait_profile_db_path
 
 
 def main():
     """Main application."""
     args = make_args()
     print(f"Running with profile: {args.profile}")
-
-    # Set up database paths in session state
-    if (
-        "vector_store_db" not in st.session_state
-        or "trait_profile_db" not in st.session_state
-    ):
-        setup_database_paths(args.profile)
 
     init(args)
 
