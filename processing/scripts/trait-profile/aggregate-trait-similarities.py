@@ -41,12 +41,6 @@ def make_args():
         help="Output path for aggregated results (default: data/processed/similarities/trait_similarities.json)",
     )
 
-    parser.add_argument(
-        "--expected-chunks",
-        type=int,
-        help="Expected number of chunk files (for validation)",
-    )
-
     return parser.parse_args()
 
 
@@ -83,14 +77,11 @@ def load_chunk_files(input_dir: Path) -> List[Dict]:
     return all_records
 
 
-def validate_results(
-    records: List[Dict], expected_chunks: int | None = None
-) -> Dict:
+def validate_results(records: List[Dict]) -> Dict:
     """Validate the aggregated results for completeness.
 
     Args:
         records: List of similarity records
-        expected_chunks: Expected number of chunks (optional)
 
     Returns:
         Validation statistics
@@ -128,9 +119,6 @@ def validate_results(
         f"  - Average similarities per query: {stats['average_similarities_per_query']:.2f}"
     )
 
-    if expected_chunks:
-        logger.info(f"  - Expected chunks: {expected_chunks}")
-
     return stats
 
 
@@ -154,7 +142,7 @@ def main():
         return 1
 
     # Validate results
-    stats = validate_results(all_records, args.expected_chunks)
+    stats = validate_results(all_records)
 
     # Determine output path
     if args.output_path:

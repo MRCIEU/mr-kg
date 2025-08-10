@@ -53,9 +53,11 @@ embed-efo:
 aggregate-embeddings:
     #!/bin/bash
     # NOTE: note about the hardcoded path with hpc experiements
+    TRAIT_EXPERIMENT_ID="bc4-12467639"
+    EFO_EXPERIMENT_ID="bc4-12432782"
     uv run scripts/main-processing/aggregate-embeddings.py \
-        --trait-results-dir {{PROJECT_ROOT}}/data/output/bc4-12467639/results \
-        --efo-results-dir {{PROJECT_ROOT}}/data/output/bc4-12432782/results
+        --trait-results-dir {{PROJECT_ROOT}}/data/output/${TRAIT_EXPERIMENT_ID}/results \
+        --efo-results-dir {{PROJECT_ROOT}}/data/output/${EFO_EXPERIMENT_ID}/results
 
 # ==== main database ====
 
@@ -75,9 +77,9 @@ compute-trait-similarities:
 aggregate-trait-similarities:
     #!/bin/bash
     # NOTE: note about the hardcoded path with hpc experiement
+    EXPERIMENT_ID="bc4-12468629"
     uv run scripts/trait-profile/aggregate-trait-similarities.py \
-        --input-dir {{PROJECT_ROOT}}/data/output/bc4-12440505/results \
-        --expected-chunks 20
+        --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
 [group('trait-profile')]
 build-trait-profile-db:
