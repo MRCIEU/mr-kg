@@ -16,34 +16,34 @@ Found 9 tables:
   - efo_embeddings
     Rows: 67,270
   - model_result_traits
-    Rows: 114,276
+    Rows: 157,064
   - model_results
-    Rows: 26,165
+    Rows: 34,796
   - mr_pubmed_data
     Rows: 15,635
   - pmid_model_analysis
-    Rows: 26,165
+    Rows: 34,796
   - trait_efo_similarity_search
-    Rows: 1,707,648,950
+    Rows: 2,577,113,700
   - trait_embeddings
-    Rows: 25,385
+    Rows: 38,310
   - trait_similarity_search
-    Rows: 644,372,840
+    Rows: 1,467,617,790
   - trait_stats
-    Rows: 25,385
+    Rows: 38,310
 
 ----------------------------------------
 VIEWS
 ----------------------------------------
 Found 4 views:
   - pmid_model_analysis
-    Rows: 26,165
+    Rows: 34,796
   - trait_efo_similarity_search
-    Rows: 1,707,648,950
+    Rows: 2,577,113,700
   - trait_similarity_search
-    Rows: 644,372,840
+    Rows: 1,467,617,790
   - trait_stats
-    Rows: 25,385
+    Rows: 38,310
 
 ----------------------------------------
 TABLE SCHEMAS
@@ -153,7 +153,7 @@ Found 11 indexes:
 ----------------------------------------
 DATABASE METADATA
 ----------------------------------------
-Database: vector_store (File: /Users/ik18445/local-projects/+dmer/+mr-paper-data-extraction/mr-kg/data/db/vector_store.db)
+Database: vector_store
 
 ============================================================
                    TRAIT PROFILE DATABASE                   
@@ -167,13 +167,13 @@ Found 5 tables:
   - model_similarity_stats
     Rows: 5
   - query_combinations
-    Rows: 24,856
+    Rows: 34,796
   - top_similarity_pairs
-    Rows: 87,459
+    Rows: 120,549
   - trait_similarities
-    Rows: 248,560
+    Rows: 347,960
   - trait_similarity_analysis
-    Rows: 248,560
+    Rows: 347,960
 
 ----------------------------------------
 VIEWS
@@ -182,9 +182,9 @@ Found 3 views:
   - model_similarity_stats
     Rows: 5
   - top_similarity_pairs
-    Rows: 87,459
+    Rows: 120,549
   - trait_similarity_analysis
-    Rows: 248,560
+    Rows: 347,960
 
 ----------------------------------------
 TABLE SCHEMAS
@@ -263,7 +263,7 @@ Found 6 indexes:
 ----------------------------------------
 DATABASE METADATA
 ----------------------------------------
-Database: trait_profile_db (File: /Users/ik18445/local-projects/+dmer/+mr-paper-data-extraction/mr-kg/data/db/trait_profile_db.db)
+Database: trait_profile_db
 
 ============================================================
                     DESCRIPTION COMPLETE                    
