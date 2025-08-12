@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: mr-kg-backend-dev
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    environment:
+      - PROFILE=local
+      - PYTHONPATH=/app
+    networks:
+      - default
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: mr-kg-frontend-dev
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost:8000
+    networks:
+      - default
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: mr-kg-webapp-dev
+    ports:
+      - "${WEBAPP_PORT:-8501}:8501"
+    volumes:
+      - ./webapp:/app
+      - ./data:/app/data
+    environment:
+      - PROFILE=docker
+      - PYTHONPATH=/app
+    networks:
+      - default
+    restart: unless-stopped
+
+networks:
+  default:
+    name: mr-kg-network-dev
