@@ -71,7 +71,7 @@ def main():
 
     st.markdown("""
     **Available Views:**
-    - [`explore_traits`](/explore_traits): start from here to choose traits of interest
+    - `explore_traits`: start from here to choose traits of interest
     """)
 
 
