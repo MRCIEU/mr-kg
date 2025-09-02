@@ -18,6 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff>=0.1.6",
+    "ty>=0.0.1a16",
     "pytest>=7.4.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
@@ -68,3 +69,6 @@ addopts = [
     "--cov-report=html",
     "--cov-report=xml",
 ]
+
+[tool.ty.rules]
+# Configure ty type checking rules

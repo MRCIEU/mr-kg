@@ -34,9 +34,14 @@ fmt:
 lint:
     uv run ruff check .
 
+# Type check with ty
+[group('quality')]
+ty:
+    uv run ty check
+
 # Run all quality checks
 [group('quality')]
-check: lint
+check: lint ty
 
 # ==== Testing ====
 

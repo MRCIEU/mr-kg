@@ -18,6 +18,22 @@ dev-detached:
     @echo "Starting development environment in background..."
     docker-compose up --build -d
 
+# Start individual services for development
+[group('development')]
+backend-dev:
+    @echo "Starting backend development server..."
+    cd backend && just dev
+
+[group('development')]
+frontend-dev:
+    @echo "Starting frontend development server..."
+    cd frontend && just dev
+
+[group('development')]
+webapp-dev:
+    @echo "Starting legacy webapp development server..."
+    cd webapp && just local-run
+
 # Stop development environment
 [group('development')]
 dev-down:
@@ -198,7 +214,7 @@ list-backups:
 [group('environment')]
 setup-dev:
     @echo "Setting up development environment..."
-    @if [ ! -f .env.development ]; then echo "Creating .env.development..."; cp .env.development .env.development; fi
+    @if [ ! -f .env ]; then echo "Creating .env from .env.development..."; cp .env.development .env; fi
     @if [ ! -f backend/.env ]; then echo "Creating backend/.env..."; cp .env.development backend/.env; fi
     @if [ ! -f frontend/.env ]; then echo "Creating frontend/.env..."; cp .env.development frontend/.env; fi
     @echo "Development environment configured!"

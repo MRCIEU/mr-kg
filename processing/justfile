@@ -33,6 +33,30 @@ ty:
 
 # ==== main-processing ====
 
+# Run complete processing pipeline
+[group('main-processing')]
+pipeline-full:
+    #!/bin/bash
+    set -e
+    echo "Starting complete MR-KG processing pipeline..."
+    echo "Step 1: Preprocessing traits and EFO data..."
+    just preprocess-traits
+    just preprocess-efo
+    echo "Step 2: Generating embeddings (HPC batch jobs)..."
+    just embed-traits
+    just embed-efo
+    echo "Step 3: Aggregating embeddings..."
+    just aggregate-embeddings
+    echo "Step 4: Building main database..."
+    just build-main-db
+    echo "Step 5: Computing trait similarities (HPC batch job)..."
+    just compute-trait-similarities
+    echo "Step 6: Aggregating trait similarities..."
+    just aggregate-trait-similarities
+    echo "Step 7: Building trait profile database..."
+    just build-trait-profile-db
+    echo "Pipeline complete! Databases are ready for use."
+
 [group('main-processing')]
 preprocess-traits:
     uv run scripts/main-processing/preprocess-traits.py
