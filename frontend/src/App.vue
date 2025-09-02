@@ -29,7 +29,7 @@
 
     <footer class="bg-gray-100 text-center py-4 mt-16">
       <p class="text-gray-600">
-        &copy; 2024 MR-KG (Mendelian Randomization Knowledge Graph)
+        &copy; 2025 MR-KG (Mendelian Randomization Knowledge Graph)
       </p>
     </footer>
   </div>
