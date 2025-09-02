@@ -1,0 +1,103 @@
+# ==== Dependencies ====
+node_modules/
+**/node_modules/
+
+# ==== Python ====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ==== Virtual Environments ====
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# ==== IDE ====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==== OS ====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==== Logs ====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ==== Cache ====
+.cache/
+.parcel-cache/
+.npm
+.eslintcache
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==== Build Output ====
+dist/
+dist-ssr/
+*.local
+
+# ==== Environment Variables ====
+.env.local
+.env.*.local
+
+# ==== Docker ====
+.dockerignore
+
+# ==== Task Files ====
+.tasks/
+
+# ==== Data (keep structure but ignore content) ====
+data/db/*.db
+data/processed/*
+!data/processed/.gitignore
+data/raw/*
+!data/raw/.gitignore
+
+# ==== Models ====
+models/*.tar.gz
+models/*.pkl
+models/*.joblib
+
+# ==== Temporary Files ====
+*.tmp
+*.temp
+.tmp/
+.temp/

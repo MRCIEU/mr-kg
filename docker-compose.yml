@@ -1,6 +1,8 @@
-version: "3.4"
+# Development Docker Compose Configuration
+version: "3.8"
 
 services:
+  # Legacy Streamlit webapp (maintained for compatibility)
   webapp:
     build:
       context: .
@@ -13,10 +15,99 @@ services:
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
       - STREAMLIT_SERVER_HEADLESS=true
-    # networks:
-    #   - default
+      - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+    networks:
+      - mr-kg-network
     restart: unless-stopped
-#
-# networks:
-#   default:
-#     name: mr-kg-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # FastAPI Backend (Development)
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile.dev
+      target: development
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data:ro
+      - ./src:/app/src:ro
+      - ./logs/backend:/app/logs
+    environment:
+      - DEBUG=true
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DB_PROFILE=docker
+      - VECTOR_STORE_PATH=/app/data/db/vector_store.db
+      - TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
+      - ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8080
+      - LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app
+    networks:
+      - mr-kg-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/app
+          target: /app/app
+        - action: rebuild
+          path: ./backend/pyproject.toml
+
+  # Vue.js Frontend (Development)
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost:${BACKEND_PORT:-8000}/api/v1
+      - VITE_APP_TITLE=MR-KG Explorer (Dev)
+      - VITE_APP_DESCRIPTION=Mendelian Randomization Knowledge Graph - Development
+      - VITE_DEV_MODE=true
+    networks:
+      - mr-kg-network
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: rebuild
+          path: ./frontend/package.json
+
+networks:
+  mr-kg-network:
+    name: mr-kg-network
+    driver: bridge
+    
+volumes:
+  logs:
+    name: mr-kg-dev-logs

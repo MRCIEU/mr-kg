@@ -1,243 +1,561 @@
-# Development Guidelines
+# Development Guide
 
-This repository implements MR-KG (Mendelian Randomization Knowledge Graph), a system for processing and exploring structural PubMed literature data extracted by large language models. The project builds vector databases from LLM-extracted trait information and provides a Streamlit web interface for exploration.
+This repository implements MR-KG (Mendelian Randomization Knowledge Graph), a fullstack system for processing and exploring Mendelian Randomization studies through large language model-extracted trait information and vector similarity search.
 
 ## Architecture Overview
 
-The system follows a multi-stage ETL pipeline:
+The system consists of four main components:
 
-1. Raw LLM results → Processing pipeline → DuckDB vector stores
-2. Vector stores → Streamlit web application → Interactive exploration
+1. **ETL Processing Pipeline** → DuckDB vector stores
+2. **FastAPI Backend** → RESTful API with vector similarity search
+3. **Vue.js Frontend** → Modern interactive web interface
+4. **Legacy Streamlit App** → Compatible visualization interface (maintained for transition)
 
-Key technologies:
+### Technology Stack
 
-- DuckDB for vector storage and similarity search
-- Streamlit for web interface
-- HPC batch processing for embeddings computation
-- Python with uv package management
+- **Backend**: FastAPI, DuckDB, Python/uv, Pydantic
+- **Frontend**: Vue.js 3, TypeScript, Pinia, Tailwind CSS, Vite
+- **Legacy Interface**: Streamlit for existing workflows
+- **Data Processing**: Python/uv, HPC batch processing, spaCy embeddings
+- **Infrastructure**: Docker, Docker Compose, justfile task runners
 
 ## Repository Structure
 
 ```text
 mr-kg/
+├── backend/                 # FastAPI REST API server
+│   ├── app/                 # FastAPI application
+│   │   ├── api/             # API route handlers (v1 endpoints)
+│   │   ├── core/            # Core configuration, database, middleware
+│   │   ├── models/          # Pydantic data models
+│   │   ├── services/        # Business logic services
+│   │   └── utils/           # Utility functions
+│   ├── tests/               # Backend test suite
+│   └── justfile             # Backend task runner
+├── frontend/                # Vue.js TypeScript interface
+│   ├── src/                 # Vue.js application source
+│   │   ├── components/      # Reusable Vue components
+│   │   ├── views/           # Page-level components
+│   │   ├── stores/          # Pinia state management
+│   │   ├── services/        # API service layer
+│   │   ├── types/           # TypeScript definitions
+│   │   └── router/          # Vue Router configuration
+│   └── justfile             # Frontend task runner
+├── webapp/                  # Legacy Streamlit application
+│   ├── pages/               # Streamlit page modules
+│   ├── resources/           # Database resources
+│   └── app.py               # Streamlit entry point
+├── processing/              # ETL pipeline scripts and workflows
+│   ├── scripts/             # Processing pipeline scripts
+│   │   ├── main-processing/ # Core trait and EFO processing
+│   │   ├── main-db/         # Database building scripts
+│   │   ├── trait-profile/   # Similarity computation
+│   │   └── bc4/             # HPC batch job scripts
+│   └── justfile             # Processing task runner
 ├── data/                    # Data storage (raw, processed, databases)
 │   ├── raw/                 # Source datasets (EFO, LLM results, PubMed)
 │   ├── processed/           # Intermediate processing artifacts
 │   ├── db/                  # DuckDB databases
 │   └── assets/              # Schemas and reference files
-├── processing/              # ETL pipeline scripts and workflows
-├── webapp/                  # Streamlit web application
 ├── src/
 │   ├── common_funcs/        # Shared schemas and database utilities
 │   └── yiutils/             # General-purpose utilities (submodule)
 └── models/                  # ML models (spaCy, embeddings)
 ```
 
-## Core Components
+## Quick Start
 
-### Processing Pipeline (`processing/`)
+### Prerequisites
 
-The ETL pipeline processes raw LLM results into queryable vector databases through several stages:
+- Python 3.12+ with [uv](https://github.com/astral-sh/uv) package manager
+- Node.js 18+ with npm/yarn
+- [just](https://github.com/casey/just) task runner
+- Docker and Docker Compose (for containerized development)
 
-#### Main Processing Scripts
+### Full Stack Development Setup
 
-- `preprocess-traits.py`: Extracts unique trait labels from all models, creates trait indices, and links exposure/outcome traits in model results
+1. **Clone and setup the repository**:
+   ```bash
+   git clone <repository>
+   cd mr-kg
+   
+   # Setup environment files
+   just setup-dev
+   ```
+
+2. **Start the development stack**:
+   ```bash
+   # Start all services (backend, frontend, legacy webapp)
+   just dev
+   
+   # Or individually:
+   just backend-dev    # FastAPI backend only
+   just frontend-dev   # Vue.js frontend only
+   just webapp-dev     # Streamlit webapp only
+   ```
+
+3. **Access the applications**:
+   - **Frontend**: http://localhost:3000 (Vue.js interface)
+   - **Backend API**: http://localhost:8000 (FastAPI with docs at /docs)
+   - **Legacy Webapp**: http://localhost:8501 (Streamlit interface)
+
+### Component-Specific Development
+
+#### Backend Development
+
+```bash
+cd backend
+
+# Setup and development
+just install          # Install dependencies
+just env-setup        # Setup environment
+just dev              # Start development server
+
+# Code quality
+just fmt              # Format code with ruff
+just lint             # Lint code with ruff
+just ty               # Type check with ty
+just check            # Run all quality checks
+
+# Testing
+just test             # Run tests with pytest
+just test-cov         # Run tests with coverage
+```
+
+#### Frontend Development
+
+```bash
+cd frontend
+
+# Setup and development
+just install          # Install dependencies
+just env-setup        # Setup environment
+just dev              # Start development server
+
+# Build
+just build            # Build for production
+just preview          # Preview production build
+
+# Code quality
+just format           # Format code with prettier
+just lint             # Lint code with eslint
+just type-check       # Type check with vue-tsc
+just check            # Run all quality checks
+```
+
+#### Legacy Webapp Development
+
+```bash
+cd webapp
+
+# Development
+just local-run        # Start local development
+just docker-run       # Run in Docker container
+
+# Code quality
+just ruff             # Format and lint
+```
+
+## Data Processing Pipeline
+
+The system requires preprocessing raw LLM results into vector databases before the web interfaces can be used.
+
+### Setup Requirements
+
+1. **Models setup**:
+   ```bash
+   cd models
+   wget https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
+   # Extract the model files
+   ```
+
+2. **Data setup**:
+   ```bash
+   # Download EFO ontology
+   wget https://github.com/EBISPOT/efo/releases/download/v3.80.0/efo.json
+   mv efo.json data/raw/
+   ```
+
+3. **Processing environment**:
+   ```bash
+   cd processing
+   uv sync               # Install dependencies
+   ```
+
+### Processing Workflow
+
+```bash
+cd processing
+
+# Full pipeline (includes HPC batch jobs)
+just pipeline-full
+
+# Or step by step:
+# ---- Preprocessing ----
+just preprocess-traits    # Extract unique traits, create indices
+just preprocess-efo       # Process EFO ontology
+
+# ---- Embedding Generation (HPC) ----
+just embed-traits         # Generate trait embeddings (SLURM batch)
+just embed-efo           # Generate EFO embeddings (SLURM batch)
+just aggregate-embeddings # Combine HPC results
+
+# ---- Database Building ----
+just build-main-db        # Create vector_store.db
+
+# ---- Similarity Analysis (HPC) ----
+just compute-trait-similarities     # Compute similarities (SLURM batch)
+just aggregate-trait-similarities   # Combine similarity results
+just build-trait-profile-db         # Create trait_profile_db.db
+
+# ---- Development Tools ----
+just ruff                # Format and lint
+just ty                  # Type checking
+just describe-db         # Database inspection
+```
+
+### Key Processing Scripts
+
+- `preprocess-traits.py`: Extracts unique trait labels from all models, creates trait indices
 - `preprocess-efo.py`: Processes EFO ontology JSON to extract term IDs and labels
-- `embed-traits.py`: Generates embeddings for trait labels using spaCy models (HPC batch job)
-- `embed-efo.py`: Generates embeddings for EFO terms (HPC batch job)
-- `aggregate-embeddings.py`: Combines embedding results from HPC chunks into single files
-
-#### Database Building Scripts
-
+- `embed-traits.py`: Generates embeddings for trait labels using spaCy models
 - `build-main-database.py`: Creates vector_store.db with trait/EFO embeddings and model results
-- `compute-trait-similarity.py`: Computes pairwise trait similarities (HPC batch job)
+- `compute-trait-similarity.py`: Computes pairwise trait similarities
 - `build-trait-profile-database.py`: Creates trait_profile_db.db for similarity analysis
 
-#### Key Logic Flow
-
-1. Trait preprocessing extracts unique traits across all models and assigns canonical indices
-2. EFO preprocessing extracts ontology terms for semantic mapping
-3. Embedding generation creates vector representations using spaCy models
-4. Database building combines embeddings with structured data for vector search
-5. Trait similarity computation enables finding related traits and studies
-
-#### HPC Integration
+### HPC Integration
 
 The pipeline uses SLURM batch jobs for computationally intensive tasks:
-
-- `scripts/bc4/*.sbatch`: SLURM job definitions
 - Environment variable `ACCOUNT_CODE` required for HPC submissions
 - Results stored in `data/output/` with experiment IDs
+- `scripts/bc4/*.sbatch`: SLURM job definitions
 
-### Web Application (`webapp/`)
+## Development Workflows
 
-Streamlit application for interactive exploration of the processed data.
+### Full Stack Development
 
-#### Core Structure
+```bash
+# Top-level commands for full stack
+just dev              # Start all development services
+just dev-down         # Stop development stack
+just dev-logs         # View development logs
 
-- `app.py`: Main application entry point, handles profile configuration (local/docker)
-- `pages/`: Multi-page application modules
-  - `explore_results.py`: Study details and similar studies finder
-  - `explore_traits.py`: Trait search and metadata exploration
-  - `trait_similarities.py`: Trait similarity analysis and visualization
-  - `about.py`: Project information and documentation
+# Build and testing
+just build-dev        # Build development images
+just test-backend     # Run backend tests
+just health           # Check service health
+just status           # Docker container status
+```
 
-#### Key Functionality
+### Database Development
 
-- Database profile management (local paths vs. containerized paths)
-- Cached database connections for performance
-- Interactive filtering by models, traits, and similarity thresholds
-- Real-time similarity search using vector embeddings
+Both backend and webapp use DuckDB databases:
 
-#### Database Integration
-
-The webapp connects to two DuckDB databases:
-- `vector_store.db`: Main data with embeddings and model results
-- `trait_profile_db.db`: Precomputed similarity matrices and aggregations
-
-### Common Functions (`src/common_funcs/`)
-
-Shared library providing schema definitions and database utilities used across processing and webapp components.
-
-#### Schema Modules
-
-- `database_schema.py`: Complete database schema definitions with table structures, indexes, and views
-- `raw_data_schema.py`: TypedDict definitions for raw LLM output format
-- `processed_data_schema.py`: Schemas for processed data with trait linkings
-- `efo_schema.py`: EFO ontology data structures
-- `embedding_schema.py`: Vector embedding data formats
-- `mr_pubmed_schema.py`: PubMed corpus data structures
-- `trait_profile_schema.py`: Trait similarity and profile schemas
-
-#### Database Utilities
-
-- `database_utils/utils.py`: Connection management, path resolution
-- `database_schema_utils.py`: Schema validation and reporting utilities
-
-#### Key Data Flow
-
-Raw LLM results → Schema validation → Trait linking → Vector embedding → Database storage → Web interface queries
-
-### Utilities (`src/yiutils/`)
-
-Git submodule providing general-purpose utilities:
-- `project_utils.py`: Project root finding and path resolution
-- `chunking.py`: Data chunking for batch processing
-- `failsafe.py`: Error handling and retry mechanisms
-
-## Data Architecture
-
-### Data Flow Overview
-
-1. Raw data ingestion: EFO ontology + LLM results + PubMed corpus
-2. Preprocessing: Trait extraction, deduplication, indexing
-3. Embedding generation: Vector representations using spaCy models
-4. Database construction: Structured storage with vector search capabilities
-5. Web interface: Interactive exploration and similarity search
-
-### Key Databases
-
-#### vector_store.db
-
+#### Vector Store Database (`vector_store.db`)
 - `trait_embeddings`: Trait vectors indexed by canonical trait indices
 - `efo_embeddings`: EFO term vectors for semantic mapping
 - `model_results`: Raw LLM outputs with metadata
 - `model_result_traits`: Links between studies and extracted traits
 - Views for PMIDs analysis and trait-based filtering
 
-#### trait_profile_db.db
-
+#### Trait Profile Database (`trait_profile_db.db`)
 - `trait_similarities`: Precomputed pairwise trait similarity scores
 - `trait_profiles`: Aggregated trait profiles for studies
 - Views for similarity analysis and ranking
 
-### Schema Validation
+#### Database Inspection
 
-The system includes comprehensive schema validation:
-- JSON Schema validation for raw data
-- Database schema compliance checking
-- Type safety through TypedDict definitions
-- Validation reporting and error logging
-
-## Development Workflows
-
-### Setup Requirements
-
-1. Python environment with uv package manager
-2. HPC access with SLURM for embedding computation
-3. Database dependencies (DuckDB)
-4. Model downloads (spaCy, embeddings)
-
-### Task Runner Commands
-
-Both `processing/` and `webapp/` use justfile for task management:
-
-#### Processing Commands
 ```bash
-# Main processing workflow
-just preprocess-traits preprocess-efo
-just embed-traits embed-efo          # HPC batch jobs
-just aggregate-embeddings
-
-# Database building
-just build-main-db
-just compute-trait-similarities      # HPC batch job
-just aggregate-trait-similarities
-just build-trait-profile-db
-
-# Development
-just ruff                           # Format and lint
-just ty                             # Type checking
-just describe-db                    # Database inspection
+# Backend or processing directories
+just describe-db      # Generate complete database schema
+# Outputs to data/assets/database_schema/database_info.txt
 ```
 
-#### Webapp Commands
-```bash
-just local-run                     # Local development
-just docker-run                    # Docker deployment
-just describe-db                   # Database inspection
-just ruff                          # Format and lint
+### API Development
+
+The FastAPI backend provides comprehensive REST endpoints:
+
+#### API Structure
+```
+/api/v1/
+├── health/          # Health check endpoints
+├── system/          # System information
+├── core/           # Core utilities (ping, version, echo)
+├── traits/         # Trait search and exploration
+├── studies/        # Study metadata and relationships
+└── similarities/   # Vector similarity computation
 ```
 
-### Environment Configuration
+#### API Documentation
+- **Interactive docs**: http://localhost:8000/docs (Swagger UI)
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI JSON**: http://localhost:8000/openapi.json
 
-Required environment variables:
-- `ACCOUNT_CODE`: HPC account for SLURM submissions
+#### Testing API Endpoints
 
-### Code Quality
+```bash
+cd backend
 
-Both components use:
-- `ruff`: Code formatting and linting
-- `ty`: Type checking
-- Comprehensive docstrings and type annotations
-- Schema validation for data integrity
+# Test individual endpoints
+just test-endpoints       # Test core endpoints
+just test-db-health      # Test database health
+just validate-schema     # Validate OpenAPI schema
 
-## Key Entry Points for Agents
+# Development tools
+just docs                # Open API documentation
+```
+
+### Frontend Development
+
+The Vue.js frontend provides interactive interfaces for:
+
+#### Pages and Features
+- **Home**: Overview and navigation to main features
+- **Traits**: Browse and search trait labels with filtering
+- **Studies**: View study metadata and find similar studies
+- **Similarities**: Analyze trait and study similarity relationships
+- **About**: Project information and methodology
+
+#### Development Patterns
+- **Composition API**: Vue 3's modern composition API
+- **TypeScript**: Full type safety throughout the application
+- **Pinia**: State management for centralized application state
+- **Vue Router**: Single-page application navigation
+- **Tailwind CSS**: Utility-first CSS framework
+
+#### State Management
+- **Application Store**: Global UI state and configuration
+- **Traits Store**: Trait data, filtering, and search state
+- **Studies Store**: Study data and metadata management
+- **Similarities Store**: Similarity analysis and results
+
+## Code Quality and Standards
+
+### Backend Standards
+- **ruff**: Code formatting and linting
+- **ty**: Type checking
+- **pytest**: Testing framework with comprehensive coverage
+- **Pydantic**: Type-safe data models and validation
+- **FastAPI**: Automatic OpenAPI documentation
+
+### Frontend Standards
+- **ESLint**: JavaScript/TypeScript linting with Vue.js rules
+- **Prettier**: Code formatting
+- **Vue TSC**: TypeScript type checking
+- **TypeScript Strict Mode**: Full type safety
+
+### Processing Standards
+- **ruff**: Code formatting and linting
+- **ty**: Type checking
+- **Comprehensive logging**: loguru for structured logging
+- **Schema validation**: TypedDict for type-safe data processing
+
+### Quality Checks
+```bash
+# Backend
+cd backend && just check
+
+# Frontend  
+cd frontend && just check
+
+# Processing
+cd processing && just ruff && just ty
+```
+
+## Docker Development
+
+### Development Environment
+
+```bash
+# Quick start
+just start            # Setup and start development environment
+
+# Manual steps
+just setup-dev        # Create environment files
+just dev              # Start development stack
+```
+
+### Container Structure
+- **Backend**: FastAPI with hot reload, volume mounting
+- **Frontend**: Vite dev server with hot reload
+- **Legacy Webapp**: Streamlit with Docker profile
+- **Shared Volumes**: Database files, logs, development code
+
+### Environment Profiles
+- **Local Development**: Direct file system access
+- **Docker Development**: Container-based with volume mounting
+- **Production**: Optimized builds with security hardening
+
+## Environment Configuration
+
+### Required Environment Variables
+
+#### Backend
+```bash
+DEBUG=true                    # Development mode
+HOST=0.0.0.0
+PORT=8000
+DB_PROFILE=local              # or 'docker'
+VECTOR_STORE_PATH=./data/db/vector_store.db
+TRAIT_PROFILE_PATH=./data/db/trait_profile_db.db
+```
+
+#### Frontend
+```bash
+VITE_API_BASE_URL=http://localhost:8000/api/v1
+VITE_APP_TITLE=MR-KG Explorer
+VITE_APP_DESCRIPTION=Mendelian Randomization Knowledge Graph
+```
+
+#### Processing
+```bash
+ACCOUNT_CODE=your-hpc-account  # Required for HPC submissions
+```
+
+## Testing Strategy
+
+### Backend Testing
+- **Unit Tests**: Core functionality, database integration
+- **API Tests**: Endpoint validation, error handling
+- **Integration Tests**: Full workflow testing
+- **Health Checks**: System monitoring validation
+
+### Frontend Testing (Planned)
+- **Unit Tests**: Component functionality
+- **Integration Tests**: User workflow testing
+- **E2E Tests**: Full application testing
+
+### Processing Testing
+- **Data Validation**: Schema compliance testing
+- **Pipeline Tests**: ETL workflow validation
+- **Performance Tests**: Large dataset processing
+
+## Deployment Strategies
+
+### Development Deployment
+- Docker Compose with hot reload
+- Volume mounting for live code changes
+- Debug logging and comprehensive error reporting
+
+### Production Deployment
+- Multi-stage Docker builds
+- Optimized asset serving with nginx
+- Health checks and monitoring integration
+- Security hardening and resource limits
+
+### Migration from Streamlit
+1. **Phase 1**: Deploy FastAPI backend alongside existing Streamlit app
+2. **Phase 2**: Implement Vue.js frontend with API integration
+3. **Phase 3**: Use FastAPI as primary interface, Streamlit for specialized views
+
+## Integration Points
+
+### Common Functions Integration
+The `src/common_funcs/` module provides shared functionality:
+- **Database Schemas**: Complete database schema definitions
+- **Data Models**: TypedDict definitions for all data formats
+- **Validation**: Schema validation and reporting utilities
+- **Database Utils**: Connection management and path resolution
+
+### Legacy Compatibility
+- Maintains compatibility with existing Streamlit application
+- No impact on processing pipeline workflows
+- Uses existing database schemas without modification
+- Works with current data organization structure
+
+## Key Entry Points for Development
 
 ### Understanding the System
-1. Start with `DATA.md` for data structure overview
-2. Review `processing/README.md` for pipeline workflow
-3. Examine `src/common_funcs/common_funcs/schema/database_schema.py` for data model
+1. **[DATA.md](DATA.md)**: Data structure overview and database schema
+2. **[processing/README.md](processing/README.md)**: ETL pipeline workflow
+3. **[backend/API_INFRASTRUCTURE.md](backend/API_INFRASTRUCTURE.md)**: API infrastructure details
+4. **[backend/DATABASE_INTEGRATION.md](backend/DATABASE_INTEGRATION.md)**: Database integration layer
 
-### Important Scripts to Examine
-- `processing/scripts/main-processing/preprocess-traits.py`: Core trait processing logic
-- `processing/scripts/main-db/build-main-database.py`: Database construction
-- `webapp/app.py`: Web application entry point
-- `src/common_funcs/common_funcs/schema/`: All schema definitions
-
-### Database Inspection
-- Use `just describe-db` in either processing/ or webapp/ directories
-- Outputs complete database schema to `data/assets/database_schema/database_info.txt`
-- Includes table structures, row counts, and view definitions
+### Important Files to Examine
+- `src/common_funcs/common_funcs/schema/database_schema.py`: Complete data model
+- `backend/app/main.py`: FastAPI application entry point
+- `frontend/src/main.ts`: Vue.js application entry point
+- `processing/scripts/main-processing/preprocess-traits.py`: Core trait processing
+- `webapp/app.py`: Legacy Streamlit application
 
 ### Configuration Files
-- `processing/justfile`: ETL workflow commands
-- `webapp/justfile`: Web application commands
-- `docker-compose.yml`: Container deployment
-- `.env`: Environment variables (HPC configuration)
+- Top-level `justfile`: Full stack development commands
+- `docker-compose.yml` and `docker-compose.prod.yml`: Container orchestration
+- Component-specific `justfile`s: Service-specific task runners
+- `.env.*` files: Environment-specific configuration
 
-### Development Patterns
-- All scripts include `--dry-run` flags for safe testing
-- Comprehensive logging with loguru
-- Type-safe data processing with TypedDict schemas
-- Modular design with clear separation of concerns
+## Performance Considerations
+
+### Backend Performance
+- Connection pooling for DuckDB operations
+- Efficient vector similarity search
+- Caching strategies for frequently accessed data
+- Pagination for large result sets
+
+### Frontend Performance
+- Code splitting and lazy loading
+- Efficient state management with Pinia
+- Optimized asset bundling with Vite
+- Progressive loading for large datasets
+
+### Database Performance
+- Leverages existing database indexes
+- Vector similarity optimization
+- Connection pooling and reuse
+- Memory-efficient query patterns
+
+## Troubleshooting
+
+### Common Issues
+
+#### Database Connection Problems
+```bash
+# Check database files exist
+ls -la data/db/
+
+# Verify database health
+curl http://localhost:8000/api/v1/health/database
+
+# Check container logs
+just dev-logs backend
+```
+
+#### Frontend/Backend Integration Issues
+```bash
+# Check API connectivity
+curl http://localhost:8000/api/v1/health/
+
+# Verify environment variables
+just dev-logs frontend
+
+# Check CORS settings in backend
+```
+
+#### Processing Pipeline Issues
+```bash
+cd processing
+
+# Check processing status
+just describe-db
+
+# Validate schemas
+just sanity
+
+# Check HPC job status (if using HPC)
+```
+
+### Development Tools
+
+#### Monitoring and Debugging
+- Health check endpoints for service monitoring
+- Comprehensive logging throughout the stack
+- Request correlation IDs for tracing
+- Performance metrics collection
+
+#### Database Inspection
+- Database schema reporting tools
+- Query performance analysis
+- Connection pool monitoring
+- Data integrity validation
+
+This comprehensive development guide provides the foundation for contributing to the MR-KG fullstack system, whether working on data processing, backend APIs, frontend interfaces, or system deployment.
