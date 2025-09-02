@@ -2,9 +2,9 @@
 
 import asyncio
 import logging
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Dict, Optional
 
 import duckdb
 from pydantic import BaseModel
@@ -220,7 +220,7 @@ class DatabaseConnectionPool:
             self._initialized = False
             logger.info("All database connections closed")
 
-    async def get_pool_status(self) -> Dict[str, int]:
+    async def get_pool_status(self) -> dict[str, int]:
         """Get current pool status for monitoring."""
         async with self._lock:
             return {
@@ -261,7 +261,7 @@ def _resolve_database_paths(profile: str) -> tuple[Path, Path]:
 
 
 def create_database_config(
-    profile: Optional[str] = None,
+    profile: str | None = None,
     max_connections: int = 10,
     connection_timeout: float = 30.0,
 ) -> DatabaseConfig:
@@ -291,7 +291,7 @@ def create_database_config(
 
 
 # Global connection pool instance
-_connection_pool: Optional[DatabaseConnectionPool] = None
+_connection_pool: DatabaseConnectionPool | None = None
 
 
 async def get_database_pool() -> DatabaseConnectionPool:

@@ -1,15 +1,15 @@
 """Middleware components for the FastAPI application."""
 
+import logging
 import time
 import uuid
-from typing import Any, Callable, Optional
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, Response
 from fastapi.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -22,12 +22,16 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         include_request_body: bool = False,
         include_response_body: bool = False,
-        exclude_paths: Optional[list[str]] = None,
+        exclude_paths: list[str] | None = None,
     ):
         super().__init__(app)
         self.include_request_body = include_request_body
         self.include_response_body = include_response_body
-        self.exclude_paths = exclude_paths or ["/health", "/docs", "/openapi.json"]
+        self.exclude_paths = exclude_paths or [
+            "/health",
+            "/docs",
+            "/openapi.json",
+        ]
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -39,7 +43,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
 
         # Generate request ID
         request_id = str(uuid.uuid4())
-        
+
         # Add request ID to request state
         request.state.request_id = request_id
 
@@ -66,7 +70,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     "process_time": process_time,
                     "exception": str(exc),
                     "exception_type": type(exc).__name__,
-                }
+                },
             )
             raise
 
@@ -97,7 +101,11 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         }
 
         # Include request body if configured
-        if self.include_request_body and request.method in ["POST", "PUT", "PATCH"]:
+        if self.include_request_body and request.method in [
+            "POST",
+            "PUT",
+            "PATCH",
+        ]:
             try:
                 body = await request.body()
                 if body:
@@ -161,7 +169,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         app: ASGIApp,
         include_csp: bool = True,
         include_hsts: bool = False,  # Disabled by default for development
-        custom_headers: Optional[dict[str, str]] = None,
+        custom_headers: dict[str, str] | None = None,
     ):
         super().__init__(app)
         self.include_csp = include_csp
@@ -191,7 +199,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "connect-src 'self'",
                 "frame-ancestors 'none'",
             ]
-            response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
+            response.headers["Content-Security-Policy"] = "; ".join(
+                csp_directives
+            )
 
         # HTTP Strict Transport Security (for production)
         if self.include_hsts:
@@ -220,7 +230,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         self.requests_per_minute = requests_per_minute
         self.requests_per_hour = requests_per_hour
         self.enabled = enabled
-        
+
         # Simple in-memory storage (use Redis in production)
         self.request_counts: dict[str, dict[str, Any]] = {}
 
@@ -236,8 +246,11 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
 
         # Check rate limits
         if self._is_rate_limited(client_ip, current_time):
-            from app.core.exceptions import RateLimitError, mrkg_exception_to_http_exception
-            
+            from app.core.exceptions import (
+                RateLimitError,
+                mrkg_exception_to_http_exception,
+            )
+
             error = RateLimitError(
                 limit=self.requests_per_minute,
                 window="minute",
@@ -267,7 +280,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
             return False
 
         client_data = self.request_counts[client_ip]
-        
+
         # Clean old entries
         self._clean_old_entries(client_data, current_time)
 
@@ -304,7 +317,9 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
             client_data["hours"].get(hour_key, 0) + 1
         )
 
-    def _clean_old_entries(self, client_data: dict, current_time: float) -> None:
+    def _clean_old_entries(
+        self, client_data: dict, current_time: float
+    ) -> None:
         """Remove old entries to prevent memory leaks."""
         current_minute = int(current_time // 60)
         current_hour = int(current_time // 3600)
@@ -339,21 +354,21 @@ class MetricsMiddleware(BaseHTTPMiddleware):
     ) -> Response:
         """Collect metrics for request processing."""
         start_time = time.time()
-        
+
         # Increment active requests
         self.metrics["active_requests"] += 1
-        
+
         try:
             response = await call_next(request)
-            
+
             # Calculate response time
             response_time = time.time() - start_time
-            
+
             # Update metrics
             self._update_metrics(request, response, response_time)
-            
+
             return response
-            
+
         finally:
             # Decrement active requests
             self.metrics["active_requests"] -= 1
@@ -380,12 +395,16 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         # Response times (keep only last 1000)
         self.metrics["response_times"].append(response_time)
         if len(self.metrics["response_times"]) > 1000:
-            self.metrics["response_times"] = self.metrics["response_times"][-1000:]
+            self.metrics["response_times"] = self.metrics["response_times"][
+                -1000:
+            ]
 
     def get_metrics(self) -> dict[str, Any]:
         """Get current metrics snapshot."""
         response_times = self.metrics["response_times"]
-        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        avg_response_time = (
+            sum(response_times) / len(response_times) if response_times else 0
+        )
 
         return {
             "requests_total": self.metrics["requests_total"],
@@ -403,9 +422,10 @@ class MetricsMiddleware(BaseHTTPMiddleware):
 def create_request_logging_middleware(
     include_request_body: bool = False,
     include_response_body: bool = False,
-    exclude_paths: Optional[list[str]] = None,
+    exclude_paths: list[str] | None = None,
 ) -> Callable[[ASGIApp], RequestLoggingMiddleware]:
     """Create request logging middleware factory."""
+
     def middleware_factory(app: ASGIApp) -> RequestLoggingMiddleware:
         return RequestLoggingMiddleware(
             app=app,
@@ -413,15 +433,17 @@ def create_request_logging_middleware(
             include_response_body=include_response_body,
             exclude_paths=exclude_paths,
         )
+
     return middleware_factory
 
 
 def create_security_headers_middleware(
     include_csp: bool = True,
     include_hsts: bool = False,
-    custom_headers: Optional[dict[str, str]] = None,
+    custom_headers: dict[str, str] | None = None,
 ) -> Callable[[ASGIApp], SecurityHeadersMiddleware]:
     """Create security headers middleware factory."""
+
     def middleware_factory(app: ASGIApp) -> SecurityHeadersMiddleware:
         return SecurityHeadersMiddleware(
             app=app,
@@ -429,6 +451,7 @@ def create_security_headers_middleware(
             include_hsts=include_hsts,
             custom_headers=custom_headers,
         )
+
     return middleware_factory
 
 
@@ -438,6 +461,7 @@ def create_rate_limiting_middleware(
     enabled: bool = True,
 ) -> Callable[[ASGIApp], RateLimitingMiddleware]:
     """Create rate limiting middleware factory."""
+
     def middleware_factory(app: ASGIApp) -> RateLimitingMiddleware:
         return RateLimitingMiddleware(
             app=app,
@@ -445,4 +469,5 @@ def create_rate_limiting_middleware(
             requests_per_hour=requests_per_hour,
             enabled=enabled,
         )
+
     return middleware_factory

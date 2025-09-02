@@ -1,26 +1,25 @@
 """Dependency injection for database services and health checks."""
 
 import logging
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import AsyncGenerator
 
 from fastapi import Depends, HTTPException, status
-import duckdb
 
 from app.core.database import (
     get_database_pool,
-    get_vector_store_connection,
     get_trait_profile_connection,
+    get_vector_store_connection,
 )
 from app.core.schema_validation import DatabaseHealthChecker
+from app.models.database import DatabaseStatus, HealthCheckResponse
 from app.services.database_service import (
-    TraitService,
-    StudyService,
-    SimilarityService,
-    EFOService,
     AnalyticsService,
+    EFOService,
+    SimilarityService,
+    StudyService,
+    TraitService,
 )
-from app.models.database import HealthCheckResponse, DatabaseStatus
 
 logger = logging.getLogger(__name__)
 

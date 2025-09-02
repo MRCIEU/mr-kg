@@ -1,7 +1,7 @@
 """Core API endpoints for version and basic functionality."""
 
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Request
 
@@ -10,13 +10,13 @@ from app.models.responses import DataResponse
 router = APIRouter()
 
 
-@router.get("/version", response_model=DataResponse[Dict[str, str]])
-async def api_version() -> DataResponse[Dict[str, str]]:
+@router.get("/version", response_model=DataResponse[dict[str, str]])
+async def api_version() -> DataResponse[dict[str, str]]:
     """Get API version information."""
     version_info = {
         "api_version": "v1",
         "application_version": "0.1.0",
-        "build_date": "2024-01-01",  # Would be set during build
+        "build_date": "2025-09-01",  # Would be set during build
         "commit_hash": "unknown",  # Would be set during build
         "timestamp": datetime.utcnow().isoformat(),
     }
@@ -24,8 +24,8 @@ async def api_version() -> DataResponse[Dict[str, str]]:
     return DataResponse(data=version_info)
 
 
-@router.get("/ping", response_model=DataResponse[Dict[str, str]])
-async def ping() -> DataResponse[Dict[str, str]]:
+@router.get("/ping", response_model=DataResponse[dict[str, str]])
+async def ping() -> DataResponse[dict[str, str]]:
     """Simple ping endpoint for connectivity testing."""
     ping_data = {
         "message": "pong",
@@ -35,8 +35,8 @@ async def ping() -> DataResponse[Dict[str, str]]:
     return DataResponse(data=ping_data)
 
 
-@router.get("/echo", response_model=DataResponse[Dict[str, Any]])
-async def echo(request: Request) -> DataResponse[Dict[str, Any]]:
+@router.get("/echo", response_model=DataResponse[dict[str, Any]])
+async def echo(request: Request) -> DataResponse[dict[str, Any]]:
     """Echo request information for debugging purposes."""
     echo_data = {
         "method": request.method,
@@ -59,13 +59,13 @@ async def echo(request: Request) -> DataResponse[Dict[str, Any]]:
 
 
 @router.options("/", include_in_schema=False)
-async def options_handler() -> Dict[str, str]:
+async def options_handler() -> dict[str, str]:
     """Handle OPTIONS requests for CORS preflight."""
     return {"message": "OK"}
 
 
-@router.get("/", response_model=DataResponse[Dict[str, str]])
-async def api_root() -> DataResponse[Dict[str, str]]:
+@router.get("/", response_model=DataResponse[dict[str, str]])
+async def api_root() -> DataResponse[dict[str, str]]:
     """API root endpoint with basic information."""
     root_data = {
         "message": "MR-KG API v1",

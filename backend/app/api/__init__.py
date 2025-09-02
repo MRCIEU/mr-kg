@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import health, system, core, traits, studies, similarities
+from app.api.v1 import core, health, similarities, studies, system, traits
 
 
 def create_api_router() -> APIRouter:

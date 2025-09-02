@@ -1,38 +1,33 @@
 """Comprehensive tests for database integration layer."""
 
-import pytest
 import tempfile
-import os
 from pathlib import Path
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import Mock, patch
 
 import duckdb
+import pytest
 
 from app.core.database import (
     DatabaseConfig,
     DatabaseConnectionPool,
-    create_database_config,
     _resolve_database_paths,
+    create_database_config,
 )
 from app.core.schema_validation import (
-    SchemaValidator,
     DatabaseHealthChecker,
-    DatabaseTableInfo,
-    DatabaseSchemaStatus,
+    SchemaValidator,
+)
+from app.models.database import (
+    EFOEmbedding,
+    ModelResult,
+    PaginationParams,
+    QueryCombination,
+    TraitEmbedding,
 )
 from app.services.repositories import (
     BaseRepository,
-    TraitRepository,
     StudyRepository,
-    EFORepository,
-    SimilarityRepository,
-)
-from app.models.database import (
-    TraitEmbedding,
-    EFOEmbedding,
-    ModelResult,
-    QueryCombination,
-    PaginationParams,
+    TraitRepository,
 )
 
 
@@ -623,7 +618,7 @@ def test_database_files():
             )
         """)
         vector_conn.execute("""
-            INSERT INTO trait_embeddings VALUES 
+            INSERT INTO trait_embeddings VALUES
             (1, 'blood pressure', [0.1, 0.2, 0.3]),
             (2, 'diabetes', [0.4, 0.5, 0.6])
         """)
@@ -640,7 +635,7 @@ def test_database_files():
             )
         """)
         trait_conn.execute("""
-            INSERT INTO query_combinations VALUES 
+            INSERT INTO query_combinations VALUES
             (1, '12345', 'gpt-4', 'Test Study', 2)
         """)
         trait_conn.close()

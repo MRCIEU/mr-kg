@@ -1,30 +1,29 @@
 """High-level database services that abstract repository operations."""
 
 import logging
-from typing import List, Optional, Tuple
 
 import duckdb
 
 from app.models.database import (
-    TraitEmbedding,
     EFOEmbedding,
     ModelResult,
-    StudyDetailResponse,
-    TraitDetailResponse,
-    SimilarityAnalysisResponse,
-    TraitSearchResponse,
-    StudySearchResponse,
-    SimilaritySearchResult,
-    TraitSearchFilters,
-    StudySearchFilters,
-    SimilaritySearchFilters,
     PaginationParams,
+    SimilarityAnalysisResponse,
+    SimilaritySearchFilters,
+    SimilaritySearchResult,
+    StudyDetailResponse,
+    StudySearchFilters,
+    StudySearchResponse,
+    TraitDetailResponse,
+    TraitEmbedding,
+    TraitSearchFilters,
+    TraitSearchResponse,
 )
 from app.services.repositories import (
-    TraitRepository,
-    StudyRepository,
     EFORepository,
     SimilarityRepository,
+    StudyRepository,
+    TraitRepository,
 )
 
 logger = logging.getLogger(__name__)
@@ -131,7 +130,7 @@ class TraitService(DatabaseService):
 
     async def get_trait_details(
         self, trait_index: int
-    ) -> Optional[TraitDetailResponse]:
+    ) -> TraitDetailResponse | None:
         """Get detailed information about a trait.
 
         Args:
@@ -192,7 +191,7 @@ class TraitService(DatabaseService):
 
     async def find_similar_traits(
         self, trait_index: int, filters: SimilaritySearchFilters
-    ) -> List[SimilaritySearchResult]:
+    ) -> list[SimilaritySearchResult]:
         """Find traits similar to the given trait.
 
         Args:
@@ -252,8 +251,8 @@ class StudyService(DatabaseService):
                 count_where_conditions.append(
                     """
                 id IN (
-                    SELECT DISTINCT model_result_id 
-                    FROM model_result_traits 
+                    SELECT DISTINCT model_result_id
+                    FROM model_result_traits
                     WHERE trait_index IN ({})
                 )
                 """.format(",".join("?" * len(filters.trait_indices)))
@@ -306,7 +305,7 @@ class StudyService(DatabaseService):
 
     async def get_study_details(
         self, study_id: int
-    ) -> Optional[StudyDetailResponse]:
+    ) -> StudyDetailResponse | None:
         """Get detailed information about a study.
 
         Args:
@@ -348,7 +347,7 @@ class StudyService(DatabaseService):
             logger.error(f"Error getting study details for {study_id}: {e}")
             raise
 
-    async def get_studies_by_pmid(self, pmid: str) -> List[ModelResult]:
+    async def get_studies_by_pmid(self, pmid: str) -> list[ModelResult]:
         """Get all studies for a specific PMID.
 
         Args:
@@ -369,7 +368,7 @@ class SimilarityService(DatabaseService):
 
     async def analyze_similarity(
         self, pmid: str, model: str
-    ) -> Optional[SimilarityAnalysisResponse]:
+    ) -> SimilarityAnalysisResponse | None:
         """Analyze similarity for a PMID-model combination.
 
         Args:
@@ -402,7 +401,7 @@ class SimilarityService(DatabaseService):
 
     async def search_combinations(
         self, filters: SimilaritySearchFilters, pagination: PaginationParams
-    ) -> List:
+    ) -> list:
         """Search query combinations with filters.
 
         Args:
@@ -428,7 +427,7 @@ class EFOService(DatabaseService):
 
     async def search_efo_terms(
         self, query: str, pagination: PaginationParams
-    ) -> List[EFOEmbedding]:
+    ) -> list[EFOEmbedding]:
         """Search EFO terms by label.
 
         Args:
@@ -448,7 +447,7 @@ class EFOService(DatabaseService):
 
     async def get_trait_efo_mappings(
         self, trait_index: int, top_k: int = 5
-    ) -> List[SimilaritySearchResult]:
+    ) -> list[SimilaritySearchResult]:
         """Get EFO mappings for a trait.
 
         Args:

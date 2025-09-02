@@ -1,7 +1,5 @@
 """Application configuration settings using Pydantic Settings."""
 
-from typing import List
-
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
@@ -15,7 +13,7 @@ class Settings(BaseSettings):
     PORT: int = Field(default=8000, description="Port to bind server")
 
     # ---- CORS configuration ----
-    ALLOWED_ORIGINS: List[str] = Field(
+    ALLOWED_ORIGINS: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:3000",
             "http://localhost:5173",

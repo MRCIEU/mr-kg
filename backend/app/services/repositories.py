@@ -1,21 +1,19 @@
 """Repository pattern implementation for database access."""
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from abc import ABC
 
 import duckdb
 
 from app.models.database import (
-    TraitEmbedding,
     EFOEmbedding,
     ModelResult,
     ModelResultTrait,
     MRPubmedData,
     QueryCombination,
-    TraitSimilarity,
     SimilaritySearchResult,
-    PaginationParams,
+    TraitEmbedding,
+    TraitSimilarity,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,8 +26,8 @@ class BaseRepository(ABC):
         self.connection = connection
 
     def execute_query(
-        self, query: str, params: Optional[Tuple] = None
-    ) -> List[Tuple]:
+        self, query: str, params: tuple | None = None
+    ) -> list[tuple]:
         """Execute a query and return all results.
 
         Args:
@@ -51,8 +49,8 @@ class BaseRepository(ABC):
             raise
 
     def execute_one(
-        self, query: str, params: Optional[Tuple] = None
-    ) -> Optional[Tuple]:
+        self, query: str, params: tuple | None = None
+    ) -> tuple | None:
         """Execute a query and return one result.
 
         Args:
@@ -74,7 +72,7 @@ class BaseRepository(ABC):
             raise
 
     def get_count(
-        self, table: str, where_clause: str = "", params: Optional[Tuple] = None
+        self, table: str, where_clause: str = "", params: tuple | None = None
     ) -> int:
         """Get count of rows in a table with optional where clause.
 
@@ -97,7 +95,7 @@ class BaseRepository(ABC):
 class TraitRepository(BaseRepository):
     """Repository for trait-related database operations."""
 
-    def get_trait_by_index(self, trait_index: int) -> Optional[TraitEmbedding]:
+    def get_trait_by_index(self, trait_index: int) -> TraitEmbedding | None:
         """Get trait by its index.
 
         Args:
@@ -124,7 +122,7 @@ class TraitRepository(BaseRepository):
 
     def search_traits(
         self, query: str, limit: int = 50, offset: int = 0
-    ) -> List[TraitEmbedding]:
+    ) -> list[TraitEmbedding]:
         """Search traits by label text.
 
         Args:
@@ -156,8 +154,8 @@ class TraitRepository(BaseRepository):
         ]
 
     def get_traits_by_indices(
-        self, trait_indices: List[int]
-    ) -> List[TraitEmbedding]:
+        self, trait_indices: list[int]
+    ) -> list[TraitEmbedding]:
         """Get multiple traits by their indices.
 
         Args:
@@ -190,7 +188,7 @@ class TraitRepository(BaseRepository):
 
     def find_similar_traits(
         self, trait_index: int, top_k: int = 10, threshold: float = 0.5
-    ) -> List[SimilaritySearchResult]:
+    ) -> list[SimilaritySearchResult]:
         """Find similar traits using vector similarity.
 
         Args:
@@ -202,7 +200,7 @@ class TraitRepository(BaseRepository):
             List of SimilaritySearchResult instances
         """
         query = """
-        SELECT 
+        SELECT
             query_id,
             query_label,
             result_id,
@@ -244,7 +242,7 @@ class TraitRepository(BaseRepository):
 class StudyRepository(BaseRepository):
     """Repository for study-related database operations."""
 
-    def get_study_by_id(self, study_id: int) -> Optional[ModelResult]:
+    def get_study_by_id(self, study_id: int) -> ModelResult | None:
         """Get study by its ID.
 
         Args:
@@ -271,7 +269,7 @@ class StudyRepository(BaseRepository):
             results=result[4],
         )
 
-    def get_studies_by_pmid(self, pmid: str) -> List[ModelResult]:
+    def get_studies_by_pmid(self, pmid: str) -> list[ModelResult]:
         """Get all studies for a specific PMID.
 
         Args:
@@ -303,10 +301,10 @@ class StudyRepository(BaseRepository):
     def search_studies(
         self,
         query: str = "",
-        models: Optional[List[str]] = None,
+        models: list[str] | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[ModelResult]:
+    ) -> list[ModelResult]:
         """Search studies with optional filters.
 
         Args:
@@ -357,7 +355,7 @@ class StudyRepository(BaseRepository):
             for row in results
         ]
 
-    def get_study_traits(self, study_id: int) -> List[ModelResultTrait]:
+    def get_study_traits(self, study_id: int) -> list[ModelResultTrait]:
         """Get traits associated with a study.
 
         Args:
@@ -386,7 +384,7 @@ class StudyRepository(BaseRepository):
             for row in results
         ]
 
-    def get_pubmed_data(self, pmid: str) -> Optional[MRPubmedData]:
+    def get_pubmed_data(self, pmid: str) -> MRPubmedData | None:
         """Get PubMed metadata for a paper.
 
         Args:
@@ -419,7 +417,7 @@ class StudyRepository(BaseRepository):
 class EFORepository(BaseRepository):
     """Repository for EFO (Experimental Factor Ontology) operations."""
 
-    def get_efo_by_id(self, efo_id: str) -> Optional[EFOEmbedding]:
+    def get_efo_by_id(self, efo_id: str) -> EFOEmbedding | None:
         """Get EFO term by its ID.
 
         Args:
@@ -446,7 +444,7 @@ class EFORepository(BaseRepository):
 
     def search_efo_terms(
         self, query: str, limit: int = 50, offset: int = 0
-    ) -> List[EFOEmbedding]:
+    ) -> list[EFOEmbedding]:
         """Search EFO terms by label text.
 
         Args:
@@ -477,7 +475,7 @@ class EFORepository(BaseRepository):
 
     def find_trait_efo_mappings(
         self, trait_index: int, top_k: int = 5, threshold: float = 0.3
-    ) -> List[SimilaritySearchResult]:
+    ) -> list[SimilaritySearchResult]:
         """Find EFO mappings for a trait.
 
         Args:
@@ -489,7 +487,7 @@ class EFORepository(BaseRepository):
             List of SimilaritySearchResult instances
         """
         query = """
-        SELECT 
+        SELECT
             trait_index,
             trait_label,
             efo_id,
@@ -520,7 +518,7 @@ class SimilarityRepository(BaseRepository):
 
     def get_combination_by_id(
         self, combination_id: int
-    ) -> Optional[QueryCombination]:
+    ) -> QueryCombination | None:
         """Get query combination by ID.
 
         Args:
@@ -549,7 +547,7 @@ class SimilarityRepository(BaseRepository):
 
     def find_combination(
         self, pmid: str, model: str
-    ) -> Optional[QueryCombination]:
+    ) -> QueryCombination | None:
         """Find query combination by PMID and model.
 
         Args:
@@ -578,8 +576,12 @@ class SimilarityRepository(BaseRepository):
         )
 
     def get_similarities(
-        self, combination_id: int, top_k: int = 10, min_similarity: float = 0.0, similarity_type: str = "trait_profile"
-    ) -> List[TraitSimilarity]:
+        self,
+        combination_id: int,
+        top_k: int = 10,
+        min_similarity: float = 0.0,
+        similarity_type: str = "trait_profile",
+    ) -> list[TraitSimilarity]:
         """Get similarities for a query combination.
 
         Args:
@@ -592,10 +594,14 @@ class SimilarityRepository(BaseRepository):
             List of TraitSimilarity instances
         """
         # Choose the similarity column based on type
-        similarity_column = "trait_profile_similarity" if similarity_type == "trait_profile" else "trait_jaccard_similarity"
-        
+        similarity_column = (
+            "trait_profile_similarity"
+            if similarity_type == "trait_profile"
+            else "trait_jaccard_similarity"
+        )
+
         query = f"""
-        SELECT 
+        SELECT
             id, query_combination_id, similar_pmid, similar_model, similar_title,
             trait_profile_similarity, trait_jaccard_similarity,
             query_trait_count, similar_trait_count
@@ -626,11 +632,11 @@ class SimilarityRepository(BaseRepository):
 
     def search_combinations(
         self,
-        model: Optional[str] = None,
-        min_trait_count: Optional[int] = None,
+        model: str | None = None,
+        min_trait_count: int | None = None,
         limit: int = 50,
         offset: int = 0,
-    ) -> List[QueryCombination]:
+    ) -> list[QueryCombination]:
         """Search query combinations with filters.
 
         Args:

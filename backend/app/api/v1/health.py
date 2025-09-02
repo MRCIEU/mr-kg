@@ -2,25 +2,25 @@
 
 import time
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from app.core.config import settings
 from app.core.dependencies import (
-    get_database_service,
-    perform_database_health_check,
     check_database_connectivity,
+    get_database_service,
     get_pool_status,
+    perform_database_health_check,
 )
+from app.models.database import HealthCheckResponse
 from app.models.responses import (
     DataResponse,
     HealthStatus,
-    SystemInfo,
     MetricsInfo,
+    SystemInfo,
 )
-from app.models.database import HealthCheckResponse
 from app.services.database_service import DatabaseService
-from app.core.config import settings
 
 router = APIRouter()
 
@@ -41,7 +41,7 @@ async def basic_health_check(request: Request) -> DataResponse[HealthStatus]:
     This endpoint provides a simple health status without heavy operations.
     """
     uptime = time.time() - _app_start_time
-    
+
     health_data = HealthStatus(
         status="healthy",
         version="0.1.0",
@@ -68,8 +68,8 @@ async def detailed_health_check() -> HealthCheckResponse:
         )
 
 
-@router.get("/database", response_model=DataResponse[Dict[str, Any]])
-async def database_health_check() -> DataResponse[Dict[str, Any]]:
+@router.get("/database", response_model=DataResponse[dict[str, Any]])
+async def database_health_check() -> DataResponse[dict[str, Any]]:
     """Quick database connectivity check.
 
     Returns basic connectivity status for both vector store and trait
@@ -90,8 +90,8 @@ async def database_health_check() -> DataResponse[Dict[str, Any]]:
         return DataResponse(data=error_data)
 
 
-@router.get("/pool", response_model=DataResponse[Dict[str, Any]])
-async def connection_pool_status() -> DataResponse[Dict[str, Any]]:
+@router.get("/pool", response_model=DataResponse[dict[str, Any]])
+async def connection_pool_status() -> DataResponse[dict[str, Any]]:
     """Get database connection pool status and metrics."""
     try:
         pool_data = await get_pool_status()
@@ -150,10 +150,10 @@ async def application_metrics() -> DataResponse[MetricsInfo]:
     return DataResponse(data=metrics_data)
 
 
-@router.get("/ready", response_model=DataResponse[Dict[str, Any]])
+@router.get("/ready", response_model=DataResponse[dict[str, Any]])
 async def readiness_check(
     db_service: DatabaseService = Depends(get_database_service),
-) -> DataResponse[Dict[str, Any]]:
+) -> DataResponse[dict[str, Any]]:
     """Kubernetes-style readiness probe.
 
     Checks if the application is ready to serve traffic by verifying
@@ -209,8 +209,8 @@ async def readiness_check(
     return DataResponse(data=readiness_data)
 
 
-@router.get("/live", response_model=DataResponse[Dict[str, str]])
-async def liveness_check() -> DataResponse[Dict[str, str]]:
+@router.get("/live", response_model=DataResponse[dict[str, str]])
+async def liveness_check() -> DataResponse[dict[str, str]]:
     """Kubernetes-style liveness probe.
 
     Simple check to verify the application process is running and responsive.

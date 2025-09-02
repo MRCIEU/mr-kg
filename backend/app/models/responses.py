@@ -1,7 +1,7 @@
 """Standardized response models for API endpoints."""
 
-from typing import Any, Dict, Generic, List, Optional, TypeVar
 from datetime import datetime
+from typing import Any, Generic, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -16,12 +16,9 @@ class BaseResponse(BaseModel):
 
     success: bool = Field(default=True, description="Request success status")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Response timestamp"
+        default_factory=datetime.utcnow, description="Response timestamp"
     )
-    request_id: Optional[str] = Field(
-        None, description="Request correlation ID"
-    )
+    request_id: str | None = Field(None, description="Request correlation ID")
 
 
 class ErrorDetail(BaseModel):
@@ -29,8 +26,8 @@ class ErrorDetail(BaseModel):
 
     code: str = Field(..., description="Error code identifier")
     message: str = Field(..., description="Human-readable error message")
-    field: Optional[str] = Field(None, description="Field that caused error")
-    context: Optional[Dict[str, Any]] = Field(
+    field: str | None = Field(None, description="Field that caused error")
+    context: dict[str, Any] | None = Field(
         None, description="Additional error context"
     )
 
@@ -40,7 +37,7 @@ class ErrorResponse(BaseResponse):
 
     success: bool = Field(default=False, description="Request success status")
     error: ErrorDetail = Field(..., description="Error details")
-    errors: Optional[List[ErrorDetail]] = Field(
+    errors: list[ErrorDetail] | None = Field(
         None, description="Multiple validation errors"
     )
 
@@ -54,13 +51,11 @@ class DataResponse(BaseResponse, Generic[T]):
 class ListResponse(BaseResponse, Generic[T]):
     """Response model for list data with pagination."""
 
-    data: List[T] = Field(default_factory=list, description="List of items")
+    data: list[T] = Field(default_factory=list, description="List of items")
     pagination: Optional["PaginationInfo"] = Field(
         None, description="Pagination information"
     )
-    filters: Optional[Dict[str, Any]] = Field(
-        None, description="Applied filters"
-    )
+    filters: dict[str, Any] | None = Field(None, description="Applied filters")
 
 
 class PaginationInfo(BaseModel):
@@ -109,7 +104,7 @@ class SystemInfo(BaseModel):
     environment: str = Field(..., description="Environment name")
     api_version: str = Field(..., description="API version")
     database_profile: str = Field(..., description="Database profile")
-    features: List[str] = Field(
+    features: list[str] = Field(
         default_factory=list, description="Available features"
     )
 
@@ -133,10 +128,10 @@ class MetricsInfo(BaseModel):
 class SearchMeta(BaseModel):
     """Metadata for search operations."""
 
-    query: Optional[str] = Field(None, description="Search query")
+    query: str | None = Field(None, description="Search query")
     total_results: int = Field(..., description="Total matching results")
     search_time: float = Field(..., description="Search time in seconds")
-    filters_applied: List[str] = Field(
+    filters_applied: list[str] = Field(
         default_factory=list, description="Applied filter types"
     )
 
@@ -155,10 +150,10 @@ class ValidationResult(BaseModel):
     """Result of data validation operations."""
 
     valid: bool = Field(..., description="Validation success status")
-    errors: List[ErrorDetail] = Field(
+    errors: list[ErrorDetail] = Field(
         default_factory=list, description="Validation errors"
     )
-    warnings: List[str] = Field(
+    warnings: list[str] = Field(
         default_factory=list, description="Validation warnings"
     )
 
@@ -172,15 +167,15 @@ class TaskInfo(BaseModel):
     task_id: str = Field(..., description="Unique task identifier")
     status: str = Field(..., description="Task status")
     created_at: datetime = Field(..., description="Task creation time")
-    started_at: Optional[datetime] = Field(None, description="Task start time")
-    completed_at: Optional[datetime] = Field(
+    started_at: datetime | None = Field(None, description="Task start time")
+    completed_at: datetime | None = Field(
         None, description="Task completion time"
     )
-    progress: Optional[float] = Field(
+    progress: float | None = Field(
         None, ge=0, le=1, description="Task progress (0.0-1.0)"
     )
-    result: Optional[Any] = Field(None, description="Task result data")
-    error: Optional[str] = Field(None, description="Task error message")
+    result: Any | None = Field(None, description="Task result data")
+    error: str | None = Field(None, description="Task error message")
 
 
 # ==== API Documentation Models ====
@@ -192,9 +187,7 @@ class APIEndpoint(BaseModel):
     path: str = Field(..., description="Endpoint path")
     method: str = Field(..., description="HTTP method")
     summary: str = Field(..., description="Endpoint summary")
-    tags: List[str] = Field(
-        default_factory=list, description="Endpoint tags"
-    )
+    tags: list[str] = Field(default_factory=list, description="Endpoint tags")
     requires_auth: bool = Field(
         default=False, description="Authentication required"
     )
@@ -203,20 +196,21 @@ class APIEndpoint(BaseModel):
 class APICapabilities(BaseModel):
     """API capabilities and feature information."""
 
-    endpoints: List[APIEndpoint] = Field(
+    endpoints: list[APIEndpoint] = Field(
         default_factory=list, description="Available endpoints"
     )
-    features: List[str] = Field(
+    features: list[str] = Field(
         default_factory=list, description="Supported features"
     )
-    rate_limits: Dict[str, int] = Field(
+    rate_limits: dict[str, int] = Field(
         default_factory=dict, description="Rate limit information"
     )
     max_request_size: int = Field(..., description="Maximum request size")
-    supported_formats: List[str] = Field(
+    supported_formats: list[str] = Field(
         default_factory=list, description="Supported response formats"
     )
 
 
 # Update forward references
 ListResponse.model_rebuild()
+

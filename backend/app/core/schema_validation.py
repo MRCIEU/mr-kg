@@ -1,26 +1,25 @@
 """Database schema integration and validation utilities."""
 
 import logging
+
+# Import schema definitions from common_funcs
+import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 import duckdb
 from pydantic import BaseModel
 
-# Import schema definitions from common_funcs
-import sys
-
 sys.path.append(str(Path(__file__).parent.parent.parent.parent / "src"))
 
-from common_funcs.database_utils.utils import get_database_paths
 from common_funcs.schema.database_schema import (
-    DATABASE_SCHEMA,
     DATABASE_INDEXES,
+    DATABASE_SCHEMA,
     DATABASE_VIEWS,
 )
 from common_funcs.schema.trait_profile_schema import (
-    TRAIT_PROFILE_SCHEMA,
     TRAIT_PROFILE_INDEXES,
+    TRAIT_PROFILE_SCHEMA,
     TRAIT_PROFILE_VIEWS,
 )
 
@@ -32,9 +31,9 @@ class DatabaseTableInfo(BaseModel):
 
     name: str
     exists: bool
-    row_count: Optional[int] = None
-    columns: List[str] = []
-    error: Optional[str] = None
+    row_count: int | None = None
+    columns: list[str] = []
+    error: str | None = None
 
 
 class DatabaseSchemaStatus(BaseModel):
@@ -42,10 +41,10 @@ class DatabaseSchemaStatus(BaseModel):
 
     database_path: str
     accessible: bool
-    tables: List[DatabaseTableInfo] = []
-    views: List[str] = []
-    indexes: List[str] = []
-    error: Optional[str] = None
+    tables: list[DatabaseTableInfo] = []
+    views: list[str] = []
+    indexes: list[str] = []
+    error: str | None = None
 
 
 class SchemaValidator:
@@ -236,7 +235,7 @@ class DatabaseHealthChecker:
         self.vector_store_conn = vector_store_conn
         self.trait_profile_conn = trait_profile_conn
 
-    async def perform_health_check(self) -> Dict[str, Any]:
+    async def perform_health_check(self) -> dict[str, Any]:
         """Perform comprehensive health check on both databases.
 
         Returns:
@@ -289,7 +288,7 @@ class DatabaseHealthChecker:
             health_status["error"] = str(e)
             return health_status
 
-    async def _run_performance_tests(self) -> Dict[str, Any]:
+    async def _run_performance_tests(self) -> dict[str, Any]:
         """Run basic performance tests on databases.
 
         Returns:

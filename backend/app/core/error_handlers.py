@@ -1,35 +1,30 @@
 """Global exception handlers for the FastAPI application."""
 
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from fastapi import HTTPException, Request, status
-from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.exceptions import (
     MRKGException,
-    mrkg_exception_to_http_exception,
     ValidationError,
-    DatabaseError,
-    NotFoundError,
-    BusinessLogicError,
-    ExternalServiceError,
-    RateLimitError,
-    AuthenticationError,
-    AuthorizationError,
+    mrkg_exception_to_http_exception,
 )
-from app.models.responses import ErrorResponse, ErrorDetail
+from app.models.responses import ErrorDetail, ErrorResponse
 
 logger = logging.getLogger(__name__)
 
 
-async def mrkg_exception_handler(request: Request, exc: MRKGException) -> JSONResponse:
+async def mrkg_exception_handler(
+    request: Request, exc: MRKGException
+) -> JSONResponse:
     """Handle custom MR-KG exceptions."""
     # Get request ID if available
     request_id = getattr(request.state, "request_id", None)
-    
+
     # Log the exception
     logger.error(
         f"MR-KG exception: {exc.code}",
@@ -45,7 +40,7 @@ async def mrkg_exception_handler(request: Request, exc: MRKGException) -> JSONRe
 
     # Convert to HTTP exception
     http_exc = mrkg_exception_to_http_exception(exc)
-    
+
     # Create error response
     error_detail = ErrorDetail(
         code=exc.code,
@@ -69,11 +64,13 @@ async def mrkg_exception_handler(request: Request, exc: MRKGException) -> JSONRe
     )
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(
+    request: Request, exc: HTTPException
+) -> JSONResponse:
     """Handle FastAPI HTTP exceptions."""
     # Get request ID if available
     request_id = getattr(request.state, "request_id", None)
-    
+
     # Log the exception
     logger.warning(
         f"HTTP exception: {exc.status_code}",
@@ -123,7 +120,7 @@ async def validation_exception_handler(
     """Handle Pydantic validation errors."""
     # Get request ID if available
     request_id = getattr(request.state, "request_id", None)
-    
+
     # Log validation errors
     logger.warning(
         "Request validation error",
@@ -148,9 +145,13 @@ async def validation_exception_handler(
         errors.append(error_detail)
 
     # Use first error as primary error
-    primary_error = errors[0] if errors else ErrorDetail(
-        code="VALIDATION_ERROR",
-        message="Validation failed",
+    primary_error = (
+        errors[0]
+        if errors
+        else ErrorDetail(
+            code="VALIDATION_ERROR",
+            message="Validation failed",
+        )
     )
 
     error_response = ErrorResponse(
@@ -171,7 +172,7 @@ async def starlette_http_exception_handler(
     """Handle Starlette HTTP exceptions."""
     # Get request ID if available
     request_id = getattr(request.state, "request_id", None)
-    
+
     # Log the exception
     logger.warning(
         f"Starlette HTTP exception: {exc.status_code}",
@@ -200,11 +201,13 @@ async def starlette_http_exception_handler(
     )
 
 
-async def general_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+async def general_exception_handler(
+    request: Request, exc: Exception
+) -> JSONResponse:
     """Handle unexpected exceptions."""
     # Get request ID if available
     request_id = getattr(request.state, "request_id", None)
-    
+
     # Log the exception with full traceback
     logger.error(
         "Unhandled exception",
@@ -245,17 +248,21 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
 
 def register_exception_handlers(app) -> None:
     """Register all exception handlers with the FastAPI app."""
-    
+
     # Custom MR-KG exceptions
     app.add_exception_handler(MRKGException, mrkg_exception_handler)
-    
+
     # FastAPI exceptions
     app.add_exception_handler(HTTPException, http_exception_handler)
-    app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    
+    app.add_exception_handler(
+        RequestValidationError, validation_exception_handler
+    )
+
     # Starlette exceptions
-    app.add_exception_handler(StarletteHTTPException, starlette_http_exception_handler)
-    
+    app.add_exception_handler(
+        StarletteHTTPException, starlette_http_exception_handler
+    )
+
     # Catch-all for unexpected exceptions
     app.add_exception_handler(Exception, general_exception_handler)
 
@@ -267,7 +274,7 @@ def create_error_response(
     message: str,
     code: str = "ERROR",
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-    context: Dict[str, Any] = None,
+    context: dict[str, Any] = None,
     request_id: str = None,
 ) -> JSONResponse:
     """Create a standardized error response."""

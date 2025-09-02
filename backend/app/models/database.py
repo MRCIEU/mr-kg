@@ -1,10 +1,9 @@
 """Pydantic models for API responses based on database schemas."""
 
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 # ==== Base Models ====
 
@@ -16,7 +15,7 @@ class TraitEmbedding(BaseModel):
         ..., description="Canonical trait index from unique_traits.csv"
     )
     trait_label: str = Field(..., description="Human-readable trait name")
-    vector: Optional[List[float]] = Field(
+    vector: list[float] | None = Field(
         None, description="200-dimensional embedding vector"
     )
 
@@ -26,7 +25,7 @@ class EFOEmbedding(BaseModel):
 
     id: str = Field(..., description="EFO ontology identifier")
     label: str = Field(..., description="Human-readable EFO term label")
-    vector: Optional[List[float]] = Field(
+    vector: list[float] | None = Field(
         None, description="200-dimensional embedding vector"
     )
 
@@ -37,10 +36,10 @@ class ModelResult(BaseModel):
     id: int = Field(..., description="Unique result identifier")
     model: str = Field(..., description="Name of the LLM model")
     pmid: str = Field(..., description="PubMed ID of the research paper")
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         ..., description="Structured metadata including exposures/outcomes"
     )
-    results: Dict[str, Any] = Field(
+    results: dict[str, Any] = Field(
         ..., description="Complete raw model output"
     )
 
@@ -52,7 +51,7 @@ class ModelResultTrait(BaseModel):
     model_result_id: int = Field(..., description="Foreign key to model result")
     trait_index: int = Field(..., description="Foreign key to trait embedding")
     trait_label: str = Field(..., description="Denormalized trait label")
-    trait_id_in_result: Optional[str] = Field(
+    trait_id_in_result: str | None = Field(
         None, description="Original trait ID from model output"
     )
 
@@ -65,8 +64,8 @@ class MRPubmedData(BaseModel):
     abstract: str = Field(..., description="Paper abstract")
     pub_date: str = Field(..., description="Publication date")
     journal: str = Field(..., description="Journal name")
-    journal_issn: Optional[str] = Field(None, description="Journal ISSN")
-    author_affil: Optional[str] = Field(None, description="Author affiliation")
+    journal_issn: str | None = Field(None, description="Journal ISSN")
+    author_affil: str | None = Field(None, description="Author affiliation")
 
 
 # ==== Trait Profile Models ====
@@ -124,7 +123,7 @@ class SimilaritySearchResult(BaseModel):
 class TraitSearchResponse(BaseModel):
     """Response for trait search operations."""
 
-    traits: List[TraitEmbedding] = Field(
+    traits: list[TraitEmbedding] = Field(
         ..., description="List of matching traits"
     )
     total_count: int = Field(..., description="Total number of matching traits")
@@ -135,7 +134,7 @@ class TraitSearchResponse(BaseModel):
 class StudySearchResponse(BaseModel):
     """Response for study search operations."""
 
-    studies: List[ModelResult] = Field(
+    studies: list[ModelResult] = Field(
         ..., description="List of matching studies"
     )
     total_count: int = Field(
@@ -149,11 +148,11 @@ class StudyDetailResponse(BaseModel):
     """Detailed information about a specific study."""
 
     study: ModelResult = Field(..., description="Study details")
-    pubmed_data: Optional[MRPubmedData] = Field(
+    pubmed_data: MRPubmedData | None = Field(
         None, description="PubMed metadata"
     )
-    traits: List[ModelResultTrait] = Field(..., description="Associated traits")
-    similar_studies: List[TraitSimilarity] = Field(
+    traits: list[ModelResultTrait] = Field(..., description="Associated traits")
+    similar_studies: list[TraitSimilarity] = Field(
         ..., description="Similar studies"
     )
 
@@ -162,13 +161,13 @@ class TraitDetailResponse(BaseModel):
     """Detailed information about a specific trait."""
 
     trait: TraitEmbedding = Field(..., description="Trait details")
-    studies: List[ModelResult] = Field(
+    studies: list[ModelResult] = Field(
         ..., description="Studies mentioning this trait"
     )
-    similar_traits: List[SimilaritySearchResult] = Field(
+    similar_traits: list[SimilaritySearchResult] = Field(
         ..., description="Similar traits"
     )
-    efo_mappings: List[SimilaritySearchResult] = Field(
+    efo_mappings: list[SimilaritySearchResult] = Field(
         ..., description="EFO term mappings"
     )
 
@@ -179,7 +178,7 @@ class SimilarityAnalysisResponse(BaseModel):
     query_combination: QueryCombination = Field(
         ..., description="Query combination details"
     )
-    similarities: List[TraitSimilarity] = Field(
+    similarities: list[TraitSimilarity] = Field(
         ..., description="Top similarity results"
     )
     total_count: int = Field(
@@ -201,7 +200,7 @@ class DatabaseStatus(BaseModel):
     last_checked: datetime = Field(
         ..., description="Timestamp of last health check"
     )
-    error: Optional[str] = Field(None, description="Error message if unhealthy")
+    error: str | None = Field(None, description="Error message if unhealthy")
 
 
 class HealthCheckResponse(BaseModel):
@@ -215,7 +214,7 @@ class HealthCheckResponse(BaseModel):
     trait_profile: DatabaseStatus = Field(
         ..., description="Trait profile database status"
     )
-    performance_metrics: Dict[str, float] = Field(
+    performance_metrics: dict[str, float] = Field(
         ..., description="Performance metrics"
     )
 
@@ -226,14 +225,12 @@ class HealthCheckResponse(BaseModel):
 class TraitSearchFilters(BaseModel):
     """Filters for trait search operations."""
 
-    query: Optional[str] = Field(None, description="Text search query")
-    models: Optional[List[str]] = Field(
-        None, description="Filter by model names"
-    )
-    min_study_count: Optional[int] = Field(
+    query: str | None = Field(None, description="Text search query")
+    models: list[str] | None = Field(None, description="Filter by model names")
+    min_study_count: int | None = Field(
         None, description="Minimum number of studies"
     )
-    similarity_threshold: Optional[float] = Field(
+    similarity_threshold: float | None = Field(
         None, description="Minimum similarity threshold"
     )
 
@@ -241,20 +238,16 @@ class TraitSearchFilters(BaseModel):
 class StudySearchFilters(BaseModel):
     """Filters for study search operations."""
 
-    query: Optional[str] = Field(None, description="Text search query")
-    models: Optional[List[str]] = Field(
-        None, description="Filter by model names"
-    )
-    journals: Optional[List[str]] = Field(
-        None, description="Filter by journals"
-    )
-    date_from: Optional[str] = Field(
+    query: str | None = Field(None, description="Text search query")
+    models: list[str] | None = Field(None, description="Filter by model names")
+    journals: list[str] | None = Field(None, description="Filter by journals")
+    date_from: str | None = Field(
         None, description="Filter by publication date (from)"
     )
-    date_to: Optional[str] = Field(
+    date_to: str | None = Field(
         None, description="Filter by publication date (to)"
     )
-    trait_indices: Optional[List[int]] = Field(
+    trait_indices: list[int] | None = Field(
         None, description="Filter by trait indices"
     )
 
@@ -262,14 +255,12 @@ class StudySearchFilters(BaseModel):
 class SimilaritySearchFilters(BaseModel):
     """Filters for similarity search operations."""
 
-    model: Optional[str] = Field(None, description="Filter by model name")
-    min_similarity: Optional[float] = Field(
+    model: str | None = Field(None, description="Filter by model name")
+    min_similarity: float | None = Field(
         0.5, description="Minimum similarity threshold"
     )
-    max_results: Optional[int] = Field(
-        10, description="Maximum number of results"
-    )
-    similarity_type: Optional[str] = Field(
+    max_results: int | None = Field(10, description="Maximum number of results")
+    similarity_type: str | None = Field(
         "trait_profile",
         description="Type of similarity (trait_profile or jaccard)",
     )
@@ -281,7 +272,7 @@ class SimilaritySearchFilters(BaseModel):
 class VectorSimilarityRequest(BaseModel):
     """Request for vector similarity search."""
 
-    query_vector: List[float] = Field(
+    query_vector: list[float] = Field(
         ..., description="Query vector for similarity search"
     )
     top_k: int = Field(
@@ -295,7 +286,7 @@ class VectorSimilarityRequest(BaseModel):
 class TraitToEFORequest(BaseModel):
     """Request for trait to EFO mapping."""
 
-    trait_indices: List[int] = Field(
+    trait_indices: list[int] = Field(
         ..., description="List of trait indices to map"
     )
     top_k: int = Field(
@@ -337,7 +328,7 @@ class PaginatedResponse(BaseModel):
 
     @classmethod
     def create(
-        cls, items: List[Any], total_count: int, pagination: PaginationParams
+        cls, items: list[Any], total_count: int, pagination: PaginationParams
     ) -> "PaginatedResponse":
         """Create paginated response from items and pagination params."""
         total_pages = (

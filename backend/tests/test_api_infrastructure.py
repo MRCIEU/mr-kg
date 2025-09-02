@@ -1,18 +1,17 @@
 """Tests for API core infrastructure including middleware and error handling."""
 
-import json
+from unittest.mock import patch
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import patch, AsyncMock
 
-from app.main import create_app
 from app.core.exceptions import (
-    ValidationError,
     DatabaseError,
     NotFoundError,
-    BusinessLogicError,
     RateLimitError,
+    ValidationError,
 )
+from app.main import create_app
 
 
 @pytest.fixture
@@ -70,7 +69,7 @@ class TestCoreEndpoints:
         """Test echo endpoint."""
         response = client.get(
             "/api/v1/core/echo?test=value",
-            headers={"X-Test-Header": "test-value"}
+            headers={"X-Test-Header": "test-value"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -134,9 +133,13 @@ class TestHealthEndpoints:
 
     def test_readiness_check(self, client):
         """Test readiness check."""
-        with patch("app.core.dependencies.check_database_connectivity") as mock_conn:
+        with patch(
+            "app.core.dependencies.check_database_connectivity"
+        ) as mock_conn:
             mock_conn.return_value = {"status": "healthy"}
-            with patch("app.services.database_service.DatabaseService.get_trait_count") as mock_count:
+            with patch(
+                "app.services.database_service.DatabaseService.get_trait_count"
+            ) as mock_count:
                 mock_count.return_value = 100
                 response = client.get("/api/v1/health/ready")
                 # May return 503 if database not available in test
@@ -217,7 +220,7 @@ class TestMiddleware:
         """Test security headers are added."""
         response = client.get("/api/v1/core/ping")
         assert response.status_code == 200
-        
+
         # Check for security headers
         headers = response.headers
         assert "X-Content-Type-Options" in headers
@@ -259,7 +262,7 @@ class TestErrorHandling:
     def test_custom_exception_handling(self, app):
         """Test custom exception handling."""
         from app.core.error_handlers import mrkg_exception_to_http_exception
-        
+
         # Test ValidationError
         exc = ValidationError("Test validation error", field="test_field")
         http_exc = mrkg_exception_to_http_exception(exc)
@@ -308,7 +311,7 @@ class TestResponseFormats:
         response = client.get("/api/v1/core/ping")
         assert response.status_code == 200
         data = response.json()
-        
+
         # Check standard response format
         assert "success" in data
         assert "timestamp" in data
@@ -320,7 +323,7 @@ class TestResponseFormats:
         response = client.get("/nonexistent")
         assert response.status_code == 404
         data = response.json()
-        
+
         # Check error response format
         assert "success" in data
         assert "error" in data
@@ -340,7 +343,7 @@ class TestAuthentication:
             "/api/v1/core/version",
             "/api/v1/system/info",
         ]
-        
+
         for endpoint in endpoints:
             response = client.get(endpoint)
             assert response.status_code == 200
@@ -362,3 +365,4 @@ class TestDocumentation:
         """Test documentation endpoint."""
         response = client.get("/docs")
         assert response.status_code == 200
+

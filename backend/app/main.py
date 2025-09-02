@@ -6,17 +6,17 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api import create_api_router
 from app.core.config import settings
-from app.core.database import get_database_pool, close_database_pool
+from app.core.database import close_database_pool, get_database_pool
 from app.core.dependencies import check_database_connectivity
+from app.core.error_handlers import register_exception_handlers
 from app.core.middleware import (
+    MetricsMiddleware,
+    RateLimitingMiddleware,
     RequestLoggingMiddleware,
     SecurityHeadersMiddleware,
-    RateLimitingMiddleware,
-    MetricsMiddleware,
 )
-from app.core.error_handlers import register_exception_handlers
-from app.api import create_api_router
 
 # Configure logging
 logging.basicConfig(
@@ -81,10 +81,10 @@ def create_app() -> FastAPI:
 
     # ---- Add middleware stack ----
     # Note: Middleware is processed in reverse order of addition
-    
+
     # Metrics collection (innermost)
     app.add_middleware(MetricsMiddleware)
-    
+
     # Rate limiting
     app.add_middleware(
         RateLimitingMiddleware,
@@ -92,7 +92,7 @@ def create_app() -> FastAPI:
         requests_per_hour=1000,
         enabled=not settings.DEBUG,  # Disable in debug mode
     )
-    
+
     # Security headers
     app.add_middleware(
         SecurityHeadersMiddleware,
@@ -103,7 +103,7 @@ def create_app() -> FastAPI:
             "X-Service": "mr-kg-api",
         },
     )
-    
+
     # Request logging
     app.add_middleware(
         RequestLoggingMiddleware,
@@ -111,7 +111,7 @@ def create_app() -> FastAPI:
         include_response_body=False,
         exclude_paths=["/health", "/docs", "/openapi.json", "/favicon.ico"],
     )
-    
+
     # CORS (outermost)
     app.add_middleware(
         CORSMiddleware,

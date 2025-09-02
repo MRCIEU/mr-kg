@@ -1,6 +1,7 @@
 """Custom exception classes and error handling utilities."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from fastapi import HTTPException, status
 
 
@@ -11,7 +12,7 @@ class MRKGException(Exception):
         self,
         message: str,
         code: str = "MRKG_ERROR",
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ):
         self.message = message
         self.code = code
@@ -25,8 +26,8 @@ class ValidationError(MRKGException):
     def __init__(
         self,
         message: str,
-        field: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        field: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.field = field
         super().__init__(
@@ -42,8 +43,8 @@ class DatabaseError(MRKGException):
     def __init__(
         self,
         message: str,
-        operation: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        operation: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.operation = operation
         super().__init__(
@@ -59,8 +60,8 @@ class NotFoundError(MRKGException):
     def __init__(
         self,
         resource: str,
-        identifier: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        identifier: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.resource = resource
         self.identifier = identifier
@@ -80,8 +81,8 @@ class BusinessLogicError(MRKGException):
     def __init__(
         self,
         message: str,
-        rule: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        rule: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.rule = rule
         super().__init__(
@@ -98,8 +99,8 @@ class ExternalServiceError(MRKGException):
         self,
         service: str,
         message: str,
-        status_code: Optional[int] = None,
-        context: Optional[Dict[str, Any]] = None,
+        status_code: int | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.service = service
         self.status_code = status_code
@@ -117,8 +118,8 @@ class RateLimitError(MRKGException):
         self,
         limit: int,
         window: str,
-        retry_after: Optional[int] = None,
-        context: Optional[Dict[str, Any]] = None,
+        retry_after: int | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.limit = limit
         self.window = window
@@ -137,7 +138,7 @@ class AuthenticationError(MRKGException):
     def __init__(
         self,
         message: str = "Authentication required",
-        context: Optional[Dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ):
         super().__init__(
             message=message,
@@ -152,8 +153,8 @@ class AuthorizationError(MRKGException):
     def __init__(
         self,
         message: str = "Insufficient permissions",
-        required_permission: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        required_permission: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         self.required_permission = required_permission
         super().__init__(
@@ -180,7 +181,9 @@ def mrkg_exception_to_http_exception(exc: MRKGException) -> HTTPException:
         AuthorizationError: status.HTTP_403_FORBIDDEN,
     }
 
-    http_status = status_map.get(type(exc), status.HTTP_500_INTERNAL_SERVER_ERROR)
+    http_status = status_map.get(
+        type(exc), status.HTTP_500_INTERNAL_SERVER_ERROR
+    )
 
     # Create error detail
     detail = {
@@ -237,7 +240,7 @@ class MultipleValidationError(MRKGException):
 
     def __init__(
         self,
-        errors: List[ValidationError],
+        errors: list[ValidationError],
         message: str = "Multiple validation errors",
     ):
         self.errors = errors
@@ -248,9 +251,7 @@ class MultipleValidationError(MRKGException):
         )
 
 
-def validate_and_raise(
-    validations: List[tuple[bool, str, Optional[str]]]
-) -> None:
+def validate_and_raise(validations: list[tuple[bool, str, str | None]]) -> None:
     """Validate multiple conditions and raise MultipleValidationError if any fail.
 
     Args:
@@ -270,14 +271,14 @@ def validate_and_raise(
 
 def add_request_context(
     exc: MRKGException,
-    request_id: Optional[str] = None,
-    endpoint: Optional[str] = None,
-    method: Optional[str] = None,
-    user_id: Optional[str] = None,
+    request_id: str | None = None,
+    endpoint: str | None = None,
+    method: str | None = None,
+    user_id: str | None = None,
 ) -> MRKGException:
     """Add request context to exception."""
     context = exc.context.copy()
-    
+
     if request_id:
         context["request_id"] = request_id
     if endpoint:
@@ -294,17 +295,20 @@ def add_request_context(
 def create_database_error(
     operation: str,
     error: Exception,
-    context: Optional[Dict[str, Any]] = None,
+    context: dict[str, Any] | None = None,
 ) -> DatabaseError:
     """Create database error with proper context."""
     error_context = context or {}
-    error_context.update({
-        "original_error": str(error),
-        "error_type": type(error).__name__,
-    })
+    error_context.update(
+        {
+            "original_error": str(error),
+            "error_type": type(error).__name__,
+        }
+    )
 
     return DatabaseError(
         message=f"Database operation failed: {operation}",
         operation=operation,
         context=error_context,
     )
+

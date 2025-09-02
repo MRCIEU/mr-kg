@@ -1,10 +1,8 @@
 """Tests for the studies and similarities API endpoints."""
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.models.database import StudyListItem, SimilarityAnalysis
 
 client = TestClient(app)
 
@@ -85,7 +83,9 @@ class TestSimilaritiesAPI:
 
     def test_analyze_similarity_not_found(self):
         """Test analyze similarity for non-existent combination."""
-        response = client.get("/api/v1/similarities/analyze?pmid=99999999&model=nonexistent")
+        response = client.get(
+            "/api/v1/similarities/analyze?pmid=99999999&model=nonexistent"
+        )
         assert response.status_code == 404
 
     def test_analyze_similarity_missing_params(self):
@@ -103,7 +103,9 @@ class TestSimilaritiesAPI:
 
     def test_search_combinations_with_filters(self):
         """Test search combinations with filters."""
-        response = client.get("/api/v1/similarities/combinations?model=gpt-4o&min_trait_count=5")
+        response = client.get(
+            "/api/v1/similarities/combinations?model=gpt-4o&min_trait_count=5"
+        )
         assert response.status_code == 200
         data = response.json()
         assert "data" in data
@@ -113,7 +115,7 @@ class TestSimilaritiesAPI:
         request_data = {
             "query_vector": [0.1, 0.2],  # Wrong dimension
             "top_k": 10,
-            "threshold": 0.3
+            "threshold": 0.3,
         }
         response = client.post("/api/v1/similarities/vector", json=request_data)
         assert response.status_code == 400
@@ -123,9 +125,11 @@ class TestSimilaritiesAPI:
         request_data = {
             "query_vector": [0.1] * 200,  # Correct dimension
             "top_k": 10,
-            "threshold": 0.3
+            "threshold": 0.3,
         }
-        response = client.post("/api/v1/similarities/vector?search_type=invalid", json=request_data)
+        response = client.post(
+            "/api/v1/similarities/vector?search_type=invalid", json=request_data
+        )
         assert response.status_code == 400
 
     def test_bulk_trait_to_efo_mapping_too_many(self):
@@ -133,19 +137,19 @@ class TestSimilaritiesAPI:
         request_data = {
             "trait_indices": list(range(101)),  # Too many traits
             "top_k": 5,
-            "threshold": 0.3
+            "threshold": 0.3,
         }
-        response = client.post("/api/v1/similarities/trait-to-efo", json=request_data)
+        response = client.post(
+            "/api/v1/similarities/trait-to-efo", json=request_data
+        )
         assert response.status_code == 400
 
     def test_bulk_trait_to_efo_mapping_empty(self):
         """Test bulk trait-to-EFO mapping with empty list."""
-        request_data = {
-            "trait_indices": [],
-            "top_k": 5,
-            "threshold": 0.3
-        }
-        response = client.post("/api/v1/similarities/trait-to-efo", json=request_data)
+        request_data = {"trait_indices": [], "top_k": 5, "threshold": 0.3}
+        response = client.post(
+            "/api/v1/similarities/trait-to-efo", json=request_data
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["data"] == []
@@ -176,7 +180,9 @@ class TestSimilaritiesAPI:
 
     def test_get_combination_similarities_not_found(self):
         """Test get combination similarities for non-existent combination."""
-        response = client.get("/api/v1/similarities/combinations/999999/similarities")
+        response = client.get(
+            "/api/v1/similarities/combinations/999999/similarities"
+        )
         assert response.status_code == 404
 
     def test_get_combination_similarities_with_filters(self):
@@ -233,7 +239,9 @@ class TestErrorHandling:
 
     def test_invalid_similarity_threshold(self):
         """Test invalid similarity threshold."""
-        response = client.get("/api/v1/similarities/analyze?pmid=12345&model=test&min_similarity=2.0")
+        response = client.get(
+            "/api/v1/similarities/analyze?pmid=12345&model=test&min_similarity=2.0"
+        )
         assert response.status_code == 422
 
     def test_invalid_max_results(self):
@@ -258,10 +266,11 @@ class TestPerformance:
     def test_studies_list_response_time(self):
         """Test studies list response time."""
         import time
+
         start_time = time.time()
         response = client.get("/api/v1/studies/?page_size=10")
         end_time = time.time()
-        
+
         assert response.status_code == 200
         # Should respond within 2 seconds
         assert (end_time - start_time) < 2.0
@@ -269,10 +278,11 @@ class TestPerformance:
     def test_similarities_stats_response_time(self):
         """Test similarities stats response time."""
         import time
+
         start_time = time.time()
         response = client.get("/api/v1/similarities/stats")
         end_time = time.time()
-        
+
         assert response.status_code == 200
         # Should respond within 2 seconds
         assert (end_time - start_time) < 2.0
