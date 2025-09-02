@@ -19,6 +19,24 @@ The system consists of four main components:
 - **Data Processing**: Python/uv, HPC batch processing, spaCy embeddings
 - **Infrastructure**: Docker, Docker Compose, justfile task runners
 
+### Docs
+
+- `@DEV.md` (this document): Development setup and guidelines
+- `@docs/DOCKER.md`: Docker deployment and configuration
+- `@docs/ARCHITECTURE.md`: System architecture and design patterns
+- `@docs/DATA.md`: Data structure and database schema details
+- `@backend/README.md`: Backend API development guide
+- `@frontend/README.md`: Frontend development guide
+- `@processing/README.md`: ETL pipeline documentation
+
+### Important Files to Examine
+
+- `@src/common_funcs/common_funcs/schema/database_schema.py`: Complete data model
+- `@backend/app/main.py`: FastAPI application entry point
+- `@frontend/src/main.ts`: Vue.js application entry point
+- `@processing/scripts/main-processing/preprocess-traits.py`: Core trait processing
+- `@webapp/app.py`: Legacy Streamlit application
+
 ## Repository Structure
 
 ```text
@@ -75,19 +93,21 @@ mr-kg/
 ### Full Stack Development Setup
 
 1. **Clone and setup the repository**:
+
    ```bash
-   git clone <repository>
+   git clone https://github.com/MRCIEU/mr-kg
    cd mr-kg
-   
+
    # Setup environment files
    just setup-dev
    ```
 
 2. **Start the development stack**:
+
    ```bash
    # Start all services (backend, frontend, legacy webapp)
    just dev
-   
+
    # Or individually:
    just backend-dev    # FastAPI backend only
    just frontend-dev   # Vue.js frontend only
@@ -95,13 +115,14 @@ mr-kg/
    ```
 
 3. **Access the applications**:
-   - **Frontend**: http://localhost:3000 (Vue.js interface)
-   - **Backend API**: http://localhost:8000 (FastAPI with docs at /docs)
-   - **Legacy Webapp**: http://localhost:8501 (Streamlit interface)
+
+   - **Frontend**: <http://localhost:3000> (Vue.js interface)
+   - **Backend API**: <http://localhost:8000> (FastAPI with docs at /docs)
+   - **Legacy Webapp**: <http://localhost:8501> (Streamlit interface)
 
 ### Component-Specific Development
 
-#### Backend Development
+#### Backend Development Commands
 
 ```bash
 cd backend
@@ -122,7 +143,7 @@ just test             # Run tests with pytest
 just test-cov         # Run tests with coverage
 ```
 
-#### Frontend Development
+#### Frontend Development Commands
 
 ```bash
 cd frontend
@@ -143,7 +164,7 @@ just type-check       # Type check with vue-tsc
 just check            # Run all quality checks
 ```
 
-#### Legacy Webapp Development
+#### Legacy Webapp Development Commands
 
 ```bash
 cd webapp
@@ -163,6 +184,7 @@ The system requires preprocessing raw LLM results into vector databases before t
 ### Setup Requirements
 
 1. **Models setup**:
+
    ```bash
    cd models
    wget https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_core_sci_lg-0.5.4.tar.gz
@@ -170,6 +192,7 @@ The system requires preprocessing raw LLM results into vector databases before t
    ```
 
 2. **Data setup**:
+
    ```bash
    # Download EFO ontology
    wget https://github.com/EBISPOT/efo/releases/download/v3.80.0/efo.json
@@ -177,6 +200,7 @@ The system requires preprocessing raw LLM results into vector databases before t
    ```
 
 3. **Processing environment**:
+
    ```bash
    cd processing
    uv sync               # Install dependencies
@@ -226,6 +250,7 @@ just describe-db         # Database inspection
 ### HPC Integration
 
 The pipeline uses SLURM batch jobs for computationally intensive tasks:
+
 - Environment variable `ACCOUNT_CODE` required for HPC submissions
 - Results stored in `data/output/` with experiment IDs
 - `scripts/bc4/*.sbatch`: SLURM job definitions
@@ -252,6 +277,7 @@ just status           # Docker container status
 Both backend and webapp use DuckDB databases:
 
 #### Vector Store Database (`vector_store.db`)
+
 - `trait_embeddings`: Trait vectors indexed by canonical trait indices
 - `efo_embeddings`: EFO term vectors for semantic mapping
 - `model_results`: Raw LLM outputs with metadata
@@ -259,6 +285,7 @@ Both backend and webapp use DuckDB databases:
 - Views for PMIDs analysis and trait-based filtering
 
 #### Trait Profile Database (`trait_profile_db.db`)
+
 - `trait_similarities`: Precomputed pairwise trait similarity scores
 - `trait_profiles`: Aggregated trait profiles for studies
 - Views for similarity analysis and ranking
@@ -276,7 +303,8 @@ just describe-db      # Generate complete database schema
 The FastAPI backend provides comprehensive REST endpoints:
 
 #### API Structure
-```
+
+```text
 /api/v1/
 ├── health/          # Health check endpoints
 ├── system/          # System information
@@ -287,9 +315,10 @@ The FastAPI backend provides comprehensive REST endpoints:
 ```
 
 #### API Documentation
-- **Interactive docs**: http://localhost:8000/docs (Swagger UI)
-- **ReDoc**: http://localhost:8000/redoc
-- **OpenAPI JSON**: http://localhost:8000/openapi.json
+
+- **Interactive docs**: <http://localhost:8000/docs> (Swagger UI)
+- **ReDoc**: <http://localhost:8000/redoc>
+- **OpenAPI JSON**: <http://localhost:8000/openapi.json>
 
 #### Testing API Endpoints
 
@@ -310,6 +339,7 @@ just docs                # Open API documentation
 The Vue.js frontend provides interactive interfaces for:
 
 #### Pages and Features
+
 - **Home**: Overview and navigation to main features
 - **Traits**: Browse and search trait labels with filtering
 - **Studies**: View study metadata and find similar studies
@@ -317,6 +347,7 @@ The Vue.js frontend provides interactive interfaces for:
 - **About**: Project information and methodology
 
 #### Development Patterns
+
 - **Composition API**: Vue 3's modern composition API
 - **TypeScript**: Full type safety throughout the application
 - **Pinia**: State management for centralized application state
@@ -324,6 +355,7 @@ The Vue.js frontend provides interactive interfaces for:
 - **Tailwind CSS**: Utility-first CSS framework
 
 #### State Management
+
 - **Application Store**: Global UI state and configuration
 - **Traits Store**: Trait data, filtering, and search state
 - **Studies Store**: Study data and metadata management
@@ -332,6 +364,7 @@ The Vue.js frontend provides interactive interfaces for:
 ## Code Quality and Standards
 
 ### Backend Standards
+
 - **ruff**: Code formatting and linting
 - **ty**: Type checking
 - **pytest**: Testing framework with comprehensive coverage
@@ -339,23 +372,26 @@ The Vue.js frontend provides interactive interfaces for:
 - **FastAPI**: Automatic OpenAPI documentation
 
 ### Frontend Standards
+
 - **ESLint**: JavaScript/TypeScript linting with Vue.js rules
 - **Prettier**: Code formatting
 - **Vue TSC**: TypeScript type checking
 - **TypeScript Strict Mode**: Full type safety
 
 ### Processing Standards
+
 - **ruff**: Code formatting and linting
 - **ty**: Type checking
 - **Comprehensive logging**: loguru for structured logging
 - **Schema validation**: TypedDict for type-safe data processing
 
 ### Quality Checks
+
 ```bash
 # Backend
 cd backend && just check
 
-# Frontend  
+# Frontend
 cd frontend && just check
 
 # Processing
@@ -376,12 +412,14 @@ just dev              # Start development stack
 ```
 
 ### Container Structure
+
 - **Backend**: FastAPI with hot reload, volume mounting
 - **Frontend**: Vite dev server with hot reload
 - **Legacy Webapp**: Streamlit with Docker profile
 - **Shared Volumes**: Database files, logs, development code
 
 ### Environment Profiles
+
 - **Local Development**: Direct file system access
 - **Docker Development**: Container-based with volume mounting
 - **Production**: Optimized builds with security hardening
@@ -391,6 +429,7 @@ just dev              # Start development stack
 ### Required Environment Variables
 
 #### Backend
+
 ```bash
 DEBUG=true                    # Development mode
 HOST=0.0.0.0
@@ -401,6 +440,7 @@ TRAIT_PROFILE_PATH=./data/db/trait_profile_db.db
 ```
 
 #### Frontend
+
 ```bash
 VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_APP_TITLE=MR-KG Explorer
@@ -408,154 +448,25 @@ VITE_APP_DESCRIPTION=Mendelian Randomization Knowledge Graph
 ```
 
 #### Processing
+
 ```bash
 ACCOUNT_CODE=your-hpc-account  # Required for HPC submissions
 ```
 
-## Testing Strategy
-
-### Backend Testing
-- **Unit Tests**: Core functionality, database integration
-- **API Tests**: Endpoint validation, error handling
-- **Integration Tests**: Full workflow testing
-- **Health Checks**: System monitoring validation
-
-### Frontend Testing (Planned)
-- **Unit Tests**: Component functionality
-- **Integration Tests**: User workflow testing
-- **E2E Tests**: Full application testing
-
-### Processing Testing
-- **Data Validation**: Schema compliance testing
-- **Pipeline Tests**: ETL workflow validation
-- **Performance Tests**: Large dataset processing
-
-## Deployment Strategies
-
-### Development Deployment
-- Docker Compose with hot reload
-- Volume mounting for live code changes
-- Debug logging and comprehensive error reporting
-
-### Production Deployment
-- Multi-stage Docker builds
-- Optimized asset serving with nginx
-- Health checks and monitoring integration
-- Security hardening and resource limits
-
-### Migration from Streamlit
-1. **Phase 1**: Deploy FastAPI backend alongside existing Streamlit app
-2. **Phase 2**: Implement Vue.js frontend with API integration
-3. **Phase 3**: Use FastAPI as primary interface, Streamlit for specialized views
-
 ## Integration Points
 
 ### Common Functions Integration
+
 The `src/common_funcs/` module provides shared functionality:
+
 - **Database Schemas**: Complete database schema definitions
 - **Data Models**: TypedDict definitions for all data formats
 - **Validation**: Schema validation and reporting utilities
 - **Database Utils**: Connection management and path resolution
 
 ### Legacy Compatibility
+
 - Maintains compatibility with existing Streamlit application
 - No impact on processing pipeline workflows
 - Uses existing database schemas without modification
 - Works with current data organization structure
-
-## Key Entry Points for Development
-
-### Understanding the System
-1. **[DATA.md](DATA.md)**: Data structure overview and database schema
-2. **[processing/README.md](processing/README.md)**: ETL pipeline workflow
-3. **[backend/API_INFRASTRUCTURE.md](backend/API_INFRASTRUCTURE.md)**: API infrastructure details
-4. **[backend/DATABASE_INTEGRATION.md](backend/DATABASE_INTEGRATION.md)**: Database integration layer
-
-### Important Files to Examine
-- `src/common_funcs/common_funcs/schema/database_schema.py`: Complete data model
-- `backend/app/main.py`: FastAPI application entry point
-- `frontend/src/main.ts`: Vue.js application entry point
-- `processing/scripts/main-processing/preprocess-traits.py`: Core trait processing
-- `webapp/app.py`: Legacy Streamlit application
-
-### Configuration Files
-- Top-level `justfile`: Full stack development commands
-- `docker-compose.yml` and `docker-compose.prod.yml`: Container orchestration
-- Component-specific `justfile`s: Service-specific task runners
-- `.env.*` files: Environment-specific configuration
-
-## Performance Considerations
-
-### Backend Performance
-- Connection pooling for DuckDB operations
-- Efficient vector similarity search
-- Caching strategies for frequently accessed data
-- Pagination for large result sets
-
-### Frontend Performance
-- Code splitting and lazy loading
-- Efficient state management with Pinia
-- Optimized asset bundling with Vite
-- Progressive loading for large datasets
-
-### Database Performance
-- Leverages existing database indexes
-- Vector similarity optimization
-- Connection pooling and reuse
-- Memory-efficient query patterns
-
-## Troubleshooting
-
-### Common Issues
-
-#### Database Connection Problems
-```bash
-# Check database files exist
-ls -la data/db/
-
-# Verify database health
-curl http://localhost:8000/api/v1/health/database
-
-# Check container logs
-just dev-logs backend
-```
-
-#### Frontend/Backend Integration Issues
-```bash
-# Check API connectivity
-curl http://localhost:8000/api/v1/health/
-
-# Verify environment variables
-just dev-logs frontend
-
-# Check CORS settings in backend
-```
-
-#### Processing Pipeline Issues
-```bash
-cd processing
-
-# Check processing status
-just describe-db
-
-# Validate schemas
-just sanity
-
-# Check HPC job status (if using HPC)
-```
-
-### Development Tools
-
-#### Monitoring and Debugging
-- Health check endpoints for service monitoring
-- Comprehensive logging throughout the stack
-- Request correlation IDs for tracing
-- Performance metrics collection
-
-#### Database Inspection
-- Database schema reporting tools
-- Query performance analysis
-- Connection pool monitoring
-- Data integrity validation
-
-This comprehensive development guide provides the foundation for contributing to the MR-KG fullstack system, whether working on data processing, backend APIs, frontend interfaces, or system deployment.

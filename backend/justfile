@@ -39,7 +39,7 @@ lint:
 ty:
     uv run ty check
 
-# Run all quality checks
+# run all quality checks
 [group('quality')]
 check: lint ty
 

@@ -16,6 +16,7 @@ MR-KG adopts a multi-layered testing approach to ensure reliability, performance
 ## Testing Stack
 
 ### Backend Testing
+
 - **Framework**: pytest for Python testing
 - **Test Client**: FastAPI TestClient for API testing
 - **Mocking**: unittest.mock for dependency isolation
@@ -23,6 +24,7 @@ MR-KG adopts a multi-layered testing approach to ensure reliability, performance
 - **Coverage**: pytest-cov for code coverage analysis
 
 ### Frontend Testing (Planned)
+
 - **Framework**: Vitest for Vue.js testing
 - **Component Testing**: Vue Test Utils for component isolation
 - **E2E Testing**: Playwright for end-to-end workflows
@@ -30,6 +32,7 @@ MR-KG adopts a multi-layered testing approach to ensure reliability, performance
 - **Coverage**: Built-in Vitest coverage reporting
 
 ### Integration Testing
+
 - **Docker**: Containerized test environments
 - **Database**: Real DuckDB instances for integration tests
 - **API**: Full stack integration testing
@@ -89,6 +92,7 @@ pytest -m "database" -v        # Database-related tests
 ### Unit Testing
 
 #### Configuration Testing
+
 ```python
 # tests/unit/test_config.py
 def test_config_defaults():
@@ -107,6 +111,7 @@ def test_config_environment_override():
 ```
 
 #### Model Validation Testing
+
 ```python
 # tests/unit/test_models.py
 def test_trait_embedding_validation():
@@ -129,6 +134,7 @@ def test_invalid_trait_embedding():
 ### Integration Testing
 
 #### Database Integration
+
 ```python
 # tests/integration/test_database_integration.py
 @pytest.fixture
@@ -157,6 +163,7 @@ async def test_vector_store_query(database_config):
 ```
 
 #### Repository Testing
+
 ```python
 # tests/integration/test_repositories.py
 @pytest.mark.database
@@ -175,6 +182,7 @@ async def test_trait_repository_search(trait_repository):
 ### API Testing
 
 #### Health Check Testing
+
 ```python
 # tests/api/test_health.py
 def test_basic_health_check(client):
@@ -195,6 +203,7 @@ def test_detailed_health_check(client):
 ```
 
 #### Traits API Testing
+
 ```python
 # tests/api/test_traits_api.py
 def test_search_traits(client):
@@ -214,6 +223,7 @@ def test_get_trait_details(client):
 ```
 
 #### Error Handling Testing
+
 ```python
 # tests/api/test_error_handling.py
 def test_not_found_error(client):
@@ -235,16 +245,17 @@ def test_validation_error(client):
 ### Performance Testing
 
 #### Query Performance
+
 ```python
 # tests/performance/test_query_performance.py
 @pytest.mark.slow
 def test_trait_search_performance(database_service):
     """Test trait search query performance."""
     start_time = time.time()
-    
+
     filters = TraitSearchFilters(search_term="test", limit=100)
     results = database_service.search_traits(filters)
-    
+
     execution_time = time.time() - start_time
     assert execution_time < 1.0  # Should complete within 1 second
     assert len(results) <= 100
@@ -253,35 +264,36 @@ def test_trait_search_performance(database_service):
 def test_similarity_computation_performance(database_service):
     """Test similarity computation performance."""
     start_time = time.time()
-    
+
     similarities = database_service.compute_trait_similarities(
-        trait_index=1, 
-        threshold=0.7, 
+        trait_index=1,
+        threshold=0.7,
         limit=50
     )
-    
+
     execution_time = time.time() - start_time
     assert execution_time < 2.0  # Should complete within 2 seconds
 ```
 
 #### API Performance
+
 ```python
 # tests/performance/test_api_performance.py
 @pytest.mark.slow
 def test_concurrent_api_requests(client):
     """Test API performance under concurrent load."""
     import concurrent.futures
-    
+
     def make_request():
         return client.get("/api/v1/health/")
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(make_request) for _ in range(50)]
         responses = [future.result() for future in futures]
-    
+
     # All requests should succeed
     assert all(r.status_code == 200 for r in responses)
-    
+
     # Average response time should be reasonable
     avg_time = sum(r.elapsed.total_seconds() for r in responses) / len(responses)
     assert avg_time < 0.5  # Average response time under 500ms
@@ -290,6 +302,7 @@ def test_concurrent_api_requests(client):
 ### Test Configuration
 
 #### pytest Configuration
+
 ```python
 # backend/conftest.py
 import pytest
@@ -330,6 +343,7 @@ pytest.mark.integration = pytest.mark.integration
 ```
 
 #### Test Data Setup
+
 ```python
 # tests/fixtures/database_fixtures.py
 @pytest.fixture(scope="session")
@@ -345,7 +359,7 @@ def test_database_setup():
 def create_test_vector_store():
     """Create minimal vector store for testing."""
     conn = duckdb.connect("test_data/vector_store.db")
-    
+
     # Create minimal schema
     conn.execute("""
         CREATE TABLE trait_embeddings (
@@ -354,15 +368,15 @@ def create_test_vector_store():
             embedding FLOAT[]
         )
     """)
-    
+
     # Insert test data
     conn.execute("""
-        INSERT INTO trait_embeddings VALUES 
+        INSERT INTO trait_embeddings VALUES
         (1, 'height', [0.1, 0.2, 0.3]),
         (2, 'weight', [0.4, 0.5, 0.6]),
         (3, 'BMI', [0.7, 0.8, 0.9])
     """)
-    
+
     conn.close()
 ```
 
@@ -403,7 +417,7 @@ describe('TraitExplorer', () => {
         plugins: [createPinia()]
       }
     })
-    
+
     expect(wrapper.find('[data-testid="search-input"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="filter-options"]').exists()).toBe(true)
   })
@@ -414,11 +428,11 @@ describe('TraitExplorer', () => {
         plugins: [createPinia()]
       }
     })
-    
+
     const searchInput = wrapper.find('[data-testid="search-input"]')
     await searchInput.setValue('height')
     await searchInput.trigger('input')
-    
+
     // Assert search is triggered
     expect(wrapper.emitted('search')).toBeTruthy()
   })
@@ -446,14 +460,14 @@ describe('Traits Store', () => {
 
   it('handles trait search', async () => {
     const store = useTraitsStore()
-    
+
     // Mock API call
     vi.mocked(api.searchTraits).mockResolvedValue({
       data: { traits: [{ trait_index: 1, trait_label: 'height' }] }
     })
-    
+
     await store.searchTraits({ search_term: 'height' })
-    
+
     expect(store.traits).toHaveLength(1)
     expect(store.traits[0].trait_label).toBe('height')
   })
@@ -469,22 +483,22 @@ import { test, expect } from '@playwright/test'
 test.describe('Traits Exploration', () => {
   test('user can search and explore traits', async ({ page }) => {
     await page.goto('/')
-    
+
     // Navigate to traits page
     await page.click('[data-testid="nav-traits"]')
     expect(page.url()).toContain('/traits')
-    
+
     // Perform search
     await page.fill('[data-testid="search-input"]', 'height')
     await page.click('[data-testid="search-button"]')
-    
+
     // Verify results
     await expect(page.locator('[data-testid="trait-results"]')).toBeVisible()
     await expect(page.locator('[data-testid="trait-item"]')).toHaveCount.greaterThan(0)
-    
+
     // Click on first result
     await page.click('[data-testid="trait-item"]:first-child')
-    
+
     // Verify trait details page
     await expect(page.locator('[data-testid="trait-details"]')).toBeVisible()
   })
@@ -503,22 +517,22 @@ def test_trait_search_workflow(client, database_setup):
     # Search for traits
     response = client.get("/api/v1/traits/search?search_term=height")
     assert response.status_code == 200
-    
+
     traits = response.json()["data"]["traits"]
     assert len(traits) > 0
-    
+
     # Get details for first trait
     trait_index = traits[0]["trait_index"]
     response = client.get(f"/api/v1/traits/{trait_index}")
     assert response.status_code == 200
-    
+
     trait_details = response.json()["data"]
     assert trait_details["trait_index"] == trait_index
-    
+
     # Find similar traits
     response = client.get(f"/api/v1/similarities/traits/{trait_index}")
     assert response.status_code == 200
-    
+
     similarities = response.json()["data"]["similar_traits"]
     assert isinstance(similarities, list)
 ```
@@ -529,17 +543,17 @@ def test_trait_search_workflow(client, database_setup):
 # tests/integration/test_api_contracts.py
 def test_api_response_schemas(client):
     """Test API responses match expected schemas."""
-    
+
     # Test traits search response schema
     response = client.get("/api/v1/traits/search")
     data = response.json()
-    
+
     # Validate response structure
     assert "success" in data
     assert "data" in data
     assert "traits" in data["data"]
     assert "pagination" in data["data"]
-    
+
     # Validate trait schema
     if data["data"]["traits"]:
         trait = data["data"]["traits"][0]
@@ -561,26 +575,26 @@ import time
 @pytest.mark.slow
 async def test_api_load_performance():
     """Test API performance under load."""
-    
+
     async def make_request(session, url):
         start_time = time.time()
         async with session.get(url) as response:
             await response.json()
             return time.time() - start_time
-    
+
     async with aiohttp.ClientSession() as session:
         # Simulate 100 concurrent requests
         tasks = [
             make_request(session, "http://localhost:8000/api/v1/health/")
             for _ in range(100)
         ]
-        
+
         response_times = await asyncio.gather(*tasks)
-    
+
     # Performance assertions
     avg_response_time = sum(response_times) / len(response_times)
     assert avg_response_time < 0.5  # Average under 500ms
-    
+
     max_response_time = max(response_times)
     assert max_response_time < 2.0  # Max under 2 seconds
 ```
@@ -592,17 +606,17 @@ async def test_api_load_performance():
 @pytest.mark.slow
 def test_large_dataset_query_performance(database_service):
     """Test query performance with large datasets."""
-    
+
     # Test trait search with large result set
     start_time = time.time()
     results = database_service.search_traits(
         TraitSearchFilters(limit=1000)
     )
     search_time = time.time() - start_time
-    
+
     assert search_time < 5.0  # Should complete within 5 seconds
     assert len(results) <= 1000
-    
+
     # Test similarity computation
     start_time = time.time()
     similarities = database_service.compute_trait_similarities(
@@ -611,7 +625,7 @@ def test_large_dataset_query_performance(database_service):
         limit=100
     )
     similarity_time = time.time() - start_time
-    
+
     assert similarity_time < 3.0  # Should complete within 3 seconds
 ```
 
@@ -629,22 +643,22 @@ import numpy as np
 def create_test_vector_store():
     """Create test vector store database."""
     conn = duckdb.connect("test_data/vector_store.db")
-    
+
     # Create schema
     conn.execute(open("sql/vector_store_schema.sql").read())
-    
+
     # Insert sample data
     traits = [
         (1, "height", np.random.rand(300).tolist()),
         (2, "weight", np.random.rand(300).tolist()),
         (3, "BMI", np.random.rand(300).tolist()),
     ]
-    
+
     conn.executemany(
         "INSERT INTO trait_embeddings VALUES (?, ?, ?)",
         traits
     )
-    
+
     conn.close()
 
 if __name__ == "__main__":
@@ -705,28 +719,28 @@ on:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.12'
-    
+
     - name: Install uv
       run: curl -LsSf https://astral.sh/uv/install.sh | sh
-    
+
     - name: Install dependencies
       run: |
         cd backend
         uv sync
-    
+
     - name: Run tests
       run: |
         cd backend
         uv run pytest --cov=app --cov-report=xml
-    
+
     - name: Upload coverage
       uses: codecov/codecov-action@v3
       with:
@@ -734,27 +748,27 @@ jobs:
 
   frontend-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
-    
+
     - name: Install dependencies
       run: |
         cd frontend
         npm ci
-    
+
     - name: Run tests
       run: |
         cd frontend
         npm run test:coverage
-    
+
     - name: Upload coverage
       uses: codecov/codecov-action@v3
       with:
@@ -762,44 +776,17 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Create test databases
       run: |
         mkdir -p test_data
         python scripts/create_test_data.py
-    
+
     - name: Run integration tests
       run: |
         docker-compose -f docker-compose.test.yml up --abort-on-container-exit
 ```
 
-## Testing Best Practices
-
-### Code Coverage Goals
-- **Backend**: Minimum 80% code coverage
-- **Frontend**: Minimum 75% code coverage
-- **Critical paths**: 100% coverage for core business logic
-- **API endpoints**: 100% coverage for all endpoints
-
-### Test Organization
-- **Fast tests first**: Unit tests should run quickly
-- **Isolated tests**: Each test should be independent
-- **Clear naming**: Test names should describe the behavior being tested
-- **Setup/teardown**: Proper test environment management
-
-### Mock Strategy
-- **External dependencies**: Mock external APIs and services
-- **Database operations**: Use test databases or mocks for unit tests
-- **Time-dependent code**: Mock time functions for predictable tests
-- **Random data**: Use seed values for reproducible tests
-
-### Performance Benchmarks
-- **API response time**: < 500ms for 95% of requests
-- **Database queries**: < 1 second for complex similarity searches
-- **Frontend rendering**: < 100ms for component updates
-- **Memory usage**: < 1GB for typical workloads
-
-This comprehensive testing strategy ensures the MR-KG system maintains high quality, performance, and reliability throughout development and deployment.

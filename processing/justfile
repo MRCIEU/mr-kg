@@ -31,6 +31,10 @@ ruff:
 ty:
     uv run ty check
 
+# run all quality checks
+[group('codebase')]
+check: ruff ty
+
 # ==== main-processing ====
 
 # Run complete processing pipeline

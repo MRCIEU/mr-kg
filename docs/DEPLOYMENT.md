@@ -25,6 +25,7 @@ just dev          # Start development stack
 ```
 
 Access points:
+
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8000 (docs at /docs)
 - Legacy Webapp: http://localhost:8501
@@ -38,6 +39,7 @@ just prod
 ```
 
 Access points:
+
 - Frontend: http://localhost (port 80)
 - Backend API: http://localhost:8000
 - Legacy Webapp: http://localhost:8501
@@ -47,12 +49,14 @@ Access points:
 ### System Requirements
 
 #### Minimum Requirements
+
 - **CPU**: 2 cores (4 recommended)
 - **Memory**: 4GB RAM (8GB recommended)
 - **Storage**: 10GB available space
 - **Network**: Internet access for initial setup
 
 #### Production Requirements
+
 - **CPU**: 4+ cores for concurrent operations
 - **Memory**: 8GB+ RAM for optimal performance
 - **Storage**: 50GB+ for databases and logs
@@ -61,6 +65,7 @@ Access points:
 ### Required Software
 
 #### Development Environment
+
 ```bash
 # Core requirements
 - Docker 20.10+
@@ -75,6 +80,7 @@ Access points:
 ```
 
 #### Production Environment
+
 ```bash
 # Minimal production requirements
 - Docker 20.10+
@@ -102,6 +108,7 @@ ls -la data/db/
 ```
 
 If databases don't exist, run the processing pipeline:
+
 ```bash
 cd processing
 just pipeline-full  # See processing/README.md for details
@@ -118,7 +125,7 @@ The system uses environment-specific configuration files:
 .env.development         # Development-specific settings
 .env                     # Local overrides (git-ignored)
 
-# Production environment  
+# Production environment
 .env.production          # Production-specific settings
 .env.prod.local          # Production overrides (git-ignored)
 ```
@@ -138,6 +145,7 @@ cp .env.production.example .env.production
 ### Key Configuration Variables
 
 #### Backend Configuration
+
 ```bash
 # Server settings
 DEBUG=false                    # Enable debug mode (dev: true, prod: false)
@@ -162,6 +170,7 @@ RATE_LIMIT_PER_MINUTE=100    # Rate limiting (requests per minute)
 ```
 
 #### Frontend Configuration
+
 ```bash
 # Application settings
 NODE_ENV=production           # Environment mode
@@ -176,6 +185,7 @@ VITE_SOURCEMAP=false         # Generate source maps
 ```
 
 #### Legacy Webapp Configuration
+
 ```bash
 # Streamlit settings
 STREAMLIT_SERVER_PORT=8501
@@ -195,12 +205,12 @@ services:
     # Vue.js development server with hot reload
     ports: ["3000:3000"]
     volumes: ["./frontend:/app"]  # Live code mounting
-    
-  backend: 
+
+  backend:
     # FastAPI with auto-reload
     ports: ["8000:8000"]
     volumes: ["./backend:/app"]   # Live code mounting
-    
+
   webapp:
     # Streamlit with Docker profile
     ports: ["8501:8501"]
@@ -231,11 +241,13 @@ just health                 # Check service health
 ### Hot Reload Configuration
 
 #### Backend Hot Reload
+
 - **uvicorn --reload**: Automatic restart on code changes
 - **Volume mounting**: Live code updates without rebuilds
 - **Debug mode**: Enhanced error reporting and logging
 
 #### Frontend Hot Reload
+
 - **Vite HMR**: Hot module replacement for instant updates
 - **TypeScript compilation**: Real-time type checking
 - **Style updates**: Instant CSS/Tailwind changes
@@ -269,11 +281,11 @@ services:
   frontend:
     # Multi-stage build: Node.js build + nginx serve
     # Optimized static assets, gzip compression
-    
+
   backend:
     # Multi-stage build: Python dependencies + runtime
     # Security hardening, resource limits
-    
+
   webapp:
     # Streamlit with production configuration
     # Health checks and restart policies
@@ -296,6 +308,7 @@ just prod-down              # Stop production stack
 ### Multi-Stage Docker Builds
 
 #### Frontend Production Build
+
 ```dockerfile
 # Stage 1: Node.js build environment
 FROM node:18-alpine AS builder
@@ -311,6 +324,7 @@ COPY nginx.conf /etc/nginx/nginx.conf
 ```
 
 #### Backend Production Build
+
 ```dockerfile
 # Stage 1: Python build environment
 FROM python:3.12-slim AS builder
@@ -328,18 +342,21 @@ USER nonroot
 ### Production Optimizations
 
 #### Performance Optimizations
+
 - **Multi-stage builds**: Minimal image sizes
 - **Static asset optimization**: Gzip compression, cache headers
 - **Connection pooling**: Efficient database connections
 - **Resource limits**: CPU and memory constraints
 
 #### Security Hardening
+
 - **Non-root users**: All containers run as non-root
 - **Read-only filesystems**: Where applicable
 - **Security headers**: Comprehensive HTTP security headers
 - **Secrets management**: Environment-based secrets
 
 #### Health Checks
+
 ```yaml
 healthcheck:
   test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
@@ -360,14 +377,14 @@ For production deployments, use nginx as a reverse proxy:
 server {
     listen 80;
     server_name your-domain.com;
-    
+
     # Frontend static files
     location / {
         proxy_pass http://localhost:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
-    
+
     # Backend API
     location /api/ {
         proxy_pass http://localhost:8000;
@@ -375,19 +392,19 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     }
-    
+
     # Legacy webapp
     location /webapp/ {
         proxy_pass http://localhost:8501/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        
+
         # WebSocket support for Streamlit
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
-    
+
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
@@ -402,18 +419,18 @@ server {
 server {
     listen 443 ssl http2;
     server_name your-domain.com;
-    
+
     ssl_certificate /path/to/certificate.crt;
     ssl_certificate_key /path/to/private.key;
-    
+
     # SSL security settings
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
     ssl_prefer_server_ciphers off;
-    
+
     # HSTS
     add_header Strict-Transport-Security "max-age=63072000" always;
-    
+
     # Proxy configuration (same as HTTP)
     # ...
 }
@@ -431,6 +448,7 @@ server {
 ### Built-in Health Endpoints
 
 #### Backend Health Checks
+
 ```bash
 # Basic health check
 curl http://localhost:8000/api/v1/health/
@@ -447,6 +465,7 @@ curl http://localhost:8000/api/v1/health/live     # Liveness probe
 ```
 
 #### Frontend Health Checks
+
 ```bash
 # Frontend availability
 curl http://localhost:3000/
@@ -456,6 +475,7 @@ curl http://localhost/health
 ```
 
 #### Legacy Webapp Health
+
 ```bash
 # Streamlit health check
 curl http://localhost:8501/_stcore/health
@@ -480,6 +500,7 @@ just benchmark               # Performance benchmarks
 ### Log Management
 
 #### Log Collection
+
 ```bash
 # View logs
 just prod-logs               # All production logs
@@ -492,6 +513,7 @@ just prod-logs backend -f    # Follow backend logs
 ```
 
 #### Log Rotation
+
 ```bash
 # Configure logrotate for Docker logs
 /etc/logrotate.d/docker-mr-kg:
@@ -539,24 +561,26 @@ docker run --rm -v mr-kg_data:/data -v $(pwd):/backup \
 ### Disaster Recovery Procedure
 
 1. **Service Recovery**:
+
    ```bash
    # Stop damaged services
    just prod-down
-   
+
    # Restore from backup
    just restore-backup "latest"
-   
+
    # Rebuild and restart
    just build-prod
    just prod
    ```
 
 2. **Data Recovery**:
+
    ```bash
    # Restore database files
    cp backup/vector_store.db data/db/
    cp backup/trait_profile_db.db data/db/
-   
+
    # Verify database integrity
    just health
    ```
@@ -566,6 +590,7 @@ docker run --rm -v mr-kg_data:/data -v $(pwd):/backup \
 ### Backend Performance
 
 #### Connection Pool Tuning
+
 ```bash
 # Environment variables
 CONNECTION_POOL_SIZE=20      # Increase for high concurrency
@@ -574,6 +599,7 @@ QUERY_TIMEOUT=30            # Query timeout
 ```
 
 #### Resource Limits
+
 ```yaml
 # docker-compose.prod.yml
 services:
@@ -591,6 +617,7 @@ services:
 ### Frontend Performance
 
 #### nginx Optimization
+
 ```nginx
 # Compression
 gzip on;
@@ -606,6 +633,7 @@ location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
 ```
 
 #### Build Optimization
+
 ```bash
 # Environment variables
 VITE_BUILD_CHUNK_SIZE_WARNING_LIMIT=1000  # Chunk size warning
@@ -615,6 +643,7 @@ VITE_BUILD_ROLLUP_OPTIONS='{"output":{"manualChunks":{"vendor":["vue","pinia"]}}
 ### Database Performance
 
 #### Query Optimization
+
 ```bash
 # Monitor query performance
 just describe-db             # Database schema and indexes
@@ -622,12 +651,13 @@ just analyze-queries         # Query performance analysis
 ```
 
 #### Index Optimization
+
 ```sql
 -- Ensure proper indexes exist
-CREATE INDEX IF NOT EXISTS idx_trait_embeddings_trait_index 
+CREATE INDEX IF NOT EXISTS idx_trait_embeddings_trait_index
 ON trait_embeddings(trait_index);
 
-CREATE INDEX IF NOT EXISTS idx_model_results_pmid 
+CREATE INDEX IF NOT EXISTS idx_model_results_pmid
 ON model_results(pmid);
 ```
 
@@ -636,6 +666,7 @@ ON model_results(pmid);
 ### Horizontal Scaling
 
 #### Load Balancing
+
 ```nginx
 # nginx load balancing
 upstream mr-kg-backend {
@@ -652,6 +683,7 @@ server {
 ```
 
 #### Multiple Backend Instances
+
 ```yaml
 # docker-compose.scale.yml
 services:
@@ -665,6 +697,7 @@ services:
 ### Vertical Scaling
 
 #### Resource Allocation
+
 ```bash
 # Increase container resources
 docker update --memory=4g --cpus=2 mr-kg-backend-1
@@ -672,6 +705,7 @@ docker update --memory=2g --cpus=1 mr-kg-frontend-1
 ```
 
 #### Database Optimization
+
 ```bash
 # DuckDB memory settings
 PRAGMA memory_limit='4GB';
@@ -683,6 +717,7 @@ PRAGMA threads=4;
 ### Production Security Checklist
 
 #### Container Security
+
 - [ ] Non-root users in all containers
 - [ ] Read-only root filesystems where possible
 - [ ] No secrets in Docker images
@@ -690,6 +725,7 @@ PRAGMA threads=4;
 - [ ] Security scanning of images
 
 #### Network Security
+
 - [ ] HTTPS/TLS encryption
 - [ ] Proper CORS configuration
 - [ ] Rate limiting enabled
@@ -697,6 +733,7 @@ PRAGMA threads=4;
 - [ ] VPN access for admin functions
 
 #### Application Security
+
 - [ ] Environment-based configuration
 - [ ] Input validation on all endpoints
 - [ ] SQL injection prevention
@@ -704,6 +741,7 @@ PRAGMA threads=4;
 - [ ] CSRF protection (future)
 
 #### Data Security
+
 - [ ] Database file permissions (read-only for web services)
 - [ ] Encrypted backups
 - [ ] Access logging
@@ -723,6 +761,7 @@ just security-audit         # Comprehensive security audit
 ### Common Issues
 
 #### Container Won't Start
+
 ```bash
 # Diagnose container issues
 docker logs mr-kg-backend-1  # Check container logs
@@ -736,6 +775,7 @@ just setup-prod              # Recreate environment
 ```
 
 #### Database Connection Issues
+
 ```bash
 # Check database files
 ls -la data/db/
@@ -749,6 +789,7 @@ curl http://localhost:8000/api/v1/health/database
 ```
 
 #### Performance Issues
+
 ```bash
 # Monitor resource usage
 docker stats                 # Real-time resource usage
@@ -760,6 +801,7 @@ just benchmark               # Performance benchmarks
 ```
 
 #### Network Issues
+
 ```bash
 # Check service connectivity
 curl -I http://localhost:8000/api/v1/health/
@@ -774,6 +816,7 @@ lsof -i :3000                # Check port conflicts
 ### Debug Mode
 
 #### Enable Debug Logging
+
 ```bash
 # Backend debug mode
 DEBUG=true just backend-dev
@@ -786,43 +829,10 @@ just dev-logs -f
 ```
 
 #### Debug Commands
+
 ```bash
 # Interactive debugging
 just debug-backend           # Backend debug shell
 just debug-frontend          # Frontend debug shell
 just debug-database          # Database inspection
 ```
-
-## Maintenance
-
-### Regular Maintenance Tasks
-
-#### Daily
-- [ ] Check service health status
-- [ ] Monitor resource usage
-- [ ] Review error logs
-
-#### Weekly
-- [ ] Update container images
-- [ ] Backup databases
-- [ ] Review performance metrics
-
-#### Monthly
-- [ ] Security updates
-- [ ] Log rotation
-- [ ] Performance optimization review
-
-### Maintenance Commands
-
-```bash
-# System maintenance
-just maintenance             # Run all maintenance tasks
-just cleanup                # Clean unused resources
-just update                  # Update all components
-
-# Health monitoring
-just health-report          # Generate health report
-just performance-report     # Generate performance report
-```
-
-This deployment guide provides comprehensive coverage of all deployment scenarios for the MR-KG fullstack application, from development environments to production deployments with monitoring and maintenance considerations.
