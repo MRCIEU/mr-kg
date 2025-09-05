@@ -16,6 +16,7 @@
         :disabled="disabled"
         :class="inputClass"
         :aria-describedby="ariaDescribedby"
+        data-testid="search-input"
         @input="handleInput"
         @focus="handleFocus"
         @blur="handleBlur"
@@ -31,6 +32,7 @@
           class="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-full p-1"
           @click="handleClear"
           aria-label="Clear search"
+          data-testid="clear-search"
         >
           <XMarkIcon class="h-4 w-4" aria-hidden="true" />
         </button>
@@ -42,6 +44,7 @@
       v-if="isSearching"
       class="absolute inset-y-0 right-0 flex items-center pr-3"
       :class="{ 'pr-10': showClearButton }"
+      data-testid="loading-spinner"
     >
       <LoadingSpinner size="sm" :show-text="false" />
     </div>
@@ -54,6 +57,7 @@
       <div
         v-if="suggestions.length === 0 && showNoResults"
         class="px-3 py-2 text-sm text-gray-500"
+        data-testid="no-results"
       >
         No results found
       </div>
@@ -77,7 +81,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { MagnifyingGlassIcon, XMarkIcon } from '@heroicons/vue/24/outline'
-import { useDebouncedRef } from '@vueuse/core'
+import { debouncedRef } from '@vueuse/core'
 import LoadingSpinner from './LoadingSpinner.vue'
 
 // ==== Props ====
@@ -143,7 +147,7 @@ const emit = defineEmits<{
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const localValue = ref(props.modelValue)
-const debouncedValue = useDebouncedRef(localValue, props.debounceDelay)
+const debouncedValue = debouncedRef(localValue, props.debounceDelay)
 const isFocused = ref(false)
 const highlightedIndex = ref(-1)
 

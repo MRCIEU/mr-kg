@@ -1,7 +1,7 @@
 """Standardized response models for API endpoints."""
 
 from datetime import datetime
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -42,18 +42,30 @@ class ErrorResponse(BaseResponse):
     )
 
 
-class DataResponse(BaseResponse, Generic[T]):
+class DataResponse[T](BaseResponse):
     """Generic response wrapper for data payloads."""
 
     data: T = Field(..., description="Response data payload")
 
 
-class ListResponse(BaseResponse, Generic[T]):
+class ListResponse[T](BaseResponse):
     """Response model for list data with pagination."""
 
     data: list[T] = Field(default_factory=list, description="List of items")
     pagination: Optional["PaginationInfo"] = Field(
         None, description="Pagination information"
+    )
+    filters: dict[str, Any] | None = Field(None, description="Applied filters")
+
+
+class PaginatedDataResponse[T](BaseResponse):
+    """Paginated response model for API data with pagination metadata."""
+
+    data: list[T] = Field(
+        default_factory=list, description="Paginated data items"
+    )
+    pagination: "PaginationInfo" = Field(
+        ..., description="Pagination information"
     )
     filters: dict[str, Any] | None = Field(None, description="Applied filters")
 
@@ -213,4 +225,3 @@ class APICapabilities(BaseModel):
 
 # Update forward references
 ListResponse.model_rebuild()
-

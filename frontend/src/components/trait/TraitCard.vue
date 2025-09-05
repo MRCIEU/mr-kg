@@ -2,6 +2,8 @@
   <div
     class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
     :class="cardClass"
+    data-testid="trait-card"
+    @click="handleCardClick"
   >
     <!-- Card header -->
     <div class="p-4 border-b border-gray-100">
@@ -10,6 +12,7 @@
           <h3
             class="text-lg font-medium text-gray-900 truncate"
             :title="trait.trait_label"
+            data-testid="trait-label"
           >
             {{ trait.trait_label }}
           </h3>
@@ -61,7 +64,7 @@
       </div>
 
       <!-- Statistics (if available) -->
-      <div v-if="showStats && statistics" class="space-y-3 mb-4">
+      <div v-if="showStats && statistics" class="space-y-3 mb-4" data-testid="trait-statistics">
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span class="text-gray-500">Studies:</span>

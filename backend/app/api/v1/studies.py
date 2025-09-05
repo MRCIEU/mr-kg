@@ -223,7 +223,7 @@ async def list_studies(
         logger.error(f"Error listing studies: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to list studies: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/search", response_model=StudySearchResponse)
@@ -351,7 +351,7 @@ async def search_studies(
         logger.error(f"Error searching studies with query '{q}': {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to search studies: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/{study_id}", response_model=DataResponse[StudyDetailExtended])
@@ -388,7 +388,6 @@ async def get_study_details(
             raise HTTPException(
                 status_code=404, detail=f"Study with ID {study_id} not found"
             )
-
         # Get study statistics
         stats_query = """
         SELECT
@@ -427,7 +426,7 @@ async def get_study_details(
         logger.error(f"Error getting study details for ID {study_id}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get study details: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/pmid/{pmid}", response_model=DataResponse[list[ModelResult]])
@@ -447,7 +446,6 @@ async def get_studies_by_pmid(
             raise HTTPException(
                 status_code=404, detail=f"No studies found for PMID {pmid}"
             )
-
         return DataResponse(data=studies)
 
     except HTTPException:
@@ -456,7 +454,7 @@ async def get_studies_by_pmid(
         logger.error(f"Error getting studies for PMID {pmid}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get studies for PMID: {str(e)}"
-        )
+        ) from e
 
 
 @router.get(
@@ -489,7 +487,6 @@ async def get_similar_studies(
             raise HTTPException(
                 status_code=404, detail=f"Study with ID {study_id} not found"
             )
-
         # Find the combination in trait profile database
         combination = service.similarity_repo.find_combination(
             study.pmid, study.model
@@ -527,7 +524,7 @@ async def get_similar_studies(
         logger.error(f"Error finding similar studies for {study_id}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to find similar studies: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/stats/overview", response_model=DataResponse[StudyAnalytics])
@@ -627,7 +624,7 @@ async def get_studies_overview(
         logger.error(f"Error getting studies overview: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get studies overview: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/models", response_model=DataResponse[list[str]])
@@ -649,7 +646,7 @@ async def get_available_models(
         logger.error(f"Error getting available models: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get available models: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/journals", response_model=DataResponse[list[str]])
@@ -685,5 +682,4 @@ async def get_available_journals(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to get available journals: {str(e)}",
-        )
-
+        ) from e

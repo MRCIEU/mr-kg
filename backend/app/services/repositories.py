@@ -1,7 +1,7 @@
 """Repository pattern implementation for database access."""
 
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import duckdb
 
@@ -24,6 +24,11 @@ class BaseRepository(ABC):
 
     def __init__(self, connection: duckdb.DuckDBPyConnection):
         self.connection = connection
+
+    @abstractmethod
+    def get_table_name(self) -> str:
+        """Get the primary table name for this repository."""
+        pass
 
     def execute_query(
         self, query: str, params: tuple | None = None

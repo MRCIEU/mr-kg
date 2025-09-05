@@ -1,20 +1,20 @@
 """System information and utility endpoints."""
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends
 
-from app.core.dependencies import get_database_service
-from app.models.responses import DataResponse, APICapabilities, APIEndpoint
-from app.services.database_service import DatabaseService
 from app.core.config import settings
+from app.core.dependencies import get_database_service
+from app.models.responses import APICapabilities, APIEndpoint, DataResponse
+from app.services.database_service import DatabaseService
 
 router = APIRouter()
 
 
-@router.get("/info", response_model=DataResponse[Dict[str, Any]])
-async def system_information() -> DataResponse[Dict[str, Any]]:
+@router.get("/info", response_model=DataResponse[dict[str, Any]])
+async def system_information() -> DataResponse[dict[str, Any]]:
     """Get comprehensive system information and configuration."""
     info = {
         "application": {
@@ -150,10 +150,10 @@ async def api_capabilities() -> DataResponse[APICapabilities]:
     return DataResponse(data=capabilities)
 
 
-@router.get("/status", response_model=DataResponse[Dict[str, Any]])
+@router.get("/status", response_model=DataResponse[dict[str, Any]])
 async def system_status(
     db_service: DatabaseService = Depends(get_database_service),
-) -> DataResponse[Dict[str, Any]]:
+) -> DataResponse[dict[str, Any]]:
     """Get current system status and operational metrics."""
     status_info = {
         "timestamp": datetime.utcnow().isoformat(),
@@ -165,7 +165,7 @@ async def system_status(
     try:
         trait_count = await db_service.get_trait_count()
         study_count = await db_service.get_study_count()
-        
+
         status_info["database"] = {
             "status": "operational",
             "trait_count": trait_count,
@@ -188,8 +188,8 @@ async def system_status(
     return DataResponse(data=status_info)
 
 
-@router.get("/config", response_model=DataResponse[Dict[str, Any]])
-async def system_configuration() -> DataResponse[Dict[str, Any]]:
+@router.get("/config", response_model=DataResponse[dict[str, Any]])
+async def system_configuration() -> DataResponse[dict[str, Any]]:
     """Get non-sensitive system configuration information."""
     config = {
         "server": {
@@ -217,8 +217,8 @@ async def system_configuration() -> DataResponse[Dict[str, Any]]:
     return DataResponse(data=config)
 
 
-@router.get("/environment", response_model=DataResponse[Dict[str, str]])
-async def environment_info() -> DataResponse[Dict[str, str]]:
+@router.get("/environment", response_model=DataResponse[dict[str, str]])
+async def environment_info() -> DataResponse[dict[str, str]]:
     """Get environment information for debugging and support."""
     env_info = {
         "environment": "development" if settings.DEBUG else "production",
@@ -233,10 +233,10 @@ async def environment_info() -> DataResponse[Dict[str, str]]:
     return DataResponse(data=env_info)
 
 
-@router.post("/validate", response_model=DataResponse[Dict[str, Any]])
+@router.post("/validate", response_model=DataResponse[dict[str, Any]])
 async def validate_system_integrity(
     db_service: DatabaseService = Depends(get_database_service),
-) -> DataResponse[Dict[str, Any]]:
+) -> DataResponse[dict[str, Any]]:
     """Validate system integrity and configuration.
 
     This endpoint performs comprehensive system validation including

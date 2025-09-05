@@ -94,7 +94,6 @@ async def analyze_similarity(
                 status_code=404,
                 detail=f"No combination found for PMID {pmid} and model {model}",
             )
-
         # Get similarities
         similarities = service.similarity_repo.get_similarities(
             combination.id,
@@ -141,7 +140,7 @@ async def analyze_similarity(
         logger.error(f"Error analyzing similarity for {pmid}, {model}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to analyze similarity: {str(e)}"
-        )
+        ) from e
 
 
 @router.get(
@@ -249,7 +248,7 @@ async def search_combinations(
         logger.error(f"Error searching combinations: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to search combinations: {str(e)}"
-        )
+        ) from e
 
 
 @router.post(
@@ -272,12 +271,10 @@ async def vector_similarity_search(
             raise HTTPException(
                 status_code=400, detail="Query vector must be 200-dimensional"
             )
-
         if search_type not in ["traits", "efo"]:
             raise HTTPException(
                 status_code=400, detail="Search type must be 'traits' or 'efo'"
             )
-
         # Determine which table to search
         table_name = (
             "trait_embeddings" if search_type == "traits" else "efo_embeddings"
@@ -328,7 +325,7 @@ async def vector_similarity_search(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to perform vector similarity search: {str(e)}",
-        )
+        ) from e
 
 
 @router.post(
@@ -349,7 +346,6 @@ async def bulk_trait_to_efo_mapping(
                 status_code=400,
                 detail="Maximum 100 trait indices allowed per request",
             )
-
         mappings = []
 
         for trait_index in request.trait_indices:
@@ -429,7 +425,7 @@ async def bulk_trait_to_efo_mapping(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to perform trait-to-EFO mapping: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/stats", response_model=DataResponse[SimilarityStatistics])
@@ -521,7 +517,7 @@ async def similarity_statistics(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to get similarity statistics: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/models", response_model=DataResponse[list[str]])
@@ -543,7 +539,7 @@ async def get_available_similarity_models(
         logger.error(f"Error getting available similarity models: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get available models: {str(e)}"
-        )
+        ) from e
 
 
 @router.get(
@@ -573,7 +569,6 @@ async def get_combination_details(
                 status_code=404,
                 detail=f"Combination with ID {combination_id} not found",
             )
-
         row = results[0]
         combination = QueryCombination(
             id=row[0],
@@ -594,7 +589,7 @@ async def get_combination_details(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to get combination details: {str(e)}",
-        )
+        ) from e
 
 
 @router.get(
@@ -632,7 +627,6 @@ async def get_combination_similarities(
                 status_code=404,
                 detail=f"Combination with ID {combination_id} not found",
             )
-
         # Build similarity query
         similarity_column = (
             "trait_profile_similarity"
@@ -705,4 +699,4 @@ async def get_combination_similarities(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to get combination similarities: {str(e)}",
-        )
+        ) from e

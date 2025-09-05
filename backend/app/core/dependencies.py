@@ -48,7 +48,7 @@ async def get_trait_service(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database service unavailable",
-        )
+        ) from e
 
 
 async def get_study_service(
@@ -72,7 +72,7 @@ async def get_study_service(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database service unavailable",
-        )
+        ) from e
 
 
 async def get_similarity_service(
@@ -96,7 +96,7 @@ async def get_similarity_service(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database service unavailable",
-        )
+        ) from e
 
 
 async def get_efo_service(
@@ -120,7 +120,7 @@ async def get_efo_service(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database service unavailable",
-        )
+        ) from e
 
 
 async def get_analytics_service(
@@ -144,7 +144,7 @@ async def get_analytics_service(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Database service unavailable",
-        )
+        ) from e
 
 
 # ==== Health Check Functions ====
@@ -170,7 +170,7 @@ async def get_health_checker(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Health check service unavailable",
-        )
+        ) from e
 
 
 async def perform_database_health_check() -> HealthCheckResponse:
@@ -232,7 +232,7 @@ async def perform_database_health_check() -> HealthCheckResponse:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Health check failed: {str(e)}",
-        )
+        ) from e
 
 
 async def check_database_connectivity() -> dict:
@@ -385,14 +385,12 @@ def validate_pmid(pmid: str) -> str:
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="PMID cannot be empty",
         )
-
     pmid = pmid.strip()
     if not pmid.isdigit():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="PMID must be numeric",
         )
-
     return pmid
 
 

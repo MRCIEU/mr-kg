@@ -144,7 +144,7 @@ async def list_traits(
         logger.error(f"Error listing traits: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to list traits: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/search", response_model=TraitSearchResponse)
@@ -216,7 +216,7 @@ async def search_traits(
         logger.error(f"Error searching traits with query '{q}': {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to search traits: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/{trait_index}", response_model=DataResponse[TraitDetailExtended])
@@ -258,7 +258,6 @@ async def get_trait_details(
                 status_code=404,
                 detail=f"Trait with index {trait_index} not found",
             )
-
         # Get trait statistics
         statistics = await analytics_service.get_trait_statistics(trait_index)
 
@@ -327,7 +326,7 @@ async def get_trait_details(
         )
         raise HTTPException(
             status_code=500, detail=f"Failed to get trait details: {str(e)}"
-        )
+        ) from e
 
 
 @router.get(
@@ -365,7 +364,6 @@ async def get_trait_studies(
                 status_code=404,
                 detail=f"Trait with index {trait_index} not found",
             )
-
         # Build filter conditions
         where_conditions = ["mrt.trait_index = ?"]
         params: list[int | str] = [trait_index]
@@ -448,7 +446,7 @@ async def get_trait_studies(
         logger.error(f"Error getting studies for trait {trait_index}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get trait studies: {str(e)}"
-        )
+        ) from e
 
 
 @router.get(
@@ -478,7 +476,6 @@ async def get_similar_traits(
                 status_code=404,
                 detail=f"Trait with index {trait_index} not found",
             )
-
         # Find similar traits
         filters = SimilaritySearchFilters(
             max_results=max_results, min_similarity=similarity_threshold
@@ -494,7 +491,7 @@ async def get_similar_traits(
         logger.error(f"Error finding similar traits for {trait_index}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to find similar traits: {str(e)}"
-        )
+        ) from e
 
 
 @router.get(
@@ -524,7 +521,6 @@ async def get_trait_efo_mappings(
                 status_code=404,
                 detail=f"Trait with index {trait_index} not found",
             )
-
         # Get EFO mappings
         efo_mappings = service.efo_repo.find_trait_efo_mappings(
             trait_index, top_k=max_results, threshold=similarity_threshold
@@ -538,7 +534,7 @@ async def get_trait_efo_mappings(
         logger.error(f"Error getting EFO mappings for trait {trait_index}: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get EFO mappings: {str(e)}"
-        )
+        ) from e
 
 
 @router.get("/stats/overview", response_model=DataResponse[dict[str, Any]])
@@ -637,7 +633,7 @@ async def get_traits_overview(
         logger.error(f"Error getting traits overview: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get traits overview: {str(e)}"
-        )
+        ) from e
 
 
 @router.post("/bulk", response_model=DataResponse[list[TraitEmbedding]])
@@ -656,7 +652,6 @@ async def get_traits_bulk(
                 status_code=400,
                 detail="Maximum 1000 trait indices allowed per request",
             )
-
         if not trait_indices:
             return DataResponse(data=[])
 
@@ -694,5 +689,4 @@ async def get_traits_bulk(
         logger.error(f"Error getting bulk traits: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to get bulk traits: {str(e)}"
-        )
-
+        ) from e

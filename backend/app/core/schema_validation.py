@@ -377,5 +377,5 @@ def validate_database_structure(
     finally:
         try:
             conn.close()
-        except:
+        except Exception:
             pass

@@ -311,4 +311,3 @@ def create_database_error(
         operation=operation,
         context=error_context,
     )
-

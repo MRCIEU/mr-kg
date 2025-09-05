@@ -65,7 +65,7 @@ async def detailed_health_check() -> HealthCheckResponse:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Health check failed: {str(e)}",
-        )
+        ) from e
 
 
 @router.get("/database", response_model=DataResponse[dict[str, Any]])
