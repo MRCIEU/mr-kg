@@ -1,3 +1,7 @@
+Note: This document is the canonical reference for the data directory layout
+and database schema artifacts. Processing pipeline steps are documented in
+@processing/README.md.
+
 # data strcuture
 
 Top-level layout
@@ -113,7 +117,7 @@ Inspecting databases
 │   │   │   ├── slurm-12432782_6.out
 │   │   │   ├── slurm-12432782_7.out
 │   │   │   ├── slurm-12432782_8.out
-│   │   │   └── slurm-12432782_9.out
+│   │   │   ├── slurm-12432782_9.out
 │   │   ├── README
 │   │   └── results
 │   │       ├── efo_vectors_chunk_0.json

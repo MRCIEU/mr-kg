@@ -1,393 +1,111 @@
-# MR-KG Deployment Guide
+# Production Deployment (Docker)
 
-This comprehensive guide covers deployment strategies for the MR-KG fullstack application, including development environments, production deployment, and operational considerations.
+Scope and references
+
+- This guide focuses on production deployment only
+- Development-in-Docker is covered in @docs/DEVELOPMENT.md
+- Environment variables and configuration are documented in @docs/ENV.md
 
 ## Overview
 
-The MR-KG system consists of multiple components that can be deployed independently or as a coordinated stack:
+The production stack runs as containers with a read-only data layer:
 
-- **Frontend**: Vue.js application (development server or static files with nginx)
-- **Backend**: FastAPI application with Python runtime
-- **Legacy Webapp**: Streamlit application for compatibility
-- **Data Layer**: DuckDB databases (read-only files)
+- Frontend served by nginx (Vue static assets)
+- Backend served by uvicorn (FastAPI)
+- Legacy Streamlit webapp (optional)
+- DuckDB files mounted read-only from the host
 
-## Quick Start
-
-### Development Deployment
-
-```bash
-# Setup environment and start all services
-just start
-
-# Or step by step:
-just setup-dev    # Create environment files
-just dev          # Start development stack
-```
-
-Access points:
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000 (docs at /docs)
-- Legacy Webapp: http://localhost:8501
-
-### Production Deployment
-
-```bash
-# Setup and deploy production stack
-just setup-prod
-just prod
-```
-
-Access points:
-
-- Frontend: http://localhost (port 80)
-- Backend API: http://localhost:8000
-- Legacy Webapp: http://localhost:8501
+All examples assume the provided docker-compose.prod.yml at the repo root.
 
 ## Prerequisites
 
-### System Requirements
+- Docker Engine and Docker Compose plugin installed
+- A production environment file created (see @docs/ENV.md)
+- Required databases present on the host under data/db/
+  - data/db/vector_store.db
+  - data/db/trait_profile_db.db
+- Adequate CPU, RAM, storage, and network access for your workload
 
-#### Minimum Requirements
+## Production Compose
 
-- **CPU**: 2 cores (4 recommended)
-- **Memory**: 4GB RAM (8GB recommended)
-- **Storage**: 10GB available space
-- **Network**: Internet access for initial setup
-
-#### Production Requirements
-
-- **CPU**: 4+ cores for concurrent operations
-- **Memory**: 8GB+ RAM for optimal performance
-- **Storage**: 50GB+ for databases and logs
-- **Network**: Stable connection for user access
-
-### Required Software
-
-#### Development Environment
+Core usage
 
 ```bash
-# Core requirements
-- Docker 20.10+
-- Docker Compose 2.0+
-- Git
-- just (task runner)
+# Build images and start the stack
+just prod
 
-# Optional for local development
-- Python 3.12+
-- Node.js 18+
-- uv (Python package manager)
+# Or with Docker Compose directly
+docker-compose -f docker-compose.prod.yml up --build -d
+
+# View container status
+docker-compose -f docker-compose.prod.yml ps
+
+# Tail production logs
+just prod-logs
+just prod-logs backend
 ```
 
-#### Production Environment
+Notes
 
-```bash
-# Minimal production requirements
-- Docker 20.10+
-- Docker Compose 2.0+
-- Git (for deployment updates)
-- just (task runner)
+- The backend mounts ./data and ./src read-only into the container
+- Databases under data/db are read-only in the backend container
+- Health checks are defined for all services
+- Resource limits are set via deploy.resources in compose
+- Port bindings can be customized with environment values (see @docs/ENV.md)
 
-# Recommended additions
-- nginx (reverse proxy)
-- systemd (service management)
-- logrotate (log management)
-```
+## Build Process
 
-### Database Prerequisites
+Recommended flows
 
-The application requires processed DuckDB databases:
+- Local build and run
 
-```bash
-# Required database files
-data/db/vector_store.db      # Main vector database
-data/db/trait_profile_db.db  # Similarity analysis database
+  ```bash
+  just build-prod
+  just prod
+  ```
 
-# Check database files exist
-ls -la data/db/
-```
+- Update existing deployment with minimal downtime
 
-If databases don't exist, run the processing pipeline:
+  ```bash
+  just prod-update
+  # Equivalent to pull + up --build -d
+  ```
 
-```bash
-cd processing
-just pipeline-full  # See processing/README.md for details
-```
+- Rebuild a single service only
 
-## Environment Configuration
+  ```bash
+  docker-compose -f docker-compose.prod.yml build backend
+  docker-compose -f docker-compose.prod.yml up -d backend
+  ```
 
-### Environment Files
+Image considerations
 
-The system uses environment-specific configuration files:
+- Multi-stage Dockerfiles are used to minimize image size
+- Non-root users and health checks are configured in the images
+- Pin image tags in production CI/CD to avoid accidental upgrades
 
-```bash
-# Development environment
-.env.development         # Development-specific settings
-.env                     # Local overrides (git-ignored)
+## Reverse Proxy and TLS
 
-# Production environment
-.env.production          # Production-specific settings
-.env.prod.local          # Production overrides (git-ignored)
-```
+You can deploy behind a reverse proxy on the host or add a proxy
+container. Both approaches are supported.
 
-### Creating Environment Files
-
-```bash
-# Create initial environment files
-just setup-dev           # Development setup
-just setup-prod          # Production setup
-
-# Or manually copy examples
-cp .env.development.example .env.development
-cp .env.production.example .env.production
-```
-
-### Key Configuration Variables
-
-#### Backend Configuration
-
-```bash
-# Server settings
-DEBUG=false                    # Enable debug mode (dev: true, prod: false)
-HOST=0.0.0.0                  # Server bind address
-PORT=8000                     # Server port
-LOG_LEVEL=INFO                # Logging level (DEBUG/INFO/WARNING/ERROR)
-
-# Database configuration
-DB_PROFILE=docker             # Database profile (local/docker)
-VECTOR_STORE_PATH=/app/data/db/vector_store.db
-TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
-
-# Security settings
-ALLOWED_ORIGINS=http://localhost:3000,https://your-domain.com
-SECRET_KEY=your-super-secret-key-change-this-in-production
-CORS_ALLOW_CREDENTIALS=true
-
-# Performance settings
-CONNECTION_POOL_SIZE=10       # Database connection pool size
-REQUEST_TIMEOUT=30            # Request timeout in seconds
-RATE_LIMIT_PER_MINUTE=100    # Rate limiting (requests per minute)
-```
-
-#### Frontend Configuration
-
-```bash
-# Application settings
-NODE_ENV=production           # Environment mode
-VITE_API_BASE_URL=http://localhost:8000/api/v1
-VITE_APP_TITLE=MR-KG Explorer
-VITE_APP_DESCRIPTION=Mendelian Randomization Knowledge Graph
-
-# Build settings (production)
-VITE_BUILD_TARGET=es2020      # JavaScript target
-VITE_MINIFY=true             # Enable minification
-VITE_SOURCEMAP=false         # Generate source maps
-```
-
-#### Legacy Webapp Configuration
-
-```bash
-# Streamlit settings
-STREAMLIT_SERVER_PORT=8501
-STREAMLIT_SERVER_ADDRESS=0.0.0.0
-STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
-```
-
-## Development Deployment
-
-### Docker Compose Development
-
-The development environment uses `docker-compose.yml` with:
-
-```yaml
-services:
-  frontend:
-    # Vue.js development server with hot reload
-    ports: ["3000:3000"]
-    volumes: ["./frontend:/app"]  # Live code mounting
-
-  backend:
-    # FastAPI with auto-reload
-    ports: ["8000:8000"]
-    volumes: ["./backend:/app"]   # Live code mounting
-
-  webapp:
-    # Streamlit with Docker profile
-    ports: ["8501:8501"]
-    volumes: ["./data:/app/data:ro"]  # Read-only data access
-```
-
-### Development Workflow
-
-```bash
-# Start development environment
-just dev                     # All services
-just backend-dev            # Backend only
-just frontend-dev           # Frontend only
-just webapp-dev             # Legacy webapp only
-
-# Development utilities
-just dev-logs               # View all service logs
-just dev-logs backend       # View specific service logs
-just dev-down               # Stop development stack
-just dev-restart            # Restart development stack
-
-# Code quality checks
-just test-backend           # Run backend tests
-just check-frontend         # Frontend linting and type checking
-just health                 # Check service health
-```
-
-### Hot Reload Configuration
-
-#### Backend Hot Reload
-
-- **uvicorn --reload**: Automatic restart on code changes
-- **Volume mounting**: Live code updates without rebuilds
-- **Debug mode**: Enhanced error reporting and logging
-
-#### Frontend Hot Reload
-
-- **Vite HMR**: Hot module replacement for instant updates
-- **TypeScript compilation**: Real-time type checking
-- **Style updates**: Instant CSS/Tailwind changes
-
-### Development Debugging
-
-```bash
-# Debug individual services
-docker exec -it mr-kg-backend-1 /bin/bash    # Backend shell
-docker exec -it mr-kg-frontend-1 /bin/sh     # Frontend shell
-
-# View service logs
-just dev-logs backend        # Backend application logs
-just dev-logs frontend       # Frontend build logs
-just dev-logs webapp         # Streamlit logs
-
-# Health checks
-curl http://localhost:8000/api/v1/health/     # Backend health
-curl http://localhost:3000/                   # Frontend health
-curl http://localhost:8501/_stcore/health     # Webapp health
-```
-
-## Production Deployment
-
-### Docker Compose Production
-
-The production environment uses `docker-compose.prod.yml` with:
-
-```yaml
-services:
-  frontend:
-    # Multi-stage build: Node.js build + nginx serve
-    # Optimized static assets, gzip compression
-
-  backend:
-    # Multi-stage build: Python dependencies + runtime
-    # Security hardening, resource limits
-
-  webapp:
-    # Streamlit with production configuration
-    # Health checks and restart policies
-```
-
-### Production Build Process
-
-```bash
-# Build production images
-just build-prod             # Build all production images
-just build-prod-frontend    # Frontend only
-just build-prod-backend     # Backend only
-
-# Deploy production stack
-just prod                   # Start production stack
-just prod-update            # Rolling update deployment
-just prod-down              # Stop production stack
-```
-
-### Multi-Stage Docker Builds
-
-#### Frontend Production Build
-
-```dockerfile
-# Stage 1: Node.js build environment
-FROM node:18-alpine AS builder
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-
-# Stage 2: nginx serving
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
-```
-
-#### Backend Production Build
-
-```dockerfile
-# Stage 1: Python build environment
-FROM python:3.12-slim AS builder
-RUN pip install uv
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
-
-# Stage 2: Runtime environment
-FROM python:3.12-slim
-COPY --from=builder /app/.venv /app/.venv
-COPY app/ /app/app/
-USER nonroot
-```
-
-### Production Optimizations
-
-#### Performance Optimizations
-
-- **Multi-stage builds**: Minimal image sizes
-- **Static asset optimization**: Gzip compression, cache headers
-- **Connection pooling**: Efficient database connections
-- **Resource limits**: CPU and memory constraints
-
-#### Security Hardening
-
-- **Non-root users**: All containers run as non-root
-- **Read-only filesystems**: Where applicable
-- **Security headers**: Comprehensive HTTP security headers
-- **Secrets management**: Environment-based secrets
-
-#### Health Checks
-
-```yaml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
-  start_period: 60s
-```
-
-## Reverse Proxy Configuration
-
-### nginx Configuration
-
-For production deployments, use nginx as a reverse proxy:
+Host-managed nginx example
 
 ```nginx
-# /etc/nginx/sites-available/mr-kg
 server {
     listen 80;
     server_name your-domain.com;
 
-    # Frontend static files
+    # Frontend
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://127.0.0.1:8080; # frontend container exposed on host 8080
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
     # Backend API
     location /api/ {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -395,47 +113,36 @@ server {
 
     # Legacy webapp
     location /webapp/ {
-        proxy_pass http://localhost:8501/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-
-        # WebSocket support for Streamlit
+        proxy_pass http://127.0.0.1:8501/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
     }
 
-    # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
 }
 ```
 
-### SSL/TLS Configuration
+TLS with nginx
 
 ```nginx
-# HTTPS configuration
 server {
     listen 443 ssl http2;
     server_name your-domain.com;
 
-    ssl_certificate /path/to/certificate.crt;
-    ssl_certificate_key /path/to/private.key;
+    ssl_certificate /etc/ssl/certs/your.crt;
+    ssl_certificate_key /etc/ssl/private/your.key;
 
-    # SSL security settings
     ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
     ssl_prefer_server_ciphers off;
 
-    # HSTS
     add_header Strict-Transport-Security "max-age=63072000" always;
 
-    # Proxy configuration (same as HTTP)
-    # ...
+    # proxy_pass locations as above
 }
 
-# HTTP redirect
 server {
     listen 80;
     server_name your-domain.com;
@@ -443,396 +150,305 @@ server {
 }
 ```
 
-## Monitoring and Health Checks
+Compose-managed proxy (optional)
 
-### Built-in Health Endpoints
+- A commented proxy service exists in docker-compose.prod.yml
+- Provide an nginx.conf and TLS assets via bind mounts
+- Use this if you prefer to keep everything inside Compose
 
-#### Backend Health Checks
+## Monitoring and Logs
+
+Health and status
 
 ```bash
-# Basic health check
+# Built-in checks
 curl http://localhost:8000/api/v1/health/
-
-# Detailed health with database status
-curl http://localhost:8000/api/v1/health/detailed
-
-# Database connectivity
-curl http://localhost:8000/api/v1/health/database
-
-# Kubernetes-style probes
-curl http://localhost:8000/api/v1/health/ready    # Readiness probe
-curl http://localhost:8000/api/v1/health/live     # Liveness probe
-```
-
-#### Frontend Health Checks
-
-```bash
-# Frontend availability
-curl http://localhost:3000/
-
-# nginx health (production)
 curl http://localhost/health
-```
-
-#### Legacy Webapp Health
-
-```bash
-# Streamlit health check
 curl http://localhost:8501/_stcore/health
+
+# Compose status and logs
+docker-compose -f docker-compose.prod.yml ps
+just prod-logs
+just prod-logs backend -f
 ```
 
-### Monitoring Commands
+Logging
+
+- Containers use the json-file logging driver with rotation
+- Adjust max-size and max-file in docker-compose.prod.yml if needed
+- Consider system-wide logrotate for Docker engine logs
+
+Observability options
+
+- cAdvisor for container metrics
+- Prometheus and Grafana for time-series monitoring
+- Loki or a centralized log solution for log aggregation
+
+## Backup and Restore
+
+Targets
+
+- Database files under data/db (read-only at runtime)
+- Configuration files, Compose files, and proxy config
+- TLS certificates if managed on the host
+
+Commands
 
 ```bash
-# Service status
-just status                  # Docker container status
-just health                  # All service health checks
+# Quick database backup (timestamped tarball)
+just backup
 
-# Resource monitoring
-just usage                   # Resource usage statistics
-just logs                    # View recent logs
-
-# Performance monitoring
-just metrics                 # Application metrics
-just benchmark               # Performance benchmarks
-```
-
-### Log Management
-
-#### Log Collection
-
-```bash
-# View logs
-just prod-logs               # All production logs
-just prod-logs backend       # Backend logs only
-just dev-logs frontend       # Frontend development logs
-
-# Follow logs
-just prod-logs -f            # Follow all logs
-just prod-logs backend -f    # Follow backend logs
-```
-
-#### Log Rotation
-
-```bash
-# Configure logrotate for Docker logs
-/etc/logrotate.d/docker-mr-kg:
-/var/lib/docker/containers/*/*-json.log {
-    daily
-    rotate 30
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 0644 root root
-}
-```
-
-## Backup and Disaster Recovery
-
-### Database Backup
-
-```bash
-# Create database backup
-just backup                  # Timestamped backup
-just backup-with-name "pre-deployment"
-
-# List backups
+# List available backups
 just list-backups
-
-# Restore from backup
-just restore-backup "2024-01-01-backup"
 ```
 
-### Configuration Backup
+Manual backup
 
 ```bash
-# Backup configuration
-tar -czf mr-kg-config-$(date +%Y%m%d).tar.gz \
-    .env.production \
-    docker-compose.prod.yml \
-    nginx.conf
+# Databases
+mkdir -p backups
+cp -a data/db backups/db-$(date +%Y%m%d-%H%M%S)
 
-# Backup application state
-docker run --rm -v mr-kg_data:/data -v $(pwd):/backup \
-    alpine tar czf /backup/mr-kg-data-$(date +%Y%m%d).tar.gz /data
+# Compose and config
+tar -czf backups/mr-kg-config-$(date +%Y%m%d).tar.gz \
+  docker-compose.prod.yml \
+  .env.production \
+  nginx.conf 2>/dev/null || true
 ```
 
-### Disaster Recovery Procedure
+Restore guidance
 
-1. **Service Recovery**:
-
-   ```bash
-   # Stop damaged services
-   just prod-down
-
-   # Restore from backup
-   just restore-backup "latest"
-
-   # Rebuild and restart
-   just build-prod
-   just prod
-   ```
-
-2. **Data Recovery**:
-
-   ```bash
-   # Restore database files
-   cp backup/vector_store.db data/db/
-   cp backup/trait_profile_db.db data/db/
-
-   # Verify database integrity
-   just health
-   ```
+- Stop the stack before replacing database files
+- Restore the desired backup into data/db
+- Start the stack and verify health endpoints
 
 ## Performance Tuning
 
-### Backend Performance
+Backend
 
-#### Connection Pool Tuning
+- Scale out with multiple backend containers or increase workers
+- To change workers, override the command in Compose
 
-```bash
-# Environment variables
-CONNECTION_POOL_SIZE=20      # Increase for high concurrency
-CONNECTION_TIMEOUT=60        # Connection timeout
-QUERY_TIMEOUT=30            # Query timeout
-```
+  ```yaml
+  services:
+    backend:
+      command: [
+        "python", "-m", "uvicorn", "app.main:app",
+        "--host", "0.0.0.0", "--port", "8000",
+        "--workers", "2"
+      ]
+  ```
 
-#### Resource Limits
+- Configure timeouts, request sizes, and CORS via environment values
+  documented in @docs/ENV.md
+- Ensure data and log volumes use fast storage
 
-```yaml
-# docker-compose.prod.yml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
-          memory: 1G
-          cpus: '0.5'
-```
+Frontend
 
-### Frontend Performance
+- Static assets are served by nginx with gzip and long-lived cache
+- Place the proxy and frontend on the same host to minimize latency
 
-#### nginx Optimization
+Databases
 
-```nginx
-# Compression
-gzip on;
-gzip_vary on;
-gzip_min_length 1024;
-gzip_types text/plain text/css application/json application/javascript;
+- DuckDB reads benefit from more RAM and CPU
+- Keep databases on local SSDs for best throughput
 
-# Caching
-location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
-```
+Container resources
 
-#### Build Optimization
+- Update deploy.resources limits and reservations in Compose to match
+  your workload and host capacity
 
-```bash
-# Environment variables
-VITE_BUILD_CHUNK_SIZE_WARNING_LIMIT=1000  # Chunk size warning
-VITE_BUILD_ROLLUP_OPTIONS='{"output":{"manualChunks":{"vendor":["vue","pinia"]}}}'
-```
+## Scaling
 
-### Database Performance
+Horizontal scaling
 
-#### Query Optimization
+- Run multiple backend containers
 
-```bash
-# Monitor query performance
-just describe-db             # Database schema and indexes
-just analyze-queries         # Query performance analysis
-```
+  ```bash
+  docker-compose -f docker-compose.prod.yml up -d --scale backend=3
+  ```
 
-#### Index Optimization
+- Place a reverse proxy in front of scaled backends
+- Prefer a reverse proxy that supports service discovery
+  (Traefik or nginx with Docker DNS resolver)
 
-```sql
--- Ensure proper indexes exist
-CREATE INDEX IF NOT EXISTS idx_trait_embeddings_trait_index
-ON trait_embeddings(trait_index);
-
-CREATE INDEX IF NOT EXISTS idx_model_results_pmid
-ON model_results(pmid);
-```
-
-## Scaling Considerations
-
-### Horizontal Scaling
-
-#### Load Balancing
+nginx upstream example
 
 ```nginx
-# nginx load balancing
-upstream mr-kg-backend {
-    server localhost:8000;
-    server localhost:8001;
-    server localhost:8002;
+# Use Docker DNS resolver inside the proxy container
+resolver 127.0.0.11 valid=30s;
+
+upstream mrkg_backend {
+    server backend:8000 resolve;
 }
 
 server {
+    listen 80;
     location /api/ {
-        proxy_pass http://mr-kg-backend;
+        proxy_pass http://mrkg_backend;
     }
 }
 ```
 
-#### Multiple Backend Instances
+Vertical scaling
 
-```yaml
-# docker-compose.scale.yml
-services:
-  backend:
-    deploy:
-      replicas: 3
-    ports:
-      - "8000-8002:8000"
-```
+- Increase container CPU and memory limits in Compose
+- Use a bigger VM with SSD storage and more RAM
 
-### Vertical Scaling
+## Security
 
-#### Resource Allocation
+Container hardening
 
-```bash
-# Increase container resources
-docker update --memory=4g --cpus=2 mr-kg-backend-1
-docker update --memory=2g --cpus=1 mr-kg-frontend-1
-```
+- Non-root users inside images
+- Read-only bind mounts for data
+- Minimal base images with regular updates
 
-#### Database Optimization
+Network and transport
 
-```bash
-# DuckDB memory settings
-PRAGMA memory_limit='4GB';
-PRAGMA threads=4;
-```
+- Enforce TLS for all public traffic
+- Restrict CORS origins to trusted domains
+- Place services on a private Docker network
 
-## Security Considerations
+Secrets and config
 
-### Production Security Checklist
+- Do not bake secrets into images
+- Provide secrets via environment or Docker secrets
+- See @docs/ENV.md for configuration guidance
 
-#### Container Security
+Headers and policies
 
-- [ ] Non-root users in all containers
-- [ ] Read-only root filesystems where possible
-- [ ] No secrets in Docker images
-- [ ] Regular base image updates
-- [ ] Security scanning of images
-
-#### Network Security
-
-- [ ] HTTPS/TLS encryption
-- [ ] Proper CORS configuration
-- [ ] Rate limiting enabled
-- [ ] Firewall rules configured
-- [ ] VPN access for admin functions
-
-#### Application Security
-
-- [ ] Environment-based configuration
-- [ ] Input validation on all endpoints
-- [ ] SQL injection prevention
-- [ ] XSS protection headers
-- [ ] CSRF protection (future)
-
-#### Data Security
-
-- [ ] Database file permissions (read-only for web services)
-- [ ] Encrypted backups
-- [ ] Access logging
-- [ ] Data retention policies
-
-### Security Updates
-
-```bash
-# Regular security updates
-just security-update         # Update base images
-just vulnerability-scan      # Scan for vulnerabilities
-just security-audit         # Comprehensive security audit
-```
+- Add standard security headers in nginx
+- Consider a Content Security Policy for the frontend
 
 ## Troubleshooting
 
-### Common Issues
-
-#### Container Won't Start
+Startup issues
 
 ```bash
-# Diagnose container issues
-docker logs mr-kg-backend-1  # Check container logs
-docker inspect mr-kg-backend-1  # Inspect container config
-just health                   # Run health checks
+# View logs and inspect containers
+just prod-logs backend
+just prod-logs frontend
 
-# Common fixes
-just clean                    # Clean Docker resources
-just build-prod              # Rebuild images
-just setup-prod              # Recreate environment
+docker ps
+
+docker inspect mr-kg-backend-1 | head -n 50
 ```
 
-#### Database Connection Issues
+Health and connectivity
 
 ```bash
-# Check database files
-ls -la data/db/
-file data/db/vector_store.db  # Verify file type
-
-# Check permissions
-chmod 644 data/db/*.db        # Ensure read permissions
-
-# Test database connectivity
-curl http://localhost:8000/api/v1/health/database
+curl -i http://localhost:8000/api/v1/health/
+curl -I http://localhost/health
 ```
 
-#### Performance Issues
+Data access
 
-```bash
-# Monitor resource usage
-docker stats                 # Real-time resource usage
-just usage                   # Resource summary
+- Verify data/db files exist and are readable by the Docker engine
+- Ensure mount paths match those in docker-compose.prod.yml
 
-# Check for memory leaks
-just monitor                 # Long-term monitoring
-just benchmark               # Performance benchmarks
+Port conflicts
+
+- Adjust host ports via environment values (see @docs/ENV.md)
+- Confirm nothing else is bound to the same ports on the host
+
+## Maintenance
+
+Regular tasks
+
+- Update images and restart with minimal downtime using just prod-update
+- Prune unused images and volumes periodically with just clean
+- Rotate logs at the engine level if needed
+- Renew TLS certificates if managed on the host
+
+Zero-downtime tips
+
+- Use a reverse proxy and scale backends to more than one replica
+- Perform rolling updates by updating one replica at a time
+
+## CI/CD Integration
+
+Recommended approach
+
+- Build and push versioned images from CI to a registry
+- Deploy by pulling new images on the server and running just prod-update
+
+GitHub Actions example
+
+```yaml
+name: build-and-deploy
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ "v*" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mr-kg-backend:latest
+            ghcr.io/${{ github.repository_owner }}/mr-kg-backend:${{ github.sha }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mr-kg-frontend:latest
+            ghcr.io/${{ github.repository_owner }}/mr-kg-frontend:${{ github.sha }}
+
+      - name: Build and push webapp
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./webapp/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mr-kg-webapp:latest
+            ghcr.io/${{ github.repository_owner }}/mr-kg-webapp:${{ github.sha }}
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remote deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/mr-kg
+            docker-compose -f docker-compose.prod.yml pull
+            docker-compose -f docker-compose.prod.yml up -d
 ```
 
-#### Network Issues
+Tagging strategy
 
-```bash
-# Check service connectivity
-curl -I http://localhost:8000/api/v1/health/
-curl -I http://localhost:3000/
-curl -I http://localhost:8501/
+- Use immutable image tags per commit (SHA) and a moving tag like latest
+- Prefer rolling updates with pull + up -d on the server
 
-# Check port conflicts
-netstat -tulpn | grep :8000  # Check port usage
-lsof -i :3000                # Check port conflicts
-```
-
-### Debug Mode
-
-#### Enable Debug Logging
-
-```bash
-# Backend debug mode
-DEBUG=true just backend-dev
-
-# Frontend debug mode
-NODE_ENV=development just frontend-dev
-
-# View debug logs
-just dev-logs -f
-```
-
-#### Debug Commands
-
-```bash
-# Interactive debugging
-just debug-backend           # Backend debug shell
-just debug-frontend          # Frontend debug shell
-just debug-database          # Database inspection
-```
+That is all you need to operate MR-KG in production with Docker. For
+any configuration values not covered here, see @docs/ENV.md.

@@ -17,7 +17,7 @@ List of docs
 - `@docs/ARCHITECTURE.md`: System architecture and design patterns
 - `@docs/DATA.md`: Data structure and database schema details
 - `@docs/DEPLOYMENT.md`: Deployment guide
-- `@docs/DOCKER.md`: Docker deployment and configuration
+- `@docs/ENV.md`: Environment variables and profiles
 - `@docs/TESTING.md`: Testing Strategy and Guidelines
 - `@backend/README.md`: Backend API development guide
 - `@frontend/README.md`: Frontend development guide

@@ -1,170 +1,157 @@
 # MR-KG Backend
 
-FastAPI backend for MR-KG (Mendelian Randomization Knowledge Graph), providing RESTful APIs for trait exploration, study analysis, and similarity computation.
+FastAPI backend for MR-KG (Mendelian Randomization Knowledge Graph).
+Provides RESTful APIs for trait exploration, study analysis, and
+similarity computation.
 
 ## Features
 
-- FastAPI framework with automatic OpenAPI documentation
+- FastAPI with automatic OpenAPI documentation
 - DuckDB integration for vector similarity search
-- Environment-based configuration management
-- Hot reload development environment
+- Environment-based configuration via `.env`
+- Hot reload development server
 - Comprehensive test suite with pytest
-- Code quality enforcement with ruff and type checking
+- Code quality with ruff and type checking (ty)
+- Task automation with a curated `justfile`
 
-## Development Setup
+## Local Development
 
-### Prerequisites
-
-- Python 3.12+
-- [uv](https://github.com/astral-sh/uv) package manager
-- [just](https://github.com/casey/just) task runner
+For initial setup and prerequisites, see @docs/SETTING-UP.md.
 
 ### Quick Start
 
-1. **Install dependencies**:
-   ```bash
-   just install
-   ```
-
-2. **Set up environment**:
-   ```bash
-   just env-example
-   just env-setup
-   ```
-
-3. **Start development server**:
-   ```bash
-   just dev
-   ```
-
-4. **Access the API**:
-   - API: http://localhost:8000
-   - Documentation: http://localhost:8000/docs
-   - Health check: http://localhost:8000/health
-
-### Available Commands
-
 ```bash
-# Development
-just dev              # Start development server with hot reload
-just install          # Install dependencies
+cd backend
 
-# Code Quality
-just fmt              # Format code with ruff
-just lint             # Lint code with ruff
-just ty               # Type check with ty
-just check            # Run all quality checks
+# Install dependencies and setup environment
+just install
+just env-setup
 
-# Testing
-just test             # Run tests with pytest
-just test-cov         # Run tests with coverage
-
-# Docker
-just docker-build     # Build development Docker image
-just docker-run       # Run development Docker container
-
-# Environment
-just env-example      # Create example environment file
-just env-setup        # Set up .env from example
+# Start development server (hot reload)
+just dev
 ```
+
+### Access Points
+
+- Base URL: http://localhost:8000
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/api/v1/health/
 
 ## Project Structure
 
 ```
 backend/
 ├── app/
-│   ├── api/          # API route handlers
-│   ├── core/         # Core configuration and utilities
+│   ├── api/          # API route handlers (v1 endpoints)
+│   ├── core/         # Config, database, dependencies
 │   ├── models/       # Pydantic data models
 │   ├── services/     # Business logic services
-│   ├── utils/        # Utility functions
+│   ├── utils/        # Utilities and helpers
 │   └── main.py       # FastAPI application entry point
 ├── tests/            # Test suite
-├── Dockerfile.dev    # Development Docker configuration
-├── justfile          # Task runner configuration
+├── justfile          # Task runner commands
 └── pyproject.toml    # Python project configuration
+```
+
+## Commands
+
+### Development
+
+```bash
+just install           # Install dependencies
+just install-dev       # Install with dev dependencies
+just dev               # Start server with hot reload
+```
+
+### API Tools
+
+```bash
+just docs              # Open Swagger UI
+just validate-schema   # Validate OpenAPI schema
+just test-endpoints    # Simple curl-based checks
+```
+
+### Database
+
+```bash
+just check-db          # Run DB integration tests
+just test-db-health    # Check DB health endpoint
+```
+
+### Testing
+
+```bash
+just test              # Run tests (pytest -vv)
+just test-cov          # Run tests with coverage report
+just test-file tests/<path>.py   # Run a specific test file
+just test-infra        # Infra-focused tests
+just test-health       # Health endpoint tests
+```
+
+### Code Quality
+
+```bash
+just fmt               # Format and fix with ruff
+just lint              # Lint with ruff
+just ty                # Type check with ty
+just check             # Lint + type check
+```
+
+### Performance
+
+```bash
+just load-test         # Basic load test (if ab is installed)
+just profile           # Quick latency check
+```
+
+### Maintenance
+
+```bash
+just clean             # Remove caches and build artifacts
+just reset             # Clean and remove .env, uv caches
 ```
 
 ## Configuration
 
-Configuration is managed through environment variables. See `.env.example` for available options:
-
-- `DEBUG`: Enable debug mode (default: true)
-- `HOST`: Server host (default: 0.0.0.0)
-- `PORT`: Server port (default: 8000)
-- `DB_PROFILE`: Database profile (local/docker)
-- `VECTOR_STORE_PATH`: Path to vector store database
-- `TRAIT_PROFILE_PATH`: Path to trait profile database
-
-## Database Integration
-
-The backend integrates with existing DuckDB vector stores:
-
-- **Vector Store**: Contains trait embeddings and model results
-- **Trait Profile**: Contains precomputed similarity matrices
-
-Database paths are configurable via environment variables and support both local development and Docker deployment profiles.
-
-## Docker Development
-
-Build and run the development environment with Docker:
-
-```bash
-# Build development image
-just docker-build
-
-# Run with hot reload and volume mounting
-just docker-run
-```
-
-The Docker setup includes:
-- Hot reload for development
-- Volume mounting for code changes
-- Environment variable injection
-- Non-root user execution
-
-## Testing
-
-Run the test suite with:
-
-```bash
-# Basic test run
-just test
-
-# With coverage reporting
-just test-cov
-```
-
-Tests include:
-- Health check endpoints
-- API route validation
-- Database connection testing
-- Error handling verification
-
-## Code Quality
-
-Code quality is enforced through:
-
-- **ruff**: Code formatting and linting
-- **ty**: Type checking
-- **pytest**: Testing framework
-- **pre-commit**: Git hook validation
-
-Run all quality checks:
-
-```bash
-just check
-```
+Configuration is provided via environment variables in `.env`.
+Use `just env-setup` to create `.env` from `.env.example`.
+See @docs/ENV.md for complete variable documentation.
 
 ## API Documentation
 
-When running in development mode, interactive API documentation is available at:
+Interactive API documentation is available when the server is running:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+## Testing
 
-The API follows RESTful conventions and includes:
-- Request/response validation
-- Error handling with appropriate HTTP status codes
-- OpenAPI schema generation
-- Type-safe data models
+Run the test suite locally:
+
+```bash
+just test      # All tests
+just test-cov  # With coverage
+```
+
+The suite covers health checks, API routes, database integration, and
+basic error handling.
+
+## Code Quality
+
+Maintain code quality with provided commands:
+
+```bash
+just check     # Run all quality checks (lint + type check)
+just fmt       # Format code
+```
+
+Tools used:
+- ruff for formatting and linting
+- ty for type checking
+- pytest for tests
+
+## References
+
+- Environment configuration: @docs/ENV.md
+- Development workflows: @docs/DEVELOPMENT.md
+- Testing guidelines: @docs/TESTING.md
+- System architecture: @docs/ARCHITECTURE.md
