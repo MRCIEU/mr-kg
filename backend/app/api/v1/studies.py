@@ -1,7 +1,7 @@
 """Studies API endpoints for version 1."""
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -14,7 +14,11 @@ from app.models.database import (
     PaginationParams,
     SimilaritySearchResult,
 )
-from app.models.responses import DataResponse, PaginatedDataResponse
+from app.models.responses import (
+    DataResponse,
+    PaginatedDataResponse,
+    PaginationInfo,
+)
 from app.services.database_service import AnalyticsService, StudyService
 
 logger = logging.getLogger(__name__)
@@ -210,13 +214,11 @@ async def list_studies(
 
         return StudyListResponse(
             data=studies,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except Exception as e:
@@ -338,13 +340,11 @@ async def search_studies(
 
         return StudySearchResponse(
             data=studies,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except Exception as e:
@@ -406,15 +406,25 @@ async def get_study_details(
 
         # Initialize optional data
         traits = study_detail.traits if include_traits else []
-        similar_studies = (
-            study_detail.similar_studies if include_similar else []
-        )
+        similar_studies_converted = []
+        if include_similar and study_detail.similar_studies:
+            # Convert TraitSimilarity to SimilaritySearchResult
+            for sim in study_detail.similar_studies:
+                similar_studies_converted.append(
+                    SimilaritySearchResult(
+                        query_id=str(sim.query_combination_id),
+                        query_label=f"Study {study_detail.study.pmid} ({study_detail.study.model})",
+                        result_id=sim.similar_pmid,
+                        result_label=sim.similar_title,
+                        similarity=sim.trait_profile_similarity,
+                    )
+                )
 
         study_extended = StudyDetailExtended(
             study=study_detail.study,
             pubmed_data=study_detail.pubmed_data,
             traits=traits,
-            similar_studies=similar_studies,
+            similar_studies=similar_studies_converted,
             statistics=statistics,
         )
 
@@ -440,13 +450,15 @@ async def get_studies_by_pmid(
     Useful for comparing extraction results across models.
     """
     try:
-        studies = await service.get_studies_by_pmid(pmid)
+        studies: list[ModelResult] = await service.get_studies_by_pmid(pmid)
 
         if not studies:
             raise HTTPException(
                 status_code=404, detail=f"No studies found for PMID {pmid}"
             )
-        return DataResponse(data=studies)
+
+        # Use cast to ensure type checker understands the non-empty list type
+        return DataResponse(data=cast(list[ModelResult], studies))
 
     except HTTPException:
         raise

@@ -10,7 +10,9 @@ from typing import Any
 import duckdb
 from pydantic import BaseModel
 
-sys.path.append(str(Path(__file__).parent.parent.parent.parent / "src"))
+sys.path.append(
+    str(Path(__file__).parent.parent.parent.parent / "src" / "common_funcs")
+)
 
 from common_funcs.schema.database_schema import (
     DATABASE_INDEXES,

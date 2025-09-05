@@ -27,6 +27,27 @@ logger = logging.getLogger(__name__)
 # ==== Service Dependencies ====
 
 
+async def get_database_service():
+    """Generic database service dependency.
+
+    Returns the appropriate service based on what's requested.
+    In practice, this should be replaced with specific service dependencies.
+    """
+
+    # This is a fallback - in practice the specific services should be used
+    async def service_factory():
+        pool = await get_database_pool()
+        async with pool.get_vector_store_connection() as vs_conn:
+            async with pool.get_trait_profile_connection() as tp_conn:
+                # Return a generic service that can be used for different purposes
+                # This is not ideal but maintains compatibility
+                from app.services.database_service import DatabaseService
+
+                return DatabaseService(vs_conn, tp_conn)
+
+    return service_factory()
+
+
 async def get_trait_service(
     vector_store_conn=Depends(get_vector_store_connection),
     trait_profile_conn=Depends(get_trait_profile_connection),
@@ -254,8 +275,10 @@ async def check_database_connectivity() -> dict:
 
         return {
             "status": "healthy",
-            "vector_store_connection": vs_result[0] == 1,
-            "trait_profile_connection": tp_result[0] == 1,
+            "vector_store_connection": vs_result is not None
+            and vs_result[0] == 1,
+            "trait_profile_connection": tp_result is not None
+            and tp_result[0] == 1,
             "pool_status": pool_status,
         }
 

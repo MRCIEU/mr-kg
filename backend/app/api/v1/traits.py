@@ -13,7 +13,11 @@ from app.models.database import (
     SimilaritySearchResult,
     TraitEmbedding,
 )
-from app.models.responses import DataResponse, PaginatedDataResponse
+from app.models.responses import (
+    DataResponse,
+    PaginatedDataResponse,
+    PaginationInfo,
+)
 from app.services.database_service import AnalyticsService, TraitService
 
 logger = logging.getLogger(__name__)
@@ -131,13 +135,11 @@ async def list_traits(
 
         return TraitListResponse(
             data=traits,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except Exception as e:
@@ -203,13 +205,11 @@ async def search_traits(
 
         return TraitSearchResponse(
             data=traits,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except Exception as e:
@@ -431,13 +431,11 @@ async def get_trait_studies(
 
         return PaginatedDataResponse(
             data=studies,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except HTTPException:

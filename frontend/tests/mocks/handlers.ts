@@ -10,7 +10,7 @@ import type {
   DataResponse,
 } from '@/types/api'
 
-const API_BASE_URL = 'http://localhost:8000/api/v1/api/v1'
+const API_BASE_URL = 'http://localhost:8000/api/v1'
 
 // ==== Mock Data ====
 
@@ -33,7 +33,7 @@ const mockTraitDetail: TraitDetailExtended = {
     trait_label: 'height',
     appearance_count: 150,
     study_count: 45,
-    model_distribution: { 'GWAS': 30, 'MR': 15 },
+    model_distribution: { GWAS: 30, MR: 15 },
     publication_years: [2020, 2021, 2022, 2023],
   },
   studies: [],
@@ -110,7 +110,7 @@ export const handlers = [
     let filteredTraits = [...mockTraits]
     if (minAppearances) {
       const min = parseInt(minAppearances)
-      filteredTraits = filteredTraits.filter(t => t.appearance_count >= min)
+      filteredTraits = filteredTraits.filter((t) => t.appearance_count >= min)
     }
 
     const start = (page - 1) * pageSize
@@ -134,7 +134,7 @@ export const handlers = [
     const page = parseInt(url.searchParams.get('page') || '1')
     const pageSize = parseInt(url.searchParams.get('page_size') || '50')
 
-    const filteredTraits = mockTraits.filter(trait =>
+    const filteredTraits = mockTraits.filter((trait) =>
       trait.trait_label.toLowerCase().includes(query.toLowerCase())
     )
 
@@ -155,22 +155,19 @@ export const handlers = [
 
   http.get(`${API_BASE_URL}/traits/:traitIndex`, ({ params }) => {
     const traitIndex = parseInt(params.traitIndex as string)
-    
+
     if (traitIndex === 1) {
       return HttpResponse.json({
         data: mockTraitDetail,
       } as DataResponse<TraitDetailExtended>)
     }
 
-    return HttpResponse.json(
-      { error: 'Trait not found' },
-      { status: 404 }
-    )
+    return HttpResponse.json({ error: 'Trait not found' }, { status: 404 })
   }),
 
   http.get(`${API_BASE_URL}/traits/:traitIndex/similar`, ({ params }) => {
     const traitIndex = parseInt(params.traitIndex as string)
-    
+
     const similarTraits: SimilaritySearchResult[] = [
       { index: 2, label: 'body height', similarity_score: 0.95 },
       { index: 3, label: 'stature', similarity_score: 0.89 },
@@ -215,9 +212,10 @@ export const handlers = [
     const page = parseInt(url.searchParams.get('page') || '1')
     const pageSize = parseInt(url.searchParams.get('page_size') || '50')
 
-    const filteredStudies = mockStudies.filter(study =>
-      study.title?.toLowerCase().includes(query.toLowerCase()) ||
-      study.pmid.includes(query)
+    const filteredStudies = mockStudies.filter(
+      (study) =>
+        study.title?.toLowerCase().includes(query.toLowerCase()) ||
+        study.pmid.includes(query)
     )
 
     const start = (page - 1) * pageSize

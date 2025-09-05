@@ -7,8 +7,10 @@ from collections.abc import Callable
 from typing import Any
 
 from fastapi import Request, Response
-from fastapi.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.base import RequestResponseEndpoint
+from starlette.middleware.base import (
+    BaseHTTPMiddleware,
+    RequestResponseEndpoint,
+)
 from starlette.types import ASGIApp
 
 logger = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 """Core API endpoints for version and basic functionality."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Request
@@ -18,7 +18,7 @@ async def api_version() -> DataResponse[dict[str, str]]:
         "application_version": "0.1.0",
         "build_date": "2025-09-01",  # Would be set during build
         "commit_hash": "unknown",  # Would be set during build
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=version_info)
@@ -29,7 +29,7 @@ async def ping() -> DataResponse[dict[str, str]]:
     """Simple ping endpoint for connectivity testing."""
     ping_data = {
         "message": "pong",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=ping_data)
@@ -52,7 +52,7 @@ async def echo(request: Request) -> DataResponse[dict[str, Any]]:
             "host": getattr(request.client, "host", "unknown"),
             "port": getattr(request.client, "port", "unknown"),
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=echo_data)
@@ -72,7 +72,7 @@ async def api_root() -> DataResponse[dict[str, str]]:
         "description": "FastAPI backend for MR-KG (Mendelian Randomization Knowledge Graph)",
         "documentation": "/docs",
         "health_check": "/api/v1/health",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=root_data)

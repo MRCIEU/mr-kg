@@ -15,7 +15,11 @@ from app.models.database import (
     TraitToEFORequest,
     VectorSimilarityRequest,
 )
-from app.models.responses import DataResponse, PaginatedDataResponse
+from app.models.responses import (
+    DataResponse,
+    PaginatedDataResponse,
+    PaginationInfo,
+)
 from app.services.database_service import AnalyticsService, SimilarityService
 
 logger = logging.getLogger(__name__)
@@ -235,13 +239,11 @@ async def search_combinations(
 
         return PaginatedDataResponse(
             data=combinations,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except Exception as e:
@@ -681,13 +683,11 @@ async def get_combination_similarities(
 
         return PaginatedDataResponse(
             data=similarities,
-            total_count=total_count,
-            page=pagination.page,
-            page_size=pagination.page_size,
-            total_pages=(total_count + pagination.page_size - 1)
-            // pagination.page_size,
-            has_next=pagination.page * pagination.page_size < total_count,
-            has_previous=pagination.page > 1,
+            pagination=PaginationInfo.create(
+                page=pagination.page,
+                page_size=pagination.page_size,
+                total_items=total_count,
+            ),
         )
 
     except HTTPException:

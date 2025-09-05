@@ -197,6 +197,7 @@ class TestSchemaValidator:
 
         assert table_info.name == "nonexistent_table"
         assert not table_info.exists
+        assert table_info.error is not None
         assert "does not exist" in table_info.error
 
     def test_view_exists(self, mock_connection):

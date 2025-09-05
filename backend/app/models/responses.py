@@ -1,6 +1,6 @@
 """Standardized response models for API endpoints."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel, Field
@@ -16,7 +16,8 @@ class BaseResponse(BaseModel):
 
     success: bool = Field(default=True, description="Request success status")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Response timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Response timestamp",
     )
     request_id: str | None = Field(None, description="Request correlation ID")
 

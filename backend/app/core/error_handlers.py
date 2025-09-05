@@ -274,8 +274,8 @@ def create_error_response(
     message: str,
     code: str = "ERROR",
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
-    context: dict[str, Any] = None,
-    request_id: str = None,
+    context: dict[str, Any] | None = None,
+    request_id: str | None = None,
 ) -> JSONResponse:
     """Create a standardized error response."""
     error_detail = ErrorDetail(
@@ -298,7 +298,7 @@ def create_error_response(
 def create_validation_error_response(
     field: str,
     message: str,
-    request_id: str = None,
+    request_id: str | None = None,
 ) -> JSONResponse:
     """Create a validation error response."""
     error_detail = ErrorDetail(

@@ -1,7 +1,7 @@
 """Health check endpoints for monitoring and diagnostics."""
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -46,7 +46,7 @@ async def basic_health_check(request: Request) -> DataResponse[HealthStatus]:
         status="healthy",
         version="0.1.0",
         uptime=uptime,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(UTC),
     )
 
     return DataResponse(data=health_data)
@@ -85,7 +85,7 @@ async def database_health_check() -> DataResponse[dict[str, Any]]:
             "error": str(e),
             "vector_store_connection": False,
             "trait_profile_connection": False,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         return DataResponse(data=error_data)
 
@@ -100,7 +100,7 @@ async def connection_pool_status() -> DataResponse[dict[str, Any]]:
         error_data = {
             "error": str(e),
             "initialized": False,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
         }
         return DataResponse(data=error_data)
 
@@ -195,7 +195,7 @@ async def readiness_check(
 
     readiness_data = {
         "ready": overall_ready,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "checks": checks,
     }
 
@@ -217,7 +217,7 @@ async def liveness_check() -> DataResponse[dict[str, str]]:
     """
     liveness_data = {
         "alive": "true",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "uptime": str(time.time() - _app_start_time),
     }
 

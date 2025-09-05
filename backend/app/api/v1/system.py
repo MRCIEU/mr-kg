@@ -1,6 +1,6 @@
 """System information and utility endpoints."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -46,7 +46,7 @@ async def system_information() -> DataResponse[dict[str, Any]]:
         "cors": {
             "allowed_origins": settings.ALLOWED_ORIGINS,
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=info)
@@ -155,8 +155,8 @@ async def system_status(
     db_service: DatabaseService = Depends(get_database_service),
 ) -> DataResponse[dict[str, Any]]:
     """Get current system status and operational metrics."""
-    status_info = {
-        "timestamp": datetime.utcnow().isoformat(),
+    status_info: dict[str, Any] = {
+        "timestamp": datetime.now(UTC).isoformat(),
         "uptime": "calculated_by_health_endpoint",  # Would be calculated
         "status": "operational",
     }
@@ -211,7 +211,7 @@ async def system_configuration() -> DataResponse[dict[str, Any]]:
             "cors_enabled": len(settings.ALLOWED_ORIGINS) > 0,
             "allowed_origins_count": len(settings.ALLOWED_ORIGINS),
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=config)
@@ -227,7 +227,7 @@ async def environment_info() -> DataResponse[dict[str, str]]:
         "api_version": "v1",
         "python_version": "3.12+",  # From pyproject.toml
         "fastapi_version": "0.104.0+",  # From dependencies
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     return DataResponse(data=env_info)
@@ -244,7 +244,7 @@ async def validate_system_integrity(
     verification.
     """
     validation_results = {
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "overall_status": "unknown",
         "checks": {},
     }

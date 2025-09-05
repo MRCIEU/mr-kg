@@ -283,6 +283,7 @@ class TestErrorHandling:
         exc = RateLimitError(limit=60, window="minute", retry_after=30)
         http_exc = mrkg_exception_to_http_exception(exc)
         assert http_exc.status_code == 429
+        assert http_exc.headers is not None
         assert http_exc.headers["Retry-After"] == "30"
 
 
