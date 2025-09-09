@@ -282,12 +282,25 @@ class DatabaseHealthChecker:
             vs_healthy = vs_schema.accessible and len(vs_schema.tables) > 0
             tp_healthy = tp_schema.accessible and len(tp_schema.tables) > 0
 
+            # Check for errors in components
+            errors = []
+            if vs_schema.error:
+                errors.append(f"Vector store: {vs_schema.error}")
+            if tp_schema.error:
+                errors.append(f"Trait profile: {tp_schema.error}")
+            if isinstance(perf_metrics, dict) and perf_metrics.get("error"):
+                errors.append(f"Performance: {perf_metrics['error']}")
+
             if vs_healthy and tp_healthy:
                 health_status["overall_status"] = "healthy"
             elif vs_healthy or tp_healthy:
                 health_status["overall_status"] = "partial"
             else:
                 health_status["overall_status"] = "unhealthy"
+
+            # Add top-level error if any component has errors
+            if errors:
+                health_status["error"] = "; ".join(errors)
 
             return health_status
 

@@ -120,6 +120,12 @@ class SystemInfo(BaseModel):
     features: list[str] = Field(
         default_factory=list, description="Available features"
     )
+    disk_usage: dict[str, Any] | None = Field(
+        None, description="Disk usage information"
+    )
+    load_average: dict[str, float] | None = Field(
+        None, description="System load average"
+    )
 
 
 class MetricsInfo(BaseModel):

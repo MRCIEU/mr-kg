@@ -1,5 +1,7 @@
 """Health check endpoints for monitoring and diagnostics."""
 
+import os
+import shutil
 import time
 from datetime import UTC, datetime
 from typing import Any
@@ -135,6 +137,8 @@ async def system_info(
         api_version="v1",
         database_profile=settings.DB_PROFILE,
         features=features,
+        disk_usage=get_disk_usage(),
+        load_average=get_load_average(),
     )
 
     return DataResponse(data=system_data, request_id=request_id)
@@ -240,6 +244,63 @@ async def liveness_check(
 
 
 # ==== Utility Functions ====
+
+
+def get_disk_usage() -> dict[str, Any]:
+    """Get disk usage information for the current directory."""
+    try:
+        # Get disk usage for the current working directory
+        total, used, free = shutil.disk_usage(os.getcwd())
+
+        # Convert bytes to GB for readability
+        total_gb = total / (1024**3)
+        used_gb = used / (1024**3)
+        free_gb = free / (1024**3)
+        usage_percent = (used / total) * 100 if total > 0 else 0
+
+        return {
+            "total_gb": round(total_gb, 2),
+            "used_gb": round(used_gb, 2),
+            "free_gb": round(free_gb, 2),
+            "usage_percent": round(usage_percent, 2),
+            "path": os.getcwd(),
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "total_gb": 0,
+            "used_gb": 0,
+            "free_gb": 0,
+            "usage_percent": 0,
+            "path": os.getcwd(),
+        }
+
+
+def get_load_average() -> dict[str, Any]:
+    """Get system load average information."""
+    try:
+        # Load average is available on Unix-like systems
+        if hasattr(os, "getloadavg"):
+            load1, load5, load15 = os.getloadavg()
+            return {
+                "1min": round(load1, 2),
+                "5min": round(load5, 2),
+                "15min": round(load15, 2),
+            }
+        else:
+            # Fallback for systems without load average (like Windows)
+            return {
+                "1min": 0.0,
+                "5min": 0.0,
+                "15min": 0.0,
+            }
+    except Exception as e:
+        return {
+            "1min": 0.0,
+            "5min": 0.0,
+            "15min": 0.0,
+            "error": str(e),
+        }
 
 
 def increment_request_metric(metric_name: str) -> None:

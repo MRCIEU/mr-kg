@@ -642,52 +642,87 @@ def test_get_traits_bulk_empty_list(mock_get_service, mock_trait_service):
     assert len(data["data"]) == 0
 
 
-@patch("app.core.dependencies.get_database_service")
-def test_get_traits_bulk_too_many_indices(mock_get_service, mock_trait_service):
+def test_get_traits_bulk_too_many_indices(mock_trait_service):
     """Test bulk traits with too many indices."""
-    mock_get_service.return_value = mock_trait_service
+    from app.core.dependencies import get_trait_service
+    from app.main import app
 
-    # Create a list with 1001 indices (exceeds the 1000 limit)
-    large_list = list(range(1, 1002))
+    # Override the dependency
+    async def override_get_trait_service():
+        return mock_trait_service
 
-    response = client.post("/api/v1/traits/bulk", json=large_list)
+    app.dependency_overrides[get_trait_service] = override_get_trait_service
 
-    assert response.status_code == 400
-    data = response.json()
-    assert "Maximum 1000" in data["detail"]
+    try:
+        # Create a list with 1001 indices (exceeds the 1000 limit)
+        large_list = list(range(1, 1002))
+
+        response = client.post("/api/v1/traits/bulk", json=large_list)
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "Maximum 1000" in data["error"]["message"]
+
+    finally:
+        # Clean up the dependency override
+        app.dependency_overrides.clear()
 
 
 # ---- Tests for Error Handling ----
 
 
-@patch("app.core.dependencies.get_database_service")
-def test_list_traits_database_error(mock_get_service, mock_trait_service):
+def test_list_traits_database_error(mock_trait_service):
     """Test trait listing with database error."""
-    mock_get_service.return_value = mock_trait_service
+    from app.core.dependencies import get_trait_service
+    from app.main import app
+
     mock_trait_service.trait_repo.execute_query.side_effect = Exception(
         "Database connection failed"
     )
 
-    response = client.get("/api/v1/traits/")
+    # Override the dependency
+    async def override_get_trait_service():
+        return mock_trait_service
 
-    assert response.status_code == 500
-    data = response.json()
-    assert "Failed to list traits" in data["detail"]
+    app.dependency_overrides[get_trait_service] = override_get_trait_service
+
+    try:
+        response = client.get("/api/v1/traits/")
+
+        assert response.status_code == 500
+        data = response.json()
+        assert "Failed to list traits" in data["error"]["message"]
+
+    finally:
+        # Clean up the dependency override
+        app.dependency_overrides.clear()
 
 
-@patch("app.core.dependencies.get_database_service")
-def test_search_traits_database_error(mock_get_service, mock_trait_service):
+def test_search_traits_database_error(mock_trait_service):
     """Test trait search with database error."""
-    mock_get_service.return_value = mock_trait_service
+    from app.core.dependencies import get_trait_service
+    from app.main import app
+
     mock_trait_service.trait_repo.execute_query.side_effect = Exception(
         "Database connection failed"
     )
 
-    response = client.get("/api/v1/traits/search?q=body")
+    # Override the dependency
+    async def override_get_trait_service():
+        return mock_trait_service
 
-    assert response.status_code == 500
-    data = response.json()
-    assert "Failed to search traits" in data["detail"]
+    app.dependency_overrides[get_trait_service] = override_get_trait_service
+
+    try:
+        response = client.get("/api/v1/traits/search?q=body")
+
+        assert response.status_code == 500
+        data = response.json()
+        assert "Failed to search traits" in data["error"]["message"]
+
+    finally:
+        # Clean up the dependency override
+        app.dependency_overrides.clear()
 
 
 # ---- Tests for Parameter Validation ----
