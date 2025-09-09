@@ -76,7 +76,7 @@ class TestCoreEndpoints:
         assert data["success"] is True
         assert data["data"]["method"] == "GET"
         assert data["data"]["query_params"]["test"] == "value"
-        assert "X-Test-Header" in data["data"]["headers"]
+        assert "x-test-header" in data["data"]["headers"]
 
 
 class TestHealthEndpoints:

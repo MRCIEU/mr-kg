@@ -70,9 +70,9 @@ def create_app() -> FastAPI:
         title="MR-KG API",
         description="FastAPI backend for MR-KG (Mendelian Randomization Knowledge Graph)",
         version="0.1.0",
-        docs_url="/docs" if settings.DEBUG else None,
+        docs_url="/docs",
         redoc_url="/redoc" if settings.DEBUG else None,
-        openapi_url="/openapi.json" if settings.DEBUG else None,
+        openapi_url="/openapi.json",
         lifespan=lifespan,
     )
 
@@ -115,7 +115,7 @@ def create_app() -> FastAPI:
     # CORS (outermost)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_origins=settings.cors_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allow_headers=["*"],
@@ -126,6 +126,12 @@ def create_app() -> FastAPI:
     api_router = create_api_router()
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+    # ---- Add basic health endpoint at root level for compatibility ----
+    @app.get("/health", include_in_schema=False)
+    async def root_health():
+        """Basic health endpoint for backward compatibility."""
+        return {"status": "healthy"}
+
     # ---- Root endpoint ----
     @app.get("/", include_in_schema=False)
     async def root():
@@ -134,7 +140,7 @@ def create_app() -> FastAPI:
             "message": "MR-KG API",
             "version": "0.1.0",
             "docs": "/docs" if settings.DEBUG else "disabled",
-            "health": "/api/v1/health",
+            "health": "/health",
         }
 
     return app

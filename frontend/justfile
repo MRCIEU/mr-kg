@@ -155,7 +155,7 @@ test-prod:
 [group('environment')]
 env-example:
     @echo "Creating .env.example..."
-    @echo "VITE_API_BASE_URL=http://localhost:8000/api/v1" > .env.example
+    @echo "VITE_API_BASE_URL=http://localhost:8000" > .env.example
     @echo "VITE_APP_TITLE=MR-KG Explorer" >> .env.example
     @echo "VITE_APP_DESCRIPTION=Mendelian Randomization Knowledge Graph" >> .env.example
 

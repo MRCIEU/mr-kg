@@ -12,9 +12,9 @@
     "type-check": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
+    "test:coverage": "VITE_API_BASE_URL=http://localhost:8000 vitest run --coverage",
+    "test:e2e": "VITE_API_BASE_URL=http://localhost:8000 playwright test",
+    "test:e2e:headed": "VITE_API_BASE_URL=http://localhost:8000 playwright test --headed",
     "test:all": "npm run test:coverage && npm run build && npm run test:e2e"
   },
   "dependencies": {

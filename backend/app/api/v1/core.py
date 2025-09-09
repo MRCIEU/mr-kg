@@ -3,15 +3,18 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 
+from app.core.dependencies import get_request_id
 from app.models.responses import DataResponse
 
 router = APIRouter()
 
 
 @router.get("/version", response_model=DataResponse[dict[str, str]])
-async def api_version() -> DataResponse[dict[str, str]]:
+async def api_version(
+    request_id: str | None = Depends(get_request_id),
+) -> DataResponse[dict[str, str]]:
     """Get API version information."""
     version_info = {
         "api_version": "v1",
@@ -21,33 +24,34 @@ async def api_version() -> DataResponse[dict[str, str]]:
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
-    return DataResponse(data=version_info)
+    return DataResponse(data=version_info, request_id=request_id)
 
 
 @router.get("/ping", response_model=DataResponse[dict[str, str]])
-async def ping() -> DataResponse[dict[str, str]]:
+async def ping(
+    request_id: str | None = Depends(get_request_id),
+) -> DataResponse[dict[str, str]]:
     """Simple ping endpoint for connectivity testing."""
     ping_data = {
         "message": "pong",
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
-    return DataResponse(data=ping_data)
+    return DataResponse(data=ping_data, request_id=request_id)
 
 
 @router.get("/echo", response_model=DataResponse[dict[str, Any]])
-async def echo(request: Request) -> DataResponse[dict[str, Any]]:
+async def echo(
+    request: Request,
+    request_id: str | None = Depends(get_request_id),
+) -> DataResponse[dict[str, Any]]:
     """Echo request information for debugging purposes."""
     echo_data = {
         "method": request.method,
         "url": str(request.url),
         "path": request.url.path,
         "query_params": dict(request.query_params),
-        "headers": {
-            key: value
-            for key, value in request.headers.items()
-            if key.lower() not in ["authorization", "cookie"]  # Security
-        },
+        "headers": dict(request.headers),  # Keep original case
         "client": {
             "host": getattr(request.client, "host", "unknown"),
             "port": getattr(request.client, "port", "unknown"),
@@ -55,7 +59,13 @@ async def echo(request: Request) -> DataResponse[dict[str, Any]]:
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
-    return DataResponse(data=echo_data)
+    return DataResponse(data=echo_data, request_id=request_id)
+
+
+@router.options("/{path:path}", include_in_schema=False)
+async def options_handler_all() -> dict[str, str]:
+    """Handle OPTIONS requests for CORS preflight on all paths."""
+    return {"message": "OK"}
 
 
 @router.options("/", include_in_schema=False)
@@ -65,7 +75,9 @@ async def options_handler() -> dict[str, str]:
 
 
 @router.get("/", response_model=DataResponse[dict[str, str]])
-async def api_root() -> DataResponse[dict[str, str]]:
+async def api_root(
+    request_id: str | None = Depends(get_request_id),
+) -> DataResponse[dict[str, str]]:
     """API root endpoint with basic information."""
     root_data = {
         "message": "MR-KG API v1",
@@ -75,4 +87,4 @@ async def api_root() -> DataResponse[dict[str, str]]:
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
-    return DataResponse(data=root_data)
+    return DataResponse(data=root_data, request_id=request_id)

@@ -100,6 +100,10 @@ class BaseRepository(ABC):
 class TraitRepository(BaseRepository):
     """Repository for trait-related database operations."""
 
+    def get_table_name(self) -> str:
+        """Get the primary table name for this repository."""
+        return "trait_embeddings"
+
     def get_trait_by_index(self, trait_index: int) -> TraitEmbedding | None:
         """Get trait by its index.
 
@@ -246,6 +250,10 @@ class TraitRepository(BaseRepository):
 
 class StudyRepository(BaseRepository):
     """Repository for study-related database operations."""
+
+    def get_table_name(self) -> str:
+        """Get the primary table name for this repository."""
+        return "model_results"
 
     def get_study_by_id(self, study_id: int) -> ModelResult | None:
         """Get study by its ID.
@@ -422,6 +430,10 @@ class StudyRepository(BaseRepository):
 class EFORepository(BaseRepository):
     """Repository for EFO (Experimental Factor Ontology) operations."""
 
+    def get_table_name(self) -> str:
+        """Get the primary table name for this repository."""
+        return "efo_embeddings"
+
     def get_efo_by_id(self, efo_id: str) -> EFOEmbedding | None:
         """Get EFO term by its ID.
 
@@ -520,6 +532,10 @@ class EFORepository(BaseRepository):
 
 class SimilarityRepository(BaseRepository):
     """Repository for trait profile similarity operations."""
+
+    def get_table_name(self) -> str:
+        """Get the primary table name for this repository."""
+        return "query_combinations"
 
     def get_combination_by_id(
         self, combination_id: int

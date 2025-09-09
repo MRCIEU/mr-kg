@@ -4,7 +4,7 @@ import logging
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 
 from app.core.database import (
     get_database_pool,
@@ -24,6 +24,14 @@ from app.services.database_service import (
 logger = logging.getLogger(__name__)
 
 
+# ==== Request Dependencies ====
+
+
+def get_request_id(request: Request) -> str | None:
+    """Get request ID from request state."""
+    return getattr(request.state, "request_id", None)
+
+
 # ==== Service Dependencies ====
 
 
@@ -33,19 +41,15 @@ async def get_database_service():
     Returns the appropriate service based on what's requested.
     In practice, this should be replaced with specific service dependencies.
     """
-
     # This is a fallback - in practice the specific services should be used
-    async def service_factory():
-        pool = await get_database_pool()
-        async with pool.get_vector_store_connection() as vs_conn:
-            async with pool.get_trait_profile_connection() as tp_conn:
-                # Return a generic service that can be used for different purposes
-                # This is not ideal but maintains compatibility
-                from app.services.database_service import DatabaseService
+    pool = await get_database_pool()
+    async with pool.get_vector_store_connection() as vs_conn:
+        async with pool.get_trait_profile_connection() as tp_conn:
+            # Return a generic service that can be used for different purposes
+            # This is not ideal but maintains compatibility
+            from app.services.database_service import DatabaseService
 
-                return DatabaseService(vs_conn, tp_conn)
-
-    return service_factory()
+            return DatabaseService(vs_conn, tp_conn)
 
 
 async def get_trait_service(

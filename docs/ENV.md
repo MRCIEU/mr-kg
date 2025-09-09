@@ -106,14 +106,14 @@ Defaults come from backend/app/core/config.py unless overridden by env.
 - VECTOR_STORE_PATH
   - component: backend
   - required: optional
-  - default: ./data/db/vector_store.db (local)
+  - default: ../data/db/vector_store.db (local)
   - description: Path to vector store database file
   - example: VECTOR_STORE_PATH=/app/data/db/vector_store.db
 
 - TRAIT_PROFILE_PATH
   - component: backend
   - required: optional
-  - default: ./data/db/trait_profile_db.db (local)
+  - default: ../data/db/trait_profile_db.db (local)
   - description: Path to trait profile database file
   - example: TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
 

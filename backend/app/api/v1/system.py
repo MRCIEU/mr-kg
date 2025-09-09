@@ -44,7 +44,7 @@ async def system_information() -> DataResponse[dict[str, Any]]:
             "security_headers": True,
         },
         "cors": {
-            "allowed_origins": settings.ALLOWED_ORIGINS,
+            "allowed_origins": settings.cors_origins,
         },
         "timestamp": datetime.now(UTC).isoformat(),
     }
@@ -208,8 +208,8 @@ async def system_configuration() -> DataResponse[dict[str, Any]]:
             "trait_profile_configured": bool(settings.TRAIT_PROFILE_PATH),
         },
         "features": {
-            "cors_enabled": len(settings.ALLOWED_ORIGINS) > 0,
-            "allowed_origins_count": len(settings.ALLOWED_ORIGINS),
+            "cors_enabled": len(settings.cors_origins) > 0,
+            "allowed_origins_count": len(settings.cors_origins),
         },
         "timestamp": datetime.now(UTC).isoformat(),
     }
@@ -285,7 +285,7 @@ async def validate_system_integrity(
         config_issues.append("Vector store path not configured")
     if not settings.TRAIT_PROFILE_PATH:
         config_issues.append("Trait profile path not configured")
-    if not settings.ALLOWED_ORIGINS:
+    if not settings.cors_origins:
         config_issues.append("No CORS origins configured")
 
     if config_issues:

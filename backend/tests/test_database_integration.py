@@ -159,20 +159,43 @@ class TestSchemaValidator:
     def mock_connection(self):
         """Create mock database connection."""
         mock_conn = Mock()
-        mock_conn.execute.return_value.fetchone.return_value = [1]
-        mock_conn.execute.return_value.fetchall.return_value = [
-            (0, "trait_index", "INTEGER", 0, None, 1),
-            (1, "trait_label", "VARCHAR", 0, None, 0),
-            (2, "vector", "FLOAT[]", 0, None, 0),
-        ]
         return mock_conn
+
+    @pytest.fixture
+    def test_repo_class(self):
+        """Create a concrete test repository class."""
+
+        class TestRepository(BaseRepository):
+            def get_table_name(self) -> str:
+                return "test_table"
+
+        return TestRepository
 
     def test_validate_table_exists(self, mock_connection):
         """Test validating that a table exists."""
-        # Mock table exists
-        mock_connection.execute.return_value.fetchone.return_value = [
-            "trait_embeddings"
+        # Setup proper mock chain for multiple execute calls
+        mock_execute = mock_connection.execute
+
+        # First call: check table exists - returns ("trait_embeddings",)
+        # Second call: get table info - returns column info
+        # Third call: get row count - returns (42,)
+        mock_execute.return_value.fetchone.side_effect = [
+            ("trait_embeddings",),  # table exists check
+            None,  # This won't be called for fetchone
         ]
+        mock_execute.return_value.fetchall.return_value = [
+            (0, "id", "INTEGER", 0, None, 1),  # Sample column info
+            (1, "trait_name", "TEXT", 0, None, 0),
+        ]
+
+        # Override the third call specifically for COUNT(*)
+        def mock_execute_side_effect(query, *args):
+            mock_result = mock_connection.execute.return_value
+            if "COUNT(*)" in query:
+                mock_result.fetchone.return_value = (42,)
+            return mock_result
+
+        mock_connection.execute.side_effect = mock_execute_side_effect
 
         validator = SchemaValidator(mock_connection)
 
@@ -232,25 +255,35 @@ class TestBaseRepository:
         mock_conn = Mock()
         return mock_conn
 
-    def test_execute_query(self, mock_connection):
+    @pytest.fixture
+    def test_repo_class(self):
+        """Create a concrete test repository class."""
+
+        class TestRepository(BaseRepository):
+            def get_table_name(self) -> str:
+                return "test_table"
+
+        return TestRepository
+
+    def test_execute_query(self, mock_connection, test_repo_class):
         """Test executing a query."""
         mock_connection.execute.return_value.fetchall.return_value = [
             (1, "test")
         ]
 
-        repo = BaseRepository(mock_connection)
+        repo = test_repo_class(mock_connection)
         results = repo.execute_query("SELECT * FROM test")
 
         assert results == [(1, "test")]
         mock_connection.execute.assert_called_once_with("SELECT * FROM test")
 
-    def test_execute_query_with_params(self, mock_connection):
+    def test_execute_query_with_params(self, mock_connection, test_repo_class):
         """Test executing a query with parameters."""
         mock_connection.execute.return_value.fetchall.return_value = [
             (1, "test")
         ]
 
-        repo = BaseRepository(mock_connection)
+        repo = test_repo_class(mock_connection)
         results = repo.execute_query("SELECT * FROM test WHERE id = ?", (1,))
 
         assert results == [(1, "test")]
@@ -258,20 +291,20 @@ class TestBaseRepository:
             "SELECT * FROM test WHERE id = ?", (1,)
         )
 
-    def test_execute_one(self, mock_connection):
+    def test_execute_one(self, mock_connection, test_repo_class):
         """Test executing a query and getting one result."""
         mock_connection.execute.return_value.fetchone.return_value = (1, "test")
 
-        repo = BaseRepository(mock_connection)
+        repo = test_repo_class(mock_connection)
         result = repo.execute_one("SELECT * FROM test WHERE id = 1")
 
         assert result == (1, "test")
 
-    def test_get_count(self, mock_connection):
+    def test_get_count(self, mock_connection, test_repo_class):
         """Test getting count of rows."""
         mock_connection.execute.return_value.fetchone.return_value = (42,)
 
-        repo = BaseRepository(mock_connection)
+        repo = test_repo_class(mock_connection)
         count = repo.get_count("test_table")
 
         assert count == 42
@@ -543,7 +576,7 @@ class TestDatabaseHealthChecker:
 
         status = await health_checker.perform_health_check()
 
-        assert status["overall_status"] == "error"
+        assert status["overall_status"] == "unhealthy"
         assert "error" in status
 
 

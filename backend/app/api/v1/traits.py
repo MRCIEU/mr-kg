@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from app.core.dependencies import get_database_service
+from app.core.dependencies import get_analytics_service, get_trait_service
 from app.models.database import (
     PaginationParams,
     SimilaritySearchFilters,
@@ -80,7 +80,7 @@ async def list_traits(
     min_appearances: int | None = Query(
         default=None, description="Minimum appearance count"
     ),
-    service: TraitService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
 ) -> TraitListResponse:
     """Get paginated list of traits with appearance counts.
 
@@ -159,7 +159,7 @@ async def search_traits(
     min_appearances: int | None = Query(
         default=None, description="Minimum appearance count"
     ),
-    service: TraitService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
 ) -> TraitSearchResponse:
     """Search traits by label with fuzzy matching.
 
@@ -238,8 +238,8 @@ async def get_trait_details(
     similarity_threshold: float = Query(
         default=0.3, ge=0.0, le=1.0, description="Similarity threshold"
     ),
-    service: TraitService = Depends(get_database_service),
-    analytics_service: AnalyticsService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
+    analytics_service: AnalyticsService = Depends(get_analytics_service),
 ) -> DataResponse[TraitDetailExtended]:
     """Get detailed information about a specific trait.
 
@@ -347,7 +347,7 @@ async def get_trait_studies(
     date_to: str | None = Query(
         default=None, description="Publication date to (YYYY-MM-DD)"
     ),
-    service: TraitService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
 ) -> PaginatedDataResponse[list[dict[str, Any]]]:
     """Get studies associated with a specific trait with filtering and pagination.
 
@@ -459,7 +459,7 @@ async def get_similar_traits(
     similarity_threshold: float = Query(
         default=0.3, ge=0.0, le=1.0, description="Minimum similarity"
     ),
-    service: TraitService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
 ) -> DataResponse[list[SimilaritySearchResult]]:
     """Find traits similar to the specified trait using vector embeddings.
 
@@ -504,7 +504,7 @@ async def get_trait_efo_mappings(
     similarity_threshold: float = Query(
         default=0.3, ge=0.0, le=1.0, description="Minimum similarity"
     ),
-    service: TraitService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
 ) -> DataResponse[list[SimilaritySearchResult]]:
     """Get EFO (Experimental Factor Ontology) term mappings for a trait.
 
@@ -537,7 +537,7 @@ async def get_trait_efo_mappings(
 
 @router.get("/stats/overview", response_model=DataResponse[dict[str, Any]])
 async def get_traits_overview(
-    service: AnalyticsService = Depends(get_database_service),
+    service: AnalyticsService = Depends(get_analytics_service),
 ) -> DataResponse[dict[str, Any]]:
     """Get overview statistics about traits in the database.
 
@@ -637,7 +637,7 @@ async def get_traits_overview(
 @router.post("/bulk", response_model=DataResponse[list[TraitEmbedding]])
 async def get_traits_bulk(
     trait_indices: list[int],
-    service: TraitService = Depends(get_database_service),
+    service: TraitService = Depends(get_trait_service),
 ) -> DataResponse[list[TraitEmbedding]]:
     """Get multiple traits by their indices in a single request.
 

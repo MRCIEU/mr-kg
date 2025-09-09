@@ -64,7 +64,11 @@
       </div>
 
       <!-- Statistics (if available) -->
-      <div v-if="showStats && statistics" class="space-y-3 mb-4" data-testid="trait-statistics">
+      <div
+        v-if="showStats && statistics"
+        class="space-y-3 mb-4"
+        data-testid="trait-statistics"
+      >
         <div class="grid grid-cols-2 gap-4 text-sm">
           <div>
             <span class="text-gray-500">Studies:</span>

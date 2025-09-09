@@ -157,7 +157,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
             return real_ip
 
         # Fall back to direct client IP
-        if hasattr(request.client, "host"):
+        if request.client and hasattr(request.client, "host"):
             return request.client.host
 
         return "unknown"
@@ -194,10 +194,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if self.include_csp:
             csp_directives = [
                 "default-src 'self'",
-                "script-src 'self' 'unsafe-inline'",
-                "style-src 'self' 'unsafe-inline'",
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
                 "img-src 'self' data: https:",
-                "font-src 'self'",
+                "font-src 'self' https://cdn.jsdelivr.net",
                 "connect-src 'self'",
                 "frame-ancestors 'none'",
             ]
@@ -271,7 +271,7 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
         if forwarded_for:
             return forwarded_for.split(",")[0].strip()
 
-        if hasattr(request.client, "host"):
+        if request.client and hasattr(request.client, "host"):
             return request.client.host
 
         return "unknown"

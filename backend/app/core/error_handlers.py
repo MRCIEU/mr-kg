@@ -59,7 +59,7 @@ async def mrkg_exception_handler(
 
     return JSONResponse(
         status_code=http_exc.status_code,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
         headers=http_exc.headers,
     )
 
@@ -109,7 +109,7 @@ async def http_exception_handler(
 
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
         headers=exc.headers,
     )
 
@@ -162,7 +162,7 @@ async def validation_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
     )
 
 
@@ -197,7 +197,7 @@ async def starlette_http_exception_handler(
 
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
     )
 
 
@@ -239,7 +239,7 @@ async def general_exception_handler(
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
     )
 
 
@@ -291,7 +291,7 @@ def create_error_response(
 
     return JSONResponse(
         status_code=status_code,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
     )
 
 
@@ -314,5 +314,5 @@ def create_validation_error_response(
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_response.model_dump(),
+        content=error_response.model_dump(mode="json"),
     )

@@ -67,9 +67,12 @@ class SchemaValidator:
 
             status = DatabaseSchemaStatus(
                 database_path=str(
-                    self.connection.execute("PRAGMA database_list").fetchone()[
-                        2
-                    ]
+                    (
+                        self.connection.execute(
+                            "PRAGMA database_list"
+                        ).fetchone()
+                        or [None, None, "unknown"]
+                    )[2]
                 ),
                 accessible=True,
             )
@@ -109,9 +112,12 @@ class SchemaValidator:
 
             status = DatabaseSchemaStatus(
                 database_path=str(
-                    self.connection.execute("PRAGMA database_list").fetchone()[
-                        2
-                    ]
+                    (
+                        self.connection.execute(
+                            "PRAGMA database_list"
+                        ).fetchone()
+                        or [None, None, "unknown"]
+                    )[2]
                 ),
                 accessible=True,
             )
@@ -172,9 +178,10 @@ class SchemaValidator:
             ]  # col[1] is column name
 
             # Get row count
-            row_count = self.connection.execute(
+            count_result = self.connection.execute(
                 f"SELECT COUNT(*) FROM {table_name}"
-            ).fetchone()[0]
+            ).fetchone()
+            row_count = count_result[0] if count_result else 0
 
             return DatabaseTableInfo(
                 name=table_name,
@@ -360,6 +367,7 @@ def validate_database_structure(
     Returns:
         DatabaseSchemaStatus with validation results
     """
+    conn = None
     try:
         conn = duckdb.connect(db_path, read_only=True)
         validator = SchemaValidator(conn)
@@ -377,7 +385,8 @@ def validate_database_structure(
             database_path=db_path, accessible=False, error=str(e)
         )
     finally:
-        try:
-            conn.close()
-        except Exception:
-            pass
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
