@@ -6,7 +6,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from app.core.dependencies import get_database_service
+from app.core.dependencies import (
+    get_analytics_service,
+    get_similarity_service,
+)
 from app.models.database import (
     PaginationParams,
     QueryCombination,
@@ -81,7 +84,7 @@ async def analyze_similarity(
         default="trait_profile",
         description="Similarity type: trait_profile or jaccard",
     ),
-    service: SimilarityService = Depends(get_database_service),
+    service: SimilarityService = Depends(get_similarity_service),
 ) -> DataResponse[SimilarityAnalysis]:
     """Analyze similarity for a PMID-model combination.
 
@@ -149,7 +152,7 @@ async def analyze_similarity(
 
 @router.get(
     "/combinations",
-    response_model=PaginatedDataResponse[list[QueryCombination]],
+    response_model=PaginatedDataResponse[QueryCombination],
 )
 async def search_combinations(
     page: int = Query(default=1, ge=1, description="Page number (1-based)"),
@@ -167,8 +170,8 @@ async def search_combinations(
         description="Sort field: trait_count, pmid, model",
     ),
     order_desc: bool = Query(default=True, description="Sort descending"),
-    service: SimilarityService = Depends(get_database_service),
-) -> PaginatedDataResponse[list[QueryCombination]]:
+    service: SimilarityService = Depends(get_similarity_service),
+) -> PaginatedDataResponse[QueryCombination]:
     """Search available PMID-model combinations for similarity analysis.
 
     Returns combinations with filtering and pagination support.
@@ -261,7 +264,7 @@ async def vector_similarity_search(
     search_type: str = Query(
         default="traits", description="Search type: traits or efo"
     ),
-    service: SimilarityService = Depends(get_database_service),
+    service: SimilarityService = Depends(get_similarity_service),
 ) -> DataResponse[list[VectorSimilarityResult]]:
     """Perform vector similarity search using custom query vector.
 
@@ -335,7 +338,7 @@ async def vector_similarity_search(
 )
 async def bulk_trait_to_efo_mapping(
     request: TraitToEFORequest,
-    service: SimilarityService = Depends(get_database_service),
+    service: SimilarityService = Depends(get_similarity_service),
 ) -> DataResponse[list[TraitEFOMapping]]:
     """Map multiple traits to EFO terms using vector similarity.
 
@@ -432,7 +435,7 @@ async def bulk_trait_to_efo_mapping(
 
 @router.get("/stats", response_model=DataResponse[SimilarityStatistics])
 async def similarity_statistics(
-    service: AnalyticsService = Depends(get_database_service),
+    service: AnalyticsService = Depends(get_analytics_service),
 ) -> DataResponse[SimilarityStatistics]:
     """Get statistics about similarity computations in the database.
 
@@ -524,7 +527,7 @@ async def similarity_statistics(
 
 @router.get("/models", response_model=DataResponse[list[str]])
 async def get_available_similarity_models(
-    service: SimilarityService = Depends(get_database_service),
+    service: SimilarityService = Depends(get_similarity_service),
 ) -> DataResponse[list[str]]:
     """Get list of models available in the similarity database.
 
@@ -550,7 +553,7 @@ async def get_available_similarity_models(
 )
 async def get_combination_details(
     combination_id: int,
-    service: SimilarityService = Depends(get_database_service),
+    service: SimilarityService = Depends(get_similarity_service),
 ) -> DataResponse[QueryCombination]:
     """Get details about a specific query combination.
 
@@ -596,7 +599,7 @@ async def get_combination_details(
 
 @router.get(
     "/combinations/{combination_id}/similarities",
-    response_model=PaginatedDataResponse[list[TraitSimilarity]],
+    response_model=PaginatedDataResponse[TraitSimilarity],
 )
 async def get_combination_similarities(
     combination_id: int,
@@ -611,8 +614,8 @@ async def get_combination_similarities(
         default="trait_profile",
         description="Similarity type: trait_profile or jaccard",
     ),
-    service: SimilarityService = Depends(get_database_service),
-) -> PaginatedDataResponse[list[TraitSimilarity]]:
+    service: SimilarityService = Depends(get_similarity_service),
+) -> PaginatedDataResponse[TraitSimilarity]:
     """Get all similarities for a specific query combination.
 
     Returns paginated list of similar combinations with filtering options.

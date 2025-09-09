@@ -41,13 +41,13 @@ class TraitListItem(BaseModel):
     appearance_count: int
 
 
-class TraitListResponse(PaginatedDataResponse[list[TraitListItem]]):
+class TraitListResponse(PaginatedDataResponse[TraitListItem]):
     """Response for paginated trait listing."""
 
     pass
 
 
-class TraitSearchResponse(PaginatedDataResponse[list[TraitListItem]]):
+class TraitSearchResponse(PaginatedDataResponse[TraitListItem]):
     """Response for trait search operations."""
 
     pass
@@ -331,7 +331,7 @@ async def get_trait_details(
 
 @router.get(
     "/{trait_index}/studies",
-    response_model=PaginatedDataResponse[list[dict[str, Any]]],
+    response_model=PaginatedDataResponse[dict[str, Any]],
 )
 async def get_trait_studies(
     trait_index: int,
@@ -348,7 +348,7 @@ async def get_trait_studies(
         default=None, description="Publication date to (YYYY-MM-DD)"
     ),
     service: TraitService = Depends(get_trait_service),
-) -> PaginatedDataResponse[list[dict[str, Any]]]:
+) -> PaginatedDataResponse[dict[str, Any]]:
     """Get studies associated with a specific trait with filtering and pagination.
 
     Returns detailed study information for studies that mention the specified trait.
