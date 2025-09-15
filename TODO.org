@@ -1,5 +1,5 @@
+#filetags: :work:
 * implement frontend testing
 * Simplify docs and merge duplicated information, keep single source of truth and reference them
 - DEV.md should just be an index
 * verify how planned things in architecture will be implemented
-* upgrade to new version of yiutils
