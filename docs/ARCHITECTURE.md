@@ -1,5 +1,7 @@
 # MR-KG System Architecture
 
+For project overview and navigation, see @DEV.md.
+
 Scope: Architecture-only reference. Operational guidance lives in
 @docs/DEVELOPMENT.md and @docs/DEPLOYMENT.md. Environment configuration is in
 @docs/ENV.md.
@@ -13,19 +15,40 @@ modern web interface. A legacy Streamlit app is maintained for compatibility.
 
 ## High-Level Architecture
 
-```
-+------------------------------------------------------------------+
-|                              MR-KG                               |
-+------------------------------------------------------------------+
-| Frontend (Vue.js) | Backend (FastAPI) |         Data Layer       |
-| [Vue 3 + TS]      | [REST API]        | [DuckDB vector databases]|
-| [Pinia, Router]   | [Business Logic]  |                          |
-+------------------------------------------------------------------+
-|                     Processing Pipeline (ETL)                    |
-|  Raw LLM + EFO -> Preprocess -> Embed (HPC) -> Build DuckDB      |
-+------------------------------------------------------------------+
-|                      Legacy Interface (Streamlit)                |
-+------------------------------------------------------------------+
+```mermaid
+flowchart TB
+    subgraph User Interfaces
+        Frontend[Frontend<br/>Vue 3 + TypeScript<br/>Pinia + Router]
+        Streamlit[Legacy Streamlit<br/>Read-only access]
+    end
+    
+    subgraph Backend Services
+        API[Backend API<br/>FastAPI + Pydantic<br/>REST endpoints]
+    end
+    
+    subgraph Data Layer
+        VectorDB[(vector_store.db<br/>Traits + Embeddings)]
+        TraitDB[(trait_profile_db.db<br/>Similarities + Profiles)]
+    end
+    
+    subgraph Processing Pipeline
+        Raw[Raw Inputs<br/>LLM extractions<br/>EFO ontology]
+        Preprocess[Preprocessing<br/>Normalization<br/>Deduplication]
+        Embed[Embedding<br/>spaCy vectors<br/>HPC jobs]
+        Build[Database Build<br/>DuckDB creation<br/>View materialization]
+    end
+    
+    Frontend -->|HTTP/JSON| API
+    API -->|SQL queries| VectorDB
+    API -->|SQL queries| TraitDB
+    Streamlit -->|Direct read| VectorDB
+    Streamlit -->|Direct read| TraitDB
+    
+    Raw --> Preprocess
+    Preprocess --> Embed
+    Embed --> Build
+    Build -->|Creates| VectorDB
+    Build -->|Creates| TraitDB
 ```
 
 ## Component Architecture
@@ -97,18 +120,7 @@ It reads the same DuckDB databases as the backend.
 The data layer consists of file-backed DuckDB databases optimized for vector
 search and analytical queries.
 
-Primary databases
-
-- data/db/vector_store.db
-  - trait_embeddings: trait vectors indexed by canonical trait ids
-  - efo_embeddings: ontology term vectors for semantic linkage
-  - model_results: raw LLM extraction outputs with metadata
-  - model_result_traits: study-to-trait links
-  - query_combinations: PMID and model metadata
-- data/db/trait_profile_db.db
-  - trait_similarities: precomputed pairwise trait similarities
-  - trait_profiles: aggregated trait profiles for studies
-  - similarity_views: optimized read views
+For complete database schema documentation, see @processing/docs/db_schema.md.
 
 Access patterns
 
@@ -124,26 +136,8 @@ Shared schema source
 ## Processing Pipeline Architecture
 
 The pipeline converts raw inputs into vectorized databases consumed by the web
-stack.
-
-```
-Raw inputs -> Preprocessing -> Embedding -> Database build
-
-- Raw inputs
-  - LLM extraction results
-  - EFO ontology JSON
-  - PubMed metadata
-- Preprocessing
-  - Trait normalization and deduplication
-  - EFO term parsing and linking
-  - Index construction
-- Embedding (HPC or batch)
-  - spaCy-based vectorization of traits and EFO terms
-  - Chunked jobs and aggregation of partial outputs
-- Database build
-  - Create DuckDB files and optimized tables
-  - Materialize views for query performance
-```
+stack. For complete pipeline documentation including workflows, scripts, and
+HPC details, see @processing/README.md.
 
 Key responsibilities
 
