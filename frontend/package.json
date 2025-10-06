@@ -12,6 +12,9 @@
     "type-check": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "VITE_API_BASE_URL=http://localhost:8000 vitest run tests/integration",
+    "test:integration:watch": "VITE_API_BASE_URL=http://localhost:8000 vitest tests/integration",
     "test:coverage": "VITE_API_BASE_URL=http://localhost:8000 vitest run --coverage",
     "test:e2e": "VITE_API_BASE_URL=http://localhost:8000 playwright test",
     "test:e2e:headed": "VITE_API_BASE_URL=http://localhost:8000 playwright test --headed",
@@ -26,7 +29,8 @@
     "pinia": "^2.1.0",
     "vue": "^3.4.0",
     "vue-chartjs": "^5.3.2",
-    "vue-router": "^4.2.0"
+    "vue-router": "^4.2.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",

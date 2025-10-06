@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosResponse } from 'axios'
+import { z } from 'zod'
 import type {
   DataResponse,
   PaginatedDataResponse,
@@ -11,11 +12,19 @@ import type {
   TraitsOverview,
   StudyAnalytics,
   SimilarityPair,
-  PaginationParams,
-  TraitSearchFilters,
-  StudySearchFilters,
-  SimilaritySearchFilters,
 } from '@/types/api'
+import {
+  TraitsListResponseSchema,
+  TraitDetailResponseSchema,
+  StudiesListResponseSchema,
+  StudyDetailResponseSchema,
+  SimilaritiesListResponseSchema,
+  TraitsOverviewResponseSchema,
+  StudyAnalyticsResponseSchema,
+  DataResponseSchema,
+  PaginatedDataResponseSchema,
+  SimilaritySearchResultSchema,
+} from '@/types/schemas'
 
 // ==== API Configuration ====
 
@@ -59,13 +68,27 @@ class ApiService {
 
   // ==== Generic Request Methods ====
 
-  private async get<T>(url: string, params?: Record<string, any>): Promise<T> {
+  private async get<T>(
+    url: string,
+    params?: Record<string, any>,
+    schema?: z.ZodSchema<T>
+  ): Promise<T> {
     const response: AxiosResponse<T> = await this.client.get(url, { params })
+    if (schema) {
+      return schema.parse(response.data)
+    }
     return response.data
   }
 
-  private async post<T>(url: string, data?: any): Promise<T> {
+  private async post<T>(
+    url: string,
+    data?: any,
+    schema?: z.ZodSchema<T>
+  ): Promise<T> {
     const response: AxiosResponse<T> = await this.client.post(url, data)
+    if (schema) {
+      return schema.parse(response.data)
+    }
     return response.data
   }
 
@@ -94,7 +117,7 @@ class ApiService {
       min_appearances?: number
     } = {}
   ): Promise<PaginatedDataResponse<TraitListItem[]>> {
-    return this.get('/traits', params)
+    return this.get('/traits', params, TraitsListResponseSchema)
   }
 
   async searchTraits(params: {
@@ -103,7 +126,7 @@ class ApiService {
     page_size?: number
     min_appearances?: number
   }): Promise<PaginatedDataResponse<TraitListItem[]>> {
-    return this.get('/traits/search', params)
+    return this.get('/traits/search', params, TraitsListResponseSchema)
   }
 
   async getTraitDetails(
@@ -117,7 +140,7 @@ class ApiService {
       similarity_threshold?: number
     } = {}
   ): Promise<DataResponse<TraitDetailExtended>> {
-    return this.get(`/traits/${traitIndex}`, params)
+    return this.get(`/traits/${traitIndex}`, params, TraitDetailResponseSchema)
   }
 
   async getTraitStudies(
@@ -141,7 +164,11 @@ class ApiService {
       similarity_threshold?: number
     } = {}
   ): Promise<DataResponse<SimilaritySearchResult[]>> {
-    return this.get(`/traits/${traitIndex}/similar`, params)
+    return this.get(
+      `/traits/${traitIndex}/similar`,
+      params,
+      DataResponseSchema(z.array(SimilaritySearchResultSchema))
+    )
   }
 
   async getTraitEfoMappings(
@@ -151,11 +178,15 @@ class ApiService {
       similarity_threshold?: number
     } = {}
   ): Promise<DataResponse<SimilaritySearchResult[]>> {
-    return this.get(`/traits/${traitIndex}/efo-mappings`, params)
+    return this.get(
+      `/traits/${traitIndex}/efo-mappings`,
+      params,
+      DataResponseSchema(z.array(SimilaritySearchResultSchema))
+    )
   }
 
   async getTraitsOverview(): Promise<DataResponse<TraitsOverview>> {
-    return this.get('/traits/stats/overview')
+    return this.get('/traits/stats/overview', {}, TraitsOverviewResponseSchema)
   }
 
   async getTraitsBulk(traitIndices: number[]): Promise<DataResponse<any[]>> {
@@ -177,7 +208,7 @@ class ApiService {
       order_desc?: boolean
     } = {}
   ): Promise<PaginatedDataResponse<StudyListItem[]>> {
-    return this.get('/studies', params)
+    return this.get('/studies', params, StudiesListResponseSchema)
   }
 
   async searchStudies(params: {
@@ -189,7 +220,7 @@ class ApiService {
     date_from?: string
     date_to?: string
   }): Promise<PaginatedDataResponse<StudyListItem[]>> {
-    return this.get('/studies/search', params)
+    return this.get('/studies/search', params, StudiesListResponseSchema)
   }
 
   async getStudyDetails(
@@ -201,7 +232,7 @@ class ApiService {
       similarity_threshold?: number
     } = {}
   ): Promise<DataResponse<StudyDetailExtended>> {
-    return this.get(`/studies/${studyId}`, params)
+    return this.get(`/studies/${studyId}`, params, StudyDetailResponseSchema)
   }
 
   async getStudyByPmid(
@@ -214,7 +245,11 @@ class ApiService {
       similarity_threshold?: number
     } = {}
   ): Promise<DataResponse<StudyDetailExtended>> {
-    return this.get(`/studies/pmid/${pmid}`, { model, ...params })
+    return this.get(
+      `/studies/pmid/${pmid}`,
+      { model, ...params },
+      StudyDetailResponseSchema
+    )
   }
 
   async getSimilarStudies(
@@ -224,11 +259,15 @@ class ApiService {
       similarity_threshold?: number
     } = {}
   ): Promise<DataResponse<SimilaritySearchResult[]>> {
-    return this.get(`/studies/${studyId}/similar`, params)
+    return this.get(
+      `/studies/${studyId}/similar`,
+      params,
+      DataResponseSchema(z.array(SimilaritySearchResultSchema))
+    )
   }
 
   async getStudiesAnalytics(): Promise<DataResponse<StudyAnalytics>> {
-    return this.get('/studies/stats/overview')
+    return this.get('/studies/stats/overview', {}, StudyAnalyticsResponseSchema)
   }
 
   // ==== Similarities API ====
@@ -243,7 +282,7 @@ class ApiService {
       order_desc?: boolean
     } = {}
   ): Promise<PaginatedDataResponse<SimilarityPair[]>> {
-    return this.get('/similarities', params)
+    return this.get('/similarities', params, SimilaritiesListResponseSchema)
   }
 
   async searchSimilarities(params: {
@@ -253,7 +292,11 @@ class ApiService {
     model?: string
     min_similarity?: number
   }): Promise<PaginatedDataResponse<SimilarityPair[]>> {
-    return this.get('/similarities/search', params)
+    return this.get(
+      '/similarities/search',
+      params,
+      SimilaritiesListResponseSchema
+    )
   }
 
   async getTraitSimilarities(
@@ -265,7 +308,11 @@ class ApiService {
       max_results?: number
     } = {}
   ): Promise<PaginatedDataResponse<SimilaritySearchResult[]>> {
-    return this.get(`/similarities/trait/${traitIndex}`, params)
+    return this.get(
+      `/similarities/trait/${traitIndex}`,
+      params,
+      PaginatedDataResponseSchema(z.array(SimilaritySearchResultSchema))
+    )
   }
 
   async getStudySimilarities(
@@ -278,7 +325,11 @@ class ApiService {
       max_results?: number
     } = {}
   ): Promise<PaginatedDataResponse<SimilarityPair[]>> {
-    return this.get(`/similarities/study/${pmid}`, { model, ...params })
+    return this.get(
+      `/similarities/study/${pmid}`,
+      { model, ...params },
+      SimilaritiesListResponseSchema
+    )
   }
 
   async getSimilaritiesOverview(): Promise<DataResponse<Record<string, any>>> {

@@ -7,35 +7,35 @@ Auto-generated documentation from schema definitions.
 ```mermaid
 erDiagram
     trait_embeddings {
-        INTEGER trait_index PK,NOT NULL
-        VARCHAR trait_label NOT NULL
-        FLOAT[200] vector NOT NULL
+        INTEGER trait_index PK
+        VARCHAR trait_label
+        FLOAT[200] vector
     }
     efo_embeddings {
-        VARCHAR id PK,NOT NULL
-        VARCHAR label NOT NULL
-        FLOAT[200] vector NOT NULL
+        VARCHAR id PK
+        VARCHAR label
+        FLOAT[200] vector
     }
     model_results {
-        INTEGER id PK,NOT NULL
-        VARCHAR model NOT NULL
-        VARCHAR pmid NOT NULL
-        JSON metadata NOT NULL
-        JSON results NOT NULL
+        INTEGER id PK
+        VARCHAR model
+        VARCHAR pmid
+        JSON metadata
+        JSON results
     }
     model_result_traits {
-        INTEGER id PK,NOT NULL
-        INTEGER model_result_id NOT NULL
-        INTEGER trait_index NOT NULL
-        VARCHAR trait_label NOT NULL
+        INTEGER id PK
+        INTEGER model_result_id
+        INTEGER trait_index
+        VARCHAR trait_label
         VARCHAR trait_id_in_result
     }
     mr_pubmed_data {
-        VARCHAR pmid PK,NOT NULL
-        VARCHAR title NOT NULL
-        VARCHAR abstract NOT NULL
-        VARCHAR pub_date NOT NULL
-        VARCHAR journal NOT NULL
+        VARCHAR pmid PK
+        VARCHAR title
+        VARCHAR abstract
+        VARCHAR pub_date
+        VARCHAR journal
         VARCHAR journal_issn
         VARCHAR author_affil
     }

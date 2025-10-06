@@ -224,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Bars3Icon,
@@ -259,10 +259,6 @@ const viewMode = ref<'grid' | 'list'>('grid')
 const overview = ref<TraitsOverview | null>(null)
 
 // ==== Computed ====
-
-const hasFilters = computed(() => {
-  return !!(searchQuery.value || minAppearances.value)
-})
 
 // ==== Methods ====
 

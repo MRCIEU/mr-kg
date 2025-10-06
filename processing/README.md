@@ -22,7 +22,7 @@ flowchart TD
     H --> J[Compute Trait Similarities]
     J --> K[Aggregate Similarities]
     K --> L[Build Trait Profile DB]
-    
+
     style E fill:#e1f5ff
     style F fill:#e1f5ff
     style J fill:#e1f5ff
@@ -267,18 +267,18 @@ flowchart LR
         R2[LLM Results]
         R3[PubMed]
     end
-    
+
     subgraph Processed["Intermediate"]
         P1[traits/]
         P2[efo/]
         P3[embeddings/]
     end
-    
+
     subgraph Output["Databases"]
         O1[vector_store.db]
         O2[trait_profile_db.db]
     end
-    
+
     R1 --> P2
     R2 --> P1
     R2 --> P3
@@ -287,7 +287,7 @@ flowchart LR
     P3 --> O1
     R3 --> O1
     O1 --> O2
-    
+
     style O1 fill:#ffe1e1
     style O2 fill:#ffe1e1
 ```

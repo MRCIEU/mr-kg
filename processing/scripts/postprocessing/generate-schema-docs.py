@@ -96,12 +96,8 @@ def generate_mermaid_diagram(tables: Dict[str, TableDef]) -> str:
             constraints = []
             if col.primary_key:
                 constraints.append("PK")
-            if not col.nullable:
-                constraints.append("NOT NULL")
 
-            constraint_str = (
-                f" {','.join(constraints)}" if constraints else ""
-            )
+            constraint_str = f" {' '.join(constraints)}" if constraints else ""
             lines.append(f"        {type_str} {col.name}{constraint_str}")
 
         lines.append("    }")
@@ -144,7 +140,9 @@ def generate_table_documentation(table_name: str, table_def: TableDef) -> str:
         nullable_str = "nullable" if col.nullable else "NOT NULL"
         pk_str = " (PRIMARY KEY)" if col.primary_key else ""
 
-        lines.append(f"- **`{col.name}`** ({type_str}, {nullable_str}){pk_str}")
+        lines.append(
+            f"- **`{col.name}`** ({type_str}, {nullable_str}){pk_str}"
+        )
         lines.append("")
 
     if table_def.foreign_keys:
@@ -152,7 +150,7 @@ def generate_table_documentation(table_name: str, table_def: TableDef) -> str:
         lines.append("")
         for fk in table_def.foreign_keys:
             lines.append(
-                f"- `{fk.column}` -> " f"`{fk.ref_table}.{fk.ref_column}`"
+                f"- `{fk.column}` -> `{fk.ref_table}.{fk.ref_column}`"
             )
         lines.append("")
 

@@ -4,7 +4,6 @@ import type {
   TraitDetailExtended,
   TraitsOverview,
   StudyListItem,
-  StudyDetailExtended,
   SimilaritySearchResult,
   PaginatedDataResponse,
   DataResponse,
@@ -165,9 +164,7 @@ export const handlers = [
     return HttpResponse.json({ error: 'Trait not found' }, { status: 404 })
   }),
 
-  http.get(`${API_BASE_URL}/traits/:traitIndex/similar`, ({ params }) => {
-    const traitIndex = parseInt(params.traitIndex as string)
-
+  http.get(`${API_BASE_URL}/traits/:traitIndex/similar`, () => {
     const similarTraits: SimilaritySearchResult[] = [
       { index: 2, label: 'body height', similarity_score: 0.95 },
       { index: 3, label: 'stature', similarity_score: 0.89 },
@@ -234,7 +231,7 @@ export const handlers = [
   }),
 
   // ==== Similarities endpoints ====
-  http.get(`${API_BASE_URL}/similarities`, ({ request }) => {
+  http.get(`${API_BASE_URL}/similarities`, () => {
     return HttpResponse.json({
       data: [],
       total_count: 0,
