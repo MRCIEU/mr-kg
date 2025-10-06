@@ -884,5 +884,14 @@ wheels = [
 
 [[package]]
 name = "yiutils"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "../src/yiutils" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=7.4.0" },
+    { name = "ruff", specifier = ">=0.1.0" },
+    { name = "ty", specifier = ">=0.0.1a19" },
+]
