@@ -212,7 +212,7 @@ extraction results with optimized views for similarity search.
 **Path**: `data/db/trait_profile_db.db`
 
 Precomputed trait-to-trait similarities for study network analysis.
-See @processing/docs/trait-similarity.md for similarity methodology.
+See @processing/docs/trait-profile-similarity.md for similarity methodology.
 
 ## Development Tools
 
@@ -305,7 +305,7 @@ See @docs/DATA.md for complete data structure.
 ### Technical References
 
 - **Database schema**: @processing/docs/db_schema.md (auto-generated, regenerate with `just generate-schema-docs`)
-- **Trait similarity concepts**: @processing/docs/trait-similarity.md
+- **Trait profile similarity concepts**: @processing/docs/trait-profile-similarity.md
 - **Vector store details**: @processing/docs/databases.md
 
 ### External References

@@ -40,7 +40,7 @@ study similarity profiles for network analysis.
 - Both semantic and Jaccard similarity metrics
 - Support for study network construction
 
-**Concepts**: See @processing/docs/trait-similarity.md for details on
+**Concepts**: See @processing/docs/trait-profile-similarity.md for details on
 trait profile similarity methodology.
 
 ## Embedding model
