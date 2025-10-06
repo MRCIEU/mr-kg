@@ -22,13 +22,6 @@ ruff:
 ty:
     uv run ty check
 
-# ==== sanity ====
-
-# Describe the structure of both DuckDB databases, NOTE: local setup
-[group('sanity')]
-describe-db:
-    uv run python -m utils.describe_db > ../data/assets/database_schema/database_info.txt
-
 # ==== webapp ====
 
 # Run the streamlit web app, local setup

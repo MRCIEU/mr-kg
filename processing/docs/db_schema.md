@@ -25,8 +25,8 @@ erDiagram
     }
     model_result_traits {
         INTEGER id PK
-        INTEGER model_result_id
-        INTEGER trait_index
+        INTEGER model_result_id FK
+        INTEGER trait_index FK
         VARCHAR trait_label
         VARCHAR trait_id_in_result
     }
@@ -39,8 +39,47 @@ erDiagram
         VARCHAR journal_issn
         VARCHAR author_affil
     }
-    model_result_traits ||--o{ model_results : "model_result_id -> id"
-    model_result_traits ||--o{ trait_embeddings : "trait_index -> trait_index"
+    trait_similarity_search {
+        INTEGER query_id "from_trait_embeddings.trait_index"
+        VARCHAR query_label "from_trait_embeddings.trait_label"
+        INTEGER result_id "from_trait_embeddings.trait_index"
+        VARCHAR result_label "from_trait_embeddings.trait_label"
+        FLOAT similarity "from_computed_similarity"
+    }
+    trait_efo_similarity_search {
+        INTEGER trait_index "from_trait_embeddings.trait_index"
+        VARCHAR trait_label "from_trait_embeddings.trait_label"
+        VARCHAR efo_id "from_efo_embeddings.id"
+        VARCHAR efo_label "from_efo_embeddings.label"
+        FLOAT similarity "from_computed_similarity"
+    }
+    pmid_model_analysis {
+        VARCHAR pmid "from_model_results.pmid"
+        VARCHAR model "from_model_results.model"
+        INTEGER model_result_id "from_model_results.id"
+        JSON metadata "from_model_results.metadata"
+        JSON results "from_model_results.results"
+        VARCHAR title "from_mr_pubmed_data.title"
+        VARCHAR abstract "from_mr_pubmed_data.abstract"
+        VARCHAR pub_date "from_mr_pubmed_data.pub_date"
+        VARCHAR journal "from_mr_pubmed_data.journal"
+        VARCHAR journal_issn "from_mr_pubmed_data.journal_issn"
+        VARCHAR author_affil "from_mr_pubmed_data.author_affil"
+        JSON traits "from_aggregated"
+    }
+    model_result_traits }o--|| model_results : "model_result_id references id"
+    model_result_traits }o--|| trait_embeddings : "trait_index references trait_index"
+    trait_similarity_search }o..o{ trait_embeddings : "uses"
+    trait_efo_similarity_search }o..o{ efo_embeddings : "uses"
+    trait_efo_similarity_search }o..o{ trait_embeddings : "uses"
+    pmid_model_analysis }o..o{ model_result_traits : "uses"
+    pmid_model_analysis }o..o{ model_results : "uses"
+    pmid_model_analysis }o..o{ mr_pubmed_data : "uses"
+
+    %% Styling
+    style trait_similarity_search fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style trait_efo_similarity_search fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style pmid_model_analysis fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
 ```
 
 ## Quick reference
@@ -179,6 +218,8 @@ Pre-computed views for common queries:
 
 ### trait_similarity_search
 
+Pre-computed similarity matrix for all trait-to-trait comparisons. Uses cosine similarity on 200-dimensional embeddings to find semantically related traits. Excludes self-comparisons. Useful for discovering related traits and clustering analysis.
+
 **SQL Definition:**
 
 ```sql
@@ -195,6 +236,8 @@ SELECT
 
 ### trait_efo_similarity_search
 
+Cross-reference matrix between traits and EFO ontology terms. Uses cosine similarity to map traits to relevant EFO terms for ontology alignment. Enables automatic trait categorization and standardization against biomedical ontologies. Results can be filtered by similarity threshold to find best EFO matches.
+
 **SQL Definition:**
 
 ```sql
@@ -209,6 +252,8 @@ SELECT
 ```
 
 ### pmid_model_analysis
+
+Comprehensive view combining PubMed metadata, model results, and extracted traits. Each row is unique per PMID-model combination with traits aggregated into a nested structure. Includes original PubMed data, model metadata/results, and all associated traits. Useful for detailed paper analysis and cross-referencing model outputs with source data.
 
 **SQL Definition:**
 

@@ -81,6 +81,7 @@ class ViewDef:
 
     name: str
     sql: str
+    description: str = ""
 
     def __str__(self) -> str:
         return f"CREATE VIEW {self.name} AS {self.sql}"

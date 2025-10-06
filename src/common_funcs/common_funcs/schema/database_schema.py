@@ -370,13 +370,12 @@ DATABASE_INDEXES = [
 DATABASE_VIEWS = [
     ViewDef(
         name="trait_similarity_search",
-        # Build process: Creates CROSS JOIN between trait_embeddings and itself
-        # Calculates cosine similarity for all trait pairs (excluding self-comparisons)
-        # Built after trait_embeddings table contains validated traits with embeddings
-        # Pre-computed similarity matrix for all trait-to-trait comparisons.
-        # Uses cosine similarity on 200-dimensional embeddings to find semantically related traits.
-        # Excludes self-comparisons (t1.trait_index != t2.trait_index).
-        # Useful for discovering related traits and clustering analysis.
+        description=(
+            "Pre-computed similarity matrix for all trait-to-trait comparisons. "
+            "Uses cosine similarity on 200-dimensional embeddings to find "
+            "semantically related traits. Excludes self-comparisons. "
+            "Useful for discovering related traits and clustering analysis."
+        ),
         sql="""
         SELECT
             t1.trait_index as query_id,
@@ -391,13 +390,13 @@ DATABASE_VIEWS = [
     ),
     ViewDef(
         name="trait_efo_similarity_search",
-        # Build process: Creates CROSS JOIN between trait_embeddings and efo_embeddings
-        # Calculates cosine similarity between all trait-EFO term pairs
-        # Built after both trait_embeddings and efo_embeddings tables are populated
-        # Cross-reference matrix between traits and EFO ontology terms.
-        # Uses cosine similarity to map traits to relevant EFO terms for ontology alignment.
-        # Enables automatic trait categorization and standardization against biomedical ontologies.
-        # Results can be filtered by similarity threshold to find best EFO matches.
+        description=(
+            "Cross-reference matrix between traits and EFO ontology terms. "
+            "Uses cosine similarity to map traits to relevant EFO terms for "
+            "ontology alignment. Enables automatic trait categorization and "
+            "standardization against biomedical ontologies. Results can be "
+            "filtered by similarity threshold to find best EFO matches."
+        ),
         sql="""
         SELECT
             t.trait_index as trait_index,
@@ -411,13 +410,14 @@ DATABASE_VIEWS = [
     ),
     ViewDef(
         name="pmid_model_analysis",
-        # Build process: Creates comprehensive JOIN between model_results, mr_pubmed_data,
-        # and model_result_traits with trait aggregation
-        # Built after all tables and indexes are created for optimal performance
-        # Comprehensive view combining PubMed metadata, model results, and extracted traits.
-        # Each row is unique per PMID-model combination with traits aggregated into a nested structure.
-        # Includes original PubMed data, model metadata/results, and all associated traits.
-        # Useful for detailed paper analysis and cross-referencing model outputs with source data.
+        description=(
+            "Comprehensive view combining PubMed metadata, model results, and "
+            "extracted traits. Each row is unique per PMID-model combination with "
+            "traits aggregated into a nested structure. Includes original PubMed "
+            "data, model metadata/results, and all associated traits. Useful for "
+            "detailed paper analysis and cross-referencing model outputs with "
+            "source data."
+        ),
         sql="""
         SELECT
             mr.pmid,

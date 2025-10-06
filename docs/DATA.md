@@ -64,10 +64,6 @@ Top-level layout
 
 - output/: batch logs and chunked intermediate results from cluster jobs (audit/debug only)
 
-Inspecting databases
-
-- Use webapp/scripts/describe-db.py (just describe-db) to list tables, views, schemas, and row counts.
-
 # file tree (2025-08-10)
 
 ```

@@ -77,11 +77,245 @@ def format_column_type(col_type: ColumnType) -> str:
     return res
 
 
-def generate_mermaid_diagram(tables: Dict[str, TableDef]) -> str:
-    """Generate mermaid ER diagram for all tables.
+def parse_sql_select_columns(sql: str) -> List[tuple]:
+    """Parse SQL SELECT statement to extract column definitions.
+
+    Args:
+        sql: SQL query string
+
+    Returns:
+        List of (column_name, source_expr) tuples
+    """
+    import re
+
+    sql_normalized = " ".join(sql.split())
+    select_match = re.search(
+        r"SELECT\s+(.*?)\s+FROM", sql_normalized, re.IGNORECASE | re.DOTALL
+    )
+
+    if not select_match:
+        return []
+
+    select_clause = select_match.group(1)
+    columns = []
+
+    parts = []
+    paren_depth = 0
+    current = []
+
+    for char in select_clause:
+        if char == "(":
+            paren_depth += 1
+            current.append(char)
+        elif char == ")":
+            paren_depth -= 1
+            current.append(char)
+        elif char == "," and paren_depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+
+    if current:
+        parts.append("".join(current).strip())
+
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+
+        as_match = re.search(r"\s+as\s+(\w+)\s*$", part, re.IGNORECASE)
+        if as_match:
+            col_name = as_match.group(1)
+            source_expr = part[: as_match.start()].strip()
+        else:
+            dot_match = re.search(r"(\w+)\.(\w+)$", part)
+            if dot_match:
+                col_name = dot_match.group(2)
+                source_expr = part
+            else:
+                col_name = part.split()[-1] if part else "unknown"
+                source_expr = part
+
+        columns.append((col_name, source_expr))
+
+    return columns
+
+
+def extract_source_table_column(expr: str, tables: Dict[str, TableDef]) -> str:
+    """Extract source table.column from a SQL expression.
+
+    Args:
+        expr: SQL expression (e.g., "t1.trait_index", "mr.pmid")
+        tables: Dictionary of table definitions
+
+    Returns:
+        Source in format "table.column", "computed", or "aggregated"
+    """
+    import re
+
+    table_aliases = {
+        "t1": "trait_embeddings",
+        "t2": "trait_embeddings",
+        "t": "trait_embeddings",
+        "e": "efo_embeddings",
+        "mr": "model_results",
+        "mpd": "mr_pubmed_data",
+        "mrt": "model_result_traits",
+    }
+
+    if "array_cosine_similarity" in expr.lower():
+        return "computed_similarity"
+
+    if "COALESCE" in expr.upper() and "LIST" in expr.upper():
+        if "mrt." in expr:
+            return "aggregated"
+
+    simple_match = re.search(r"(\w+)\.(\w+)", expr)
+    if simple_match:
+        alias = simple_match.group(1)
+        column = simple_match.group(2)
+        table = table_aliases.get(alias, alias)
+        return f"{table}.{column}"
+
+    if (
+        "(" in expr
+        or "+" in expr
+        or "-" in expr
+        or "*" in expr
+        or "/" in expr
+    ):
+        return "computed"
+
+    return "unknown"
+
+
+def infer_column_type(
+    col_name: str, source: str, tables: Dict[str, TableDef]
+) -> str:
+    """Infer SQL type for a view column.
+
+    Args:
+        col_name: Column name
+        source: Source expression (e.g., "table.column", "computed")
+        tables: Dictionary of table definitions
+
+    Returns:
+        SQL type string
+    """
+    if source == "computed_similarity":
+        return "FLOAT"
+
+    if source == "aggregated":
+        return "JSON"
+
+    if source == "computed":
+        if "similarity" in col_name.lower():
+            return "FLOAT"
+        return "VARCHAR"
+
+    if "." in source:
+        table_name, source_col = source.split(".", 1)
+        if table_name in tables:
+            for col in tables[table_name].columns:
+                if col.name == source_col:
+                    return format_column_type(col.type)
+
+    if "id" in col_name.lower() and "index" in col_name.lower():
+        return "INTEGER"
+    if "pmid" in col_name.lower() or "label" in col_name.lower():
+        return "VARCHAR"
+    if "metadata" in col_name.lower() or "results" in col_name.lower():
+        return "JSON"
+
+    return "VARCHAR"
+
+
+def extract_view_columns(
+    views: List[ViewDef], tables: Dict[str, TableDef]
+) -> Dict[str, List[tuple]]:
+    """Extract column definitions from view SQL statements.
+
+    Args:
+        views: List of view definitions
+        tables: Dictionary of table definitions
+
+    Returns:
+        Dictionary mapping view names to list of (type, name, source) tuples
+    """
+    result = {}
+
+    for view in views:
+        columns = parse_sql_select_columns(view.sql)
+        view_cols = []
+
+        for col_name, source_expr in columns:
+            source = extract_source_table_column(source_expr, tables)
+            col_type = infer_column_type(col_name, source, tables)
+            view_cols.append((col_type, col_name, source))
+
+        result[view.name] = view_cols
+
+    return result
+
+
+def extract_view_table_refs(views: List[ViewDef]) -> Dict[str, List[str]]:
+    """Extract table references from view SQL statements.
+
+    Args:
+        views: List of view definitions
+
+    Returns:
+        Dictionary mapping view names to list of referenced table names
+    """
+    import re
+
+    result = {}
+
+    table_aliases = {
+        "t1": "trait_embeddings",
+        "t2": "trait_embeddings",
+        "t": "trait_embeddings",
+        "e": "efo_embeddings",
+        "mr": "model_results",
+        "mpd": "mr_pubmed_data",
+        "mrt": "model_result_traits",
+    }
+
+    for view in views:
+        sql_normalized = " ".join(view.sql.split())
+
+        from_match = re.search(
+            r"FROM\s+(\w+)", sql_normalized, re.IGNORECASE
+        )
+        join_matches = re.findall(
+            r"(?:LEFT\s+JOIN|CROSS\s+JOIN|JOIN)\s+(\w+)",
+            sql_normalized,
+            re.IGNORECASE,
+        )
+
+        tables = set()
+        if from_match:
+            table = from_match.group(1)
+            tables.add(table_aliases.get(table, table))
+
+        for match in join_matches:
+            table = match
+            tables.add(table_aliases.get(table, table))
+
+        result[view.name] = sorted(tables)
+
+    return result
+
+
+def generate_mermaid_diagram(
+    tables: Dict[str, TableDef], views: List[ViewDef]
+) -> str:
+    """Generate mermaid ER diagram for all tables and views.
 
     Args:
         tables: Dictionary of table definitions
+        views: List of view definitions
 
     Returns:
         Mermaid diagram as string
@@ -96,20 +330,49 @@ def generate_mermaid_diagram(tables: Dict[str, TableDef]) -> str:
             constraints = []
             if col.primary_key:
                 constraints.append("PK")
+            if any(fk.column == col.name for fk in table_def.foreign_keys):
+                constraints.append("FK")
 
             constraint_str = f" {' '.join(constraints)}" if constraints else ""
             lines.append(f"        {type_str} {col.name}{constraint_str}")
 
         lines.append("    }")
 
+    view_columns = extract_view_columns(views, tables)
+
+    for view in views:
+        view_name = view.name
+        lines.append(f"    {view_name} {{")
+        
+        if view_name in view_columns:
+            for col_type, col_name, source in view_columns[view_name]:
+                lines.append(f"        {col_type} {col_name} \"from_{source}\"")
+        
+        lines.append("    }")
+
     for table_def in tables.values():
         if table_def.foreign_keys:
             for fk in table_def.foreign_keys:
                 lines.append(
-                    f"    {table_def.name} ||--o{{ "
+                    f"    {table_def.name} }}o--|| "
                     f"{fk.ref_table} : "
-                    f'"{fk.column} -> {fk.ref_column}"'
+                    f'"{fk.column} references {fk.ref_column}"'
                 )
+
+    view_table_refs = extract_view_table_refs(views)
+
+    for view in views:
+        if view.name in view_table_refs:
+            for table_name in view_table_refs[view.name]:
+                lines.append(
+                    f"    {view.name} }}o..o{{ {table_name} : "
+                    f'"uses"'
+                )
+
+    lines.append("")
+    lines.append("    %% Styling")
+    for view in views:
+        lines.append(f"    style {view.name} fill:#e1f5ff,stroke:#0288d1,stroke-width:2px")
 
     lines.append("```")
     res = "\n".join(lines)
@@ -202,6 +465,11 @@ def generate_view_documentation(views: List[ViewDef]) -> str:
     for view in views:
         lines.append(f"### {view.name}")
         lines.append("")
+        
+        if hasattr(view, "description") and view.description:
+            lines.append(view.description)
+            lines.append("")
+        
         lines.append("**SQL Definition:**")
         lines.append("")
         lines.append("```sql")
@@ -262,7 +530,7 @@ def generate_schema_documentation(
         "",
         "## Overview",
         "",
-        generate_mermaid_diagram(tables),
+        generate_mermaid_diagram(tables, views),
         "",
         generate_quick_reference(tables),
         "",
