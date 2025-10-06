@@ -6,7 +6,7 @@ This directory contains scripts for building and querying a DuckDB-based vector 
 
 The vector store contains:
 - **Trait embeddings**: 200-dimensional vectors for traits extracted from model results
-- **EFO embeddings**: 200-dimensional vectors for EFO ontology terms  
+- **EFO embeddings**: 200-dimensional vectors for EFO ontology terms
 - **Model results**: Links between traits in model results and their embedding indices
 - **Similarity search capabilities**: Find similar traits and EFO terms using cosine similarity
 
@@ -24,13 +24,13 @@ python scripts/build-vector-store.py --dry-run
 # Create database with automatic timestamp
 python scripts/build-vector-store.py
 
-# Create database with custom name  
+# Create database with custom name
 python scripts/build-vector-store.py --database-name my-database
 ```
 
 **Database Schema:**
 - `trait_embeddings`: trait embeddings with id, label, and 200-dim vector
-- `efo_embeddings`: EFO embeddings with id, label, and 200-dim vector  
+- `efo_embeddings`: EFO embeddings with id, label, and 200-dim vector
 - `model_results`: model result metadata (model, pmid)
 - `model_result_traits`: trait occurrences in model results with linkings
 - `trait_similarity_search`: view for trait-to-trait similarity
@@ -97,7 +97,7 @@ python scripts/query-vector-store.py --database database-{timestamp}.db --list-t
    ```bash
    python scripts/query-vector-store.py --database database-1753991544.db --query-trait "coffee intake" --limit 5
    ```
-   
+
    Output:
    ```
    Top 5 most similar traits to 'coffee intake':
@@ -113,7 +113,7 @@ python scripts/query-vector-store.py --database database-{timestamp}.db --list-t
    ```bash
    python scripts/query-vector-store.py --database database-1753991544.db --query-efo "coffee intake" --limit 5
    ```
-   
+
    Output:
    ```
    Top 5 most similar EFO terms to 'coffee intake':
@@ -126,7 +126,7 @@ python scripts/query-vector-store.py --database database-{timestamp}.db --list-t
 ## Data Sources
 
 - **Trait embeddings**: `data/processed/embeddings/traits.json`
-- **EFO embeddings**: `data/processed/embeddings/efo.json`  
+- **EFO embeddings**: `data/processed/embeddings/efo.json`
 - **Model results**: `data/processed/model_results/processed_model_results.json`
 
 ## Database Location

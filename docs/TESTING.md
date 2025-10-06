@@ -2,42 +2,6 @@
 
 This document outlines the comprehensive testing strategy for the MR-KG fullstack application, covering testing approaches, tools, and best practices for backend, frontend, and integration testing.
 
-## Testing Philosophy
-
-MR-KG adopts a multi-layered testing approach to ensure reliability, performance, and maintainability:
-
-- **Unit Testing**: Test individual components in isolation
-- **Integration Testing**: Test component interactions and data flow
-- **API Testing**: Validate REST endpoints and data contracts
-- **End-to-End Testing**: Test complete user workflows
-- **Performance Testing**: Ensure system meets performance requirements
-- **Database Testing**: Validate data integrity and query performance
-
-## Testing Stack
-
-### Backend Testing
-
-- **Framework**: pytest for Python testing
-- **Test Client**: FastAPI TestClient for API testing
-- **Mocking**: unittest.mock for dependency isolation
-- **Database**: In-memory or test-specific databases
-- **Coverage**: pytest-cov for code coverage analysis
-
-### Frontend Testing (Planned)
-
-- **Framework**: Vitest for Vue.js testing
-- **Component Testing**: Vue Test Utils for component isolation
-- **E2E Testing**: Playwright for end-to-end workflows
-- **Mocking**: MSW (Mock Service Worker) for API mocking
-- **Coverage**: Built-in Vitest coverage reporting
-
-### Integration Testing
-
-- **Docker**: Containerized test environments
-- **Database**: Real DuckDB instances for integration tests
-- **API**: Full stack integration testing
-- **Performance**: Load testing with realistic data
-
 ## Backend Testing
 
 ### Test Structure

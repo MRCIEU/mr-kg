@@ -2,7 +2,7 @@
 
 Scope: Architecture-only reference. Operational guidance lives in
 @docs/DEVELOPMENT.md and @docs/DEPLOYMENT.md. Environment configuration is in
-@docs/ENV.md. Future plans and backlog live in @docs/ROADMAP.md.
+@docs/ENV.md.
 
 ## System Overview
 

@@ -19,27 +19,15 @@ Docker development workflows, see @docs/DEVELOPMENT.md.
 - just task runner
 - Docker and Docker Compose
 
-Helpful checks:
-
-- python --version (should be 3.12+)
-- uv --version
-- node --version (should be 18+)
-- npm --version
-- just --version
-- docker --version and docker compose version
-
 ## Get the code and initial setup
 
-- Clone the repository and run the top-level setup recipe:
+Clone the repository and run the top-level setup recipe:
 
 ```bash
 git clone https://github.com/MRCIEU/mr-kg
 cd mr-kg
 just setup-dev
 ```
-
-The setup-dev recipe prepares local environment files from examples and ensures
-basic tooling is ready. You can rerun it safely if needed.
 
 ## Environment setup examples
 
@@ -102,7 +90,7 @@ Docker development quickstart:
 After starting the components locally, verify basic health.
 
 - Backend
-  - Open http://localhost:8000/docs to view the API docs
+  - Open <http://localhost:8000/docs> to view the API docs
   - Health check should return JSON with a healthy status:
 
 ```bash
@@ -110,10 +98,10 @@ curl -s http://localhost:8000/api/v1/health | jq .
 ```
 
 - Frontend
-  - Open http://localhost:3000 and confirm the app loads
+  - Open <http://localhost:3000> and confirm the app loads
 
 - Legacy webapp
-  - Open http://localhost:8501 and confirm pages render
+  - Open <http://localhost:8501> and confirm pages render
 
 If the backend shows database connectivity warnings on startup, confirm the
 DuckDB files exist and the paths in backend/.env are correct.

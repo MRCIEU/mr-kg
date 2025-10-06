@@ -381,8 +381,6 @@ Notes:
 
 Guidelines for safe and convenient local configuration.
 
-- Never commit secrets. Do not commit .env files containing secrets.
-- Prefer .env.local variants for values unique to your machine.
 - Recommended files:
   - backend/.env
     - copy from backend/.env.example and adjust paths for local dev
@@ -397,7 +395,3 @@ Guidelines for safe and convenient local configuration.
     - optional overrides for Vite variables when running `npm run dev`
   - processing/.env.local or shell exports
     - store ACCOUNT_CODE here for HPC jobs
-- Ensure .gitignore excludes any *.env.local and environment files with
-  secrets.
-- For production, supply secrets via the deployment environment or a secret
-  manager. Do not bake secrets into images.

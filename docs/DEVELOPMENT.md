@@ -159,7 +159,7 @@ Useful backend URLs:
   ```sh
   # Remove stopped containers, unused networks, dangling images
   just clean
-  
+
   # Remove everything including volumes (destructive)
   just clean-all
   ```

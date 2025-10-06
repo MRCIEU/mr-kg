@@ -267,22 +267,6 @@ Final Databases:
 └── data/db/trait_profile_db.db        # Similarity analysis database
 ```
 
-## Performance Considerations
-
-### Resource Requirements
-
-- **RAM**: 16GB+ recommended for embedding generation
-- **Storage**: 100GB+ for intermediate files and final databases
-- **CPU**: Multi-core beneficial for parallel processing
-- **HPC**: SLURM environment for large-scale processing
-
-### Optimization
-
-- Use HPC batch jobs for embedding generation
-- Process in chunks to manage memory usage
-- Leverage DuckDB's columnar storage for query performance
-- Precompute similarities to reduce runtime query complexity
-
 ## References
 
 - Shared schema definitions: @src/common_funcs/common_funcs/schema/database_schema.py
