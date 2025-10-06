@@ -9,24 +9,36 @@ See @docs/ENV.md for environment variables (ACCOUNT_CODE and others).
 
 The processing pipeline transforms raw inputs into vectorized databases consumed by the web stack:
 
+```mermaid
+flowchart TD
+    A[Raw LLM Results] --> B[Preprocess Traits]
+    C[EFO Ontology JSON] --> D[Preprocess EFO]
+    B --> E[Embed Traits]
+    D --> F[Embed EFO]
+    E --> G[Aggregate Embeddings]
+    F --> G
+    G --> H[Build Vector Store DB]
+    I[PubMed Metadata] --> H
+    H --> J[Compute Trait Similarities]
+    J --> K[Aggregate Similarities]
+    K --> L[Build Trait Profile DB]
+    
+    style E fill:#e1f5ff
+    style F fill:#e1f5ff
+    style J fill:#e1f5ff
+    style H fill:#ffe1e1
+    style L fill:#ffe1e1
 ```
-Raw inputs -> Preprocessing -> Embedding -> Database build
 
-- Raw inputs
-  - LLM extraction results
-  - EFO ontology JSON
-  - PubMed metadata
-- Preprocessing
-  - Trait normalization and deduplication
-  - EFO term parsing and linking
-  - Index construction
-- Embedding (HPC or batch)
-  - spaCy-based vectorization of traits and EFO terms
-  - Chunked jobs and aggregation of partial outputs
-- Database build
-  - Create DuckDB files and optimized tables
-  - Materialize views for query performance
-```
+**Legend**: Blue = HPC batch jobs, Red = Database outputs
+
+**Key stages**:
+
+1. **Preprocessing**: Normalize traits and EFO terms, create indices
+2. **Embedding**: Generate 200-dim vectors using SciSpaCy (HPC)
+3. **Database build**: Create vector_store.db with embeddings and results
+4. **Similarity**: Compute trait profile similarities (HPC)
+5. **Profile database**: Create trait_profile_db.db for network analysis
 
 ## Quick Start - Complete Pipeline
 
@@ -186,20 +198,21 @@ sbatch scripts/bc4/compute-trait-similarity.sbatch
 
 ## Output Databases
 
-### Vector Store Database (`data/db/vector_store.db`)
+See @processing/docs/databases.md for architecture details and @processing/docs/db_schema.md for schema reference.
 
-- `trait_embeddings`: Trait vectors indexed by canonical trait indices
-- `efo_embeddings`: EFO term vectors for semantic mapping
-- `model_results`: Raw LLM outputs with metadata
-- `model_result_traits`: Links between studies and extracted traits
-- `query_combinations`: PMID and model metadata
-- Views for PMIDs analysis and trait-based filtering
+### Vector Store Database
 
-### Trait Profile Database (`data/db/trait_profile_db.db`)
+**Path**: `data/db/vector_store.db`
 
-- `trait_similarities`: Precomputed pairwise trait similarity scores
-- `trait_profiles`: Aggregated trait profiles for studies
-- `similarity_views`: Optimized read views
+Primary database containing trait embeddings, EFO embeddings, and model
+extraction results with optimized views for similarity search.
+
+### Trait Profile Database
+
+**Path**: `data/db/trait_profile_db.db`
+
+Precomputed trait-to-trait similarities for study network analysis.
+See @processing/docs/trait-similarity.md for similarity methodology.
 
 ## Development Tools
 
@@ -247,27 +260,55 @@ uv run python scripts/main-db/build-main-database.py --debug
 
 ## Data Flow
 
+```mermaid
+flowchart LR
+    subgraph Raw["Raw Data"]
+        R1[efo.json]
+        R2[LLM Results]
+        R3[PubMed]
+    end
+    
+    subgraph Processed["Intermediate"]
+        P1[traits/]
+        P2[efo/]
+        P3[embeddings/]
+    end
+    
+    subgraph Output["Databases"]
+        O1[vector_store.db]
+        O2[trait_profile_db.db]
+    end
+    
+    R1 --> P2
+    R2 --> P1
+    R2 --> P3
+    P1 --> P3
+    P2 --> P3
+    P3 --> O1
+    R3 --> O1
+    O1 --> O2
+    
+    style O1 fill:#ffe1e1
+    style O2 fill:#ffe1e1
 ```
-Raw Data Sources:
-├── data/raw/efo.json                    # EFO ontology
-├── data/raw/llm_results/               # LLM extraction outputs
-└── data/raw/pubmed/                    # PubMed metadata
 
-Preprocessing:
-├── data/processed/traits/              # Normalized traits
-├── data/processed/efo/                 # Processed EFO terms
-└── data/processed/indices/             # Trait indices
+**Directories**:
+- `data/raw/`: Source data (EFO, LLM outputs, PubMed)
+- `data/processed/`: Normalized traits, embeddings, indices
+- `data/output/`: HPC job results
+- `data/db/`: Final database files
 
-Embeddings:
-├── data/output/embeddings/traits/      # Trait embeddings
-└── data/output/embeddings/efo/         # EFO embeddings
+See @docs/DATA.md for complete data structure.
 
-Final Databases:
-├── data/db/vector_store.db            # Main vector database
-└── data/db/trait_profile_db.db        # Similarity analysis database
-```
+## Documentation
 
-## References
+### Technical References
+
+- **Database schema**: @processing/docs/db_schema.md (auto-generated, regenerate with `just generate-schema-docs`)
+- **Trait similarity concepts**: @processing/docs/trait-similarity.md
+- **Vector store details**: @processing/docs/databases.md
+
+### External References
 
 - Shared schema definitions: @src/common_funcs/common_funcs/schema/database_schema.py
 - Environment configuration: @docs/ENV.md

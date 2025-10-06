@@ -122,3 +122,7 @@ build-trait-profile-db:
 describe-db:
     uv run scripts/postprocessing/describe-db.py \
         > {{PROJECT_ROOT}}/data/assets/database_schema/database_info.txt
+
+[group('postprocessing')]
+generate-schema-docs:
+    uv run python scripts/postprocessing/generate-schema-docs.py
