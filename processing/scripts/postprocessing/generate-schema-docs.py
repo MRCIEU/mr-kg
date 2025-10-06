@@ -2,10 +2,11 @@
 
 This script generates a comprehensive markdown documentation file from the
 database schema definitions in common_funcs. The output includes:
-- Overview and quick reference
+- Overview and quick reference for both databases
 - Detailed table descriptions with mermaid ER diagrams
 - Index documentation
 - View definitions with SQL
+- Live database statistics (row counts, version info)
 """
 
 import argparse
@@ -13,22 +14,29 @@ import sys
 from pathlib import Path
 from typing import Dict, List
 
+import duckdb
 from yiutils.project_utils import find_project_root
 
 PROJECT_ROOT = find_project_root("docker-compose.yml")
 COMMON_FUNCS_PATH = PROJECT_ROOT / "src" / "common_funcs"
 sys.path.insert(0, str(COMMON_FUNCS_PATH))
 
-from common_funcs.schema.database_schema import (
+from common_funcs.database_utils.utils import get_database_paths  # noqa: E402
+from common_funcs.schema.database_schema import (  # noqa: E402
     DATABASE_SCHEMA,
     DATABASE_INDEXES,
     DATABASE_VIEWS,
 )
-from common_funcs.schema.database_schema_utils import (
-    TableDef,
-    IndexDef,
-    ViewDef,
+from common_funcs.schema.database_schema_utils import (  # noqa: E402
     ColumnType,
+    IndexDef,
+    TableDef,
+    ViewDef,
+)
+from common_funcs.schema.trait_profile_schema import (  # noqa: E402
+    TRAIT_PROFILE_INDEXES,
+    TRAIT_PROFILE_SCHEMA,
+    TRAIT_PROFILE_VIEWS,
 )
 
 
@@ -72,6 +80,7 @@ def format_column_type(col_type: ColumnType) -> str:
         ColumnType.VARCHAR: "VARCHAR",
         ColumnType.JSON: "JSON",
         ColumnType.FLOAT_ARRAY_200: "FLOAT[200]",
+        ColumnType.DOUBLE: "DOUBLE",
     }
     res = type_map.get(col_type, str(col_type))
     return res
@@ -178,13 +187,7 @@ def extract_source_table_column(expr: str, tables: Dict[str, TableDef]) -> str:
         table = table_aliases.get(alias, alias)
         return f"{table}.{column}"
 
-    if (
-        "(" in expr
-        or "+" in expr
-        or "-" in expr
-        or "*" in expr
-        or "/" in expr
-    ):
+    if "(" in expr or "+" in expr or "-" in expr or "*" in expr or "/" in expr:
         return "computed"
 
     return "unknown"
@@ -285,9 +288,7 @@ def extract_view_table_refs(views: List[ViewDef]) -> Dict[str, List[str]]:
     for view in views:
         sql_normalized = " ".join(view.sql.split())
 
-        from_match = re.search(
-            r"FROM\s+(\w+)", sql_normalized, re.IGNORECASE
-        )
+        from_match = re.search(r"FROM\s+(\w+)", sql_normalized, re.IGNORECASE)
         join_matches = re.findall(
             r"(?:LEFT\s+JOIN|CROSS\s+JOIN|JOIN)\s+(\w+)",
             sql_normalized,
@@ -330,7 +331,9 @@ def generate_mermaid_diagram(
             constraints = []
             if col.primary_key:
                 constraints.append("PK")
-            if any(fk.column == col.name for fk in table_def.foreign_keys):
+            if table_def.foreign_keys and any(
+                fk.column == col.name for fk in table_def.foreign_keys
+            ):
                 constraints.append("FK")
 
             constraint_str = f" {' '.join(constraints)}" if constraints else ""
@@ -343,11 +346,11 @@ def generate_mermaid_diagram(
     for view in views:
         view_name = view.name
         lines.append(f"    {view_name} {{")
-        
+
         if view_name in view_columns:
             for col_type, col_name, source in view_columns[view_name]:
-                lines.append(f"        {col_type} {col_name} \"from_{source}\"")
-        
+                lines.append(f'        {col_type} {col_name} "from_{source}"')
+
         lines.append("    }")
 
     for table_def in tables.values():
@@ -364,15 +367,14 @@ def generate_mermaid_diagram(
     for view in views:
         if view.name in view_table_refs:
             for table_name in view_table_refs[view.name]:
-                lines.append(
-                    f"    {view.name} }}o..o{{ {table_name} : "
-                    f'"uses"'
-                )
+                lines.append(f'    {view.name} }}o..o{{ {table_name} : "uses"')
 
     lines.append("")
     lines.append("    %% Styling")
     for view in views:
-        lines.append(f"    style {view.name} fill:#e1f5ff,stroke:#0288d1,stroke-width:2px")
+        lines.append(
+            f"    style {view.name} fill:#e1f5ff,stroke:#0288d1,stroke-width:2px"
+        )
 
     lines.append("```")
     res = "\n".join(lines)
@@ -390,7 +392,7 @@ def generate_table_documentation(table_name: str, table_def: TableDef) -> str:
         Markdown documentation string
     """
     lines = [
-        f"### {table_name}",
+        f"#### {table_name}",
         "",
         table_def.description,
         "",
@@ -439,7 +441,7 @@ def generate_index_documentation(indexes: List[IndexDef]) -> str:
         by_table[idx.table].append(idx)
 
     for table_name in sorted(by_table.keys()):
-        lines.append(f"### {table_name}")
+        lines.append(f"#### {table_name}")
         lines.append("")
 
         for idx in by_table[table_name]:
@@ -463,13 +465,13 @@ def generate_view_documentation(views: List[ViewDef]) -> str:
     lines = ["## Views", "", "Pre-computed views for common queries:", ""]
 
     for view in views:
-        lines.append(f"### {view.name}")
+        lines.append(f"#### {view.name}")
         lines.append("")
-        
+
         if hasattr(view, "description") and view.description:
             lines.append(view.description)
             lines.append("")
-        
+
         lines.append("**SQL Definition:**")
         lines.append("")
         lines.append("```sql")
@@ -491,7 +493,7 @@ def generate_quick_reference(tables: Dict[str, TableDef]) -> str:
         Markdown table string
     """
     lines = [
-        "## Quick reference",
+        "### Quick reference",
         "",
         "| Table | Description | Key Columns |",
         "|-------|-------------|-------------|",
@@ -508,17 +510,167 @@ def generate_quick_reference(tables: Dict[str, TableDef]) -> str:
     return res
 
 
-def generate_schema_documentation(
-    tables: Dict[str, TableDef],
-    indexes: List[IndexDef],
-    views: List[ViewDef],
-) -> str:
-    """Generate complete schema documentation.
+def get_database_statistics(
+    conn: duckdb.DuckDBPyConnection, db_name: str
+) -> Dict:
+    """Get comprehensive statistics for a database.
 
     Args:
-        tables: Dictionary of table definitions
-        indexes: List of index definitions
-        views: List of view definitions
+        conn: DuckDB connection
+        db_name: Database name for display
+
+    Returns:
+        Dictionary with version, table counts, and index info
+    """
+    stats = {
+        "version": None,
+        "tables": {},
+        "indexes": {},
+    }
+
+    try:
+        version_info = conn.execute("SELECT version()").fetchone()
+        if version_info:
+            stats["version"] = version_info[0]
+    except Exception:
+        pass
+
+    try:
+        tables = conn.execute("SHOW TABLES").fetchall()
+        for table in tables:
+            table_name = table[0]
+            try:
+                count = conn.execute(
+                    f"SELECT COUNT(*) FROM {table_name}"
+                ).fetchone()
+                stats["tables"][table_name] = count[0] if count else 0
+            except Exception:
+                stats["tables"][table_name] = -1
+
+        views = conn.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_type = 'VIEW'"
+        ).fetchall()
+        for view in views:
+            view_name = view[0]
+            try:
+                count = conn.execute(
+                    f"SELECT COUNT(*) FROM {view_name}"
+                ).fetchone()
+                stats["tables"][view_name] = count[0] if count else 0
+            except Exception:
+                stats["tables"][view_name] = -1
+    except Exception as e:
+        print(f"Warning: Could not get statistics for {db_name}: {e}")
+
+    try:
+        indexes = conn.execute(
+            "SELECT table_name, index_name, is_unique "
+            "FROM duckdb_indexes() "
+            "ORDER BY table_name, index_name"
+        ).fetchall()
+        for table_name, index_name, is_unique in indexes:
+            if table_name not in stats["indexes"]:
+                stats["indexes"][table_name] = []
+            stats["indexes"][table_name].append(
+                {"name": index_name, "unique": is_unique}
+            )
+    except Exception:
+        pass
+
+    return stats
+
+
+def generate_database_statistics_section(
+    vector_stats: Dict, trait_stats: Dict
+) -> str:
+    """Generate markdown section with live database statistics.
+
+    Args:
+        vector_stats: Statistics dict for vector_store.db
+        trait_stats: Statistics dict for trait_profile_db.db
+
+    Returns:
+        Markdown section with statistics
+    """
+    lines = [
+        "## Database statistics",
+        "",
+        "Live statistics from the actual database files.",
+        "",
+    ]
+
+    if vector_stats:
+        lines.extend(
+            [
+                "### Vector store database",
+                "",
+            ]
+        )
+        if vector_stats.get("version"):
+            lines.append(f"**DuckDB Version:** {vector_stats['version']}")
+            lines.append("")
+
+        lines.extend(
+            [
+                "| Table/View | Row Count |",
+                "|------------|-----------|",
+            ]
+        )
+        for name in sorted(vector_stats.get("tables", {}).keys()):
+            count = vector_stats["tables"][name]
+            count_str = f"{count:,}" if count >= 0 else "Error"
+            lines.append(f"| `{name}` | {count_str} |")
+        lines.append("")
+
+    if trait_stats:
+        lines.extend(
+            [
+                "### Trait profile database",
+                "",
+            ]
+        )
+        if trait_stats.get("version"):
+            lines.append(f"**DuckDB Version:** {trait_stats['version']}")
+            lines.append("")
+
+        lines.extend(
+            [
+                "| Table/View | Row Count |",
+                "|------------|-----------|",
+            ]
+        )
+        for name in sorted(trait_stats.get("tables", {}).keys()):
+            count = trait_stats["tables"][name]
+            count_str = f"{count:,}" if count >= 0 else "Error"
+            lines.append(f"| `{name}` | {count_str} |")
+        lines.append("")
+
+    res = "\n".join(lines)
+    return res
+
+
+def generate_schema_documentation(
+    vector_tables: Dict[str, TableDef],
+    vector_indexes: List[IndexDef],
+    vector_views: List[ViewDef],
+    trait_tables: Dict[str, TableDef],
+    trait_indexes: List[IndexDef],
+    trait_views: List[ViewDef],
+    vector_stats: Dict[str, int],
+    trait_stats: Dict[str, int],
+) -> str:
+    """Generate complete schema documentation for both databases.
+
+    Args:
+        vector_tables: Vector store table definitions
+        vector_indexes: Vector store index definitions
+        vector_views: Vector store view definitions
+        trait_tables: Trait profile table definitions
+        trait_indexes: Trait profile index definitions
+        trait_views: Trait profile view definitions
+        vector_stats: Vector store database statistics
+        trait_stats: Trait profile database statistics
 
     Returns:
         Complete markdown documentation
@@ -526,23 +678,69 @@ def generate_schema_documentation(
     sections = [
         "# Database schema",
         "",
-        "Auto-generated documentation from schema definitions.",
+        "Auto-generated documentation from schema definitions and live database statistics.",
         "",
-        "## Overview",
+        "This document covers two databases:",
+        "- **Vector store database** (`vector_store.db`): MR-KG embeddings and analysis",
+        "- **Trait profile database** (`trait_profile_db.db`): Trait similarity profiles",
         "",
-        generate_mermaid_diagram(tables, views),
+        generate_database_statistics_section(vector_stats, trait_stats),
         "",
-        generate_quick_reference(tables),
+        "## Vector store database",
         "",
-        "## Tables",
+        "### Overview",
+        "",
+        generate_mermaid_diagram(vector_tables, vector_views),
+        "",
+        generate_quick_reference(vector_tables),
+        "",
+        "### Tables",
         "",
     ]
 
-    for table_name, table_def in tables.items():
+    for table_name, table_def in vector_tables.items():
         sections.append(generate_table_documentation(table_name, table_def))
 
-    sections.append(generate_index_documentation(indexes))
-    sections.append(generate_view_documentation(views))
+    sections.append(
+        generate_index_documentation(vector_indexes).replace(
+            "## Indexes", "### Indexes"
+        )
+    )
+    sections.append(
+        generate_view_documentation(vector_views).replace(
+            "## Views", "### Views"
+        )
+    )
+
+    sections.extend(
+        [
+            "",
+            "## Trait profile database",
+            "",
+            "### Overview",
+            "",
+            generate_mermaid_diagram(trait_tables, trait_views),
+            "",
+            generate_quick_reference(trait_tables),
+            "",
+            "### Tables",
+            "",
+        ]
+    )
+
+    for table_name, table_def in trait_tables.items():
+        sections.append(generate_table_documentation(table_name, table_def))
+
+    sections.append(
+        generate_index_documentation(trait_indexes).replace(
+            "## Indexes", "### Indexes"
+        )
+    )
+    sections.append(
+        generate_view_documentation(trait_views).replace(
+            "## Views", "### Views"
+        )
+    )
 
     res = "\n".join(sections)
     return res
@@ -551,18 +749,48 @@ def generate_schema_documentation(
 def main():
     """Main function to generate schema documentation.
 
-    This function loads the schema definitions and generates a comprehensive
-    markdown documentation file.
+    This function loads the schema definitions for both databases and generates
+    a comprehensive markdown documentation file with live statistics.
     """
     args = make_args()
 
-    print("Generating schema documentation...")
-    print(f"  Tables: {len(DATABASE_SCHEMA)}")
-    print(f"  Indexes: {len(DATABASE_INDEXES)}")
-    print(f"  Views: {len(DATABASE_VIEWS)}")
+    print("Generating schema documentation for both databases...")
+    print(f"  Vector store - Tables: {len(DATABASE_SCHEMA)}")
+    print(f"  Vector store - Indexes: {len(DATABASE_INDEXES)}")
+    print(f"  Vector store - Views: {len(DATABASE_VIEWS)}")
+    print(f"  Trait profile - Tables: {len(TRAIT_PROFILE_SCHEMA)}")
+    print(f"  Trait profile - Indexes: {len(TRAIT_PROFILE_INDEXES)}")
+    print(f"  Trait profile - Views: {len(TRAIT_PROFILE_VIEWS)}")
+
+    vector_stats: Dict[str, int] = {}
+    trait_stats: Dict[str, int] = {}
+
+    try:
+        print("\nConnecting to databases for live statistics...")
+        vector_db_path, trait_db_path = get_database_paths(profile="local")
+
+        vector_conn = duckdb.connect(str(vector_db_path), read_only=True)
+        vector_stats = get_database_statistics(vector_conn, "Vector Store")
+        vector_conn.close()
+        print(f"  Vector store: {len(vector_stats)} tables/views found")
+
+        trait_conn = duckdb.connect(str(trait_db_path), read_only=True)
+        trait_stats = get_database_statistics(trait_conn, "Trait Profile")
+        trait_conn.close()
+        print(f"  Trait profile: {len(trait_stats)} tables/views found")
+    except Exception as e:
+        print(f"Warning: Could not connect to databases: {e}")
+        print("Continuing without live statistics...")
 
     doc_content = generate_schema_documentation(
-        DATABASE_SCHEMA, DATABASE_INDEXES, DATABASE_VIEWS
+        DATABASE_SCHEMA,
+        DATABASE_INDEXES,
+        DATABASE_VIEWS,
+        TRAIT_PROFILE_SCHEMA,
+        TRAIT_PROFILE_INDEXES,
+        TRAIT_PROFILE_VIEWS,
+        vector_stats,
+        trait_stats,
     )
 
     if args.dry_run:

@@ -59,8 +59,6 @@ Top-level layout
         - processed_results/
             - metadata.schema.json
             - results.schema.json
-    - database_schema/
-        - database_info.txt — notes/specs about DB structure
 
 - output/: batch logs and chunked intermediate results from cluster jobs (audit/debug only)
 

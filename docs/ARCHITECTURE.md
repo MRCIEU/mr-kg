@@ -21,29 +21,29 @@ flowchart TB
         Frontend[Frontend<br/>Vue 3 + TypeScript<br/>Pinia + Router]
         Streamlit[Legacy Streamlit<br/>Read-only access]
     end
-    
+
     subgraph Backend Services
         API[Backend API<br/>FastAPI + Pydantic<br/>REST endpoints]
     end
-    
+
     subgraph Data Layer
         VectorDB[(vector_store.db<br/>Traits + Embeddings)]
         TraitDB[(trait_profile_db.db<br/>Similarities + Profiles)]
     end
-    
+
     subgraph Processing Pipeline
         Raw[Raw Inputs<br/>LLM extractions<br/>EFO ontology]
         Preprocess[Preprocessing<br/>Normalization<br/>Deduplication]
         Embed[Embedding<br/>spaCy vectors<br/>HPC jobs]
         Build[Database Build<br/>DuckDB creation<br/>View materialization]
     end
-    
+
     Frontend -->|HTTP/JSON| API
     API -->|SQL queries| VectorDB
     API -->|SQL queries| TraitDB
     Streamlit -->|Direct read| VectorDB
     Streamlit -->|Direct read| TraitDB
-    
+
     Raw --> Preprocess
     Preprocess --> Embed
     Embed --> Build
@@ -52,6 +52,10 @@ flowchart TB
 ```
 
 ## Component Architecture
+
+For detailed component architecture including API endpoints, service layer
+design, database access patterns, and frontend component interactions, see
+@docs/topics/components.md.
 
 ### Frontend (Vue.js)
 

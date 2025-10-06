@@ -223,11 +223,12 @@ just ruff                # Format and lint
 just ty                  # Type checking
 ```
 
-### Database Inspection
+### Database Documentation
 
 ```bash
-just describe-db         # Database inspection
-# Outputs to data/assets/database_schema/database_info.txt
+just generate-schema-docs  # Generate comprehensive schema docs with ERD diagrams
+# Outputs to processing/docs/db_schema.md (both vector_store & trait_profile)
+# Includes: table schemas, relationships, statistics, DuckDB versions, indexes
 ```
 
 ### Pipeline Status
