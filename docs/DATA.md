@@ -98,8 +98,8 @@ web application. Built from processed artifacts via database build scripts.
 - `backup-{date}-*.db`: Timestamped database snapshots
 
 **Schema documentation:**
-See @processing/docs/db_schema.md for complete table definitions,
-relationships, indexes, and views. See @processing/docs/databases.md for
+See @docs/processing/db-schema.md for complete table definitions,
+relationships, indexes, and views. See @docs/processing/databases.md for
 architectural overview.
 
 ### assets/
@@ -292,7 +292,7 @@ based on their trait profiles (combined exposure and outcome traits).
 - **trait_jaccard_similarity**: Set overlap (|intersection| / |union|,
   range 0-1)
 
-See @processing/docs/trait-profile-similarity.md for detailed methodology.
+See @docs/processing/trait-similarity.md for detailed methodology.
 
 **aggregation_stats.json**: Summary statistics (mean, median, std)
 across all similarity pairs per model.
@@ -331,8 +331,8 @@ Only terms with labels are included (~67K terms). Terms without labels
 
 ## Database architecture
 
-See @processing/docs/databases.md for detailed architecture and
-@processing/docs/db_schema.md for complete schema reference with ERD
+See @docs/processing/databases.md for detailed architecture and
+@docs/processing/db-schema.md for complete schema reference with ERD
 diagrams.
 
 ### vector_store.db

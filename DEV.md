@@ -1,54 +1,89 @@
 # MR-KG Development Portal
 
+## Documentation Structure
+
+```text
+README.md                      # Brief project overview + citation
+├── DEV.md                     # This file: minimal index (links only)
+├── docs/
+│   ├── setting-up.md          # Setup instructions
+│   ├── development.md         # Development workflows
+│   ├── architecture.md        # System architecture
+│   ├── env.md                 # Environment variables
+│   ├── testing.md             # Testing strategy
+│   ├── deployment.md          # Deployment guide
+│   ├── data.md                # Data structure
+│   ├── backend/
+│   │   ├── overview.md        # Backend overview
+│   │   ├── api-design.md      # API design patterns
+│   │   └── database-layer.md  # Database layer
+│   ├── frontend/
+│   │   ├── overview.md        # Frontend overview
+│   │   └── testing.md         # Frontend testing
+│   └── processing/
+│       ├── overview.md        # Processing overview
+│       ├── databases.md       # Vector stores
+│       ├── db-schema.md       # Database schema
+│       └── trait-similarity.md # Trait similarity
+├── backend/README.md          # Backend commands
+├── frontend/README.md         # Frontend commands
+├── processing/README.md       # Processing pipeline
+├── webapp/README.md           # Streamlit webapp
+└── src/common_funcs/README.md # Common utilities
+```
+
 ## Infrastructure documentation
 
 ### Entrypoints
 
-- Setup environment: @docs/SETTING-UP.md
-- Development workflow and conventions: @docs/DEVELOPMENT.md
-- Environment variables and profiles: @docs/ENV.md
+- Setup environment: @docs/setting-up.md
+- Development workflow: @docs/development.md
+- Environment variables: @docs/env.md
 
 ### Architecture and Data
 
-- System architecture: @docs/ARCHITECTURE.md
-- Data model and schema: @docs/DATA.md
+- System architecture: @docs/architecture.md
+- Data structure: @docs/data.md
 
 ### Testing and Quality
 
-- Testing strategy and commands: @docs/TESTING.md
+- Testing strategy: @docs/testing.md
 
 ### Deployment
 
-- Deployments and operations: @docs/DEPLOYMENT.md
+- Deployment guide: @docs/deployment.md
 
-### Component Portals
+### Component Documentation
 
-- Backend API (FastAPI): @backend/README.md
-- Frontend (Vue 3 + TS): @frontend/README.md
-- Processing pipeline (ETL): @processing/README.md
-- common_funcs: @src/common_funcs/README.md
-- Legacy webapp (Streamlit): @webapp/README.md
+#### Backend
 
-### Documentation Structure
+- Backend portal: @docs/backend/overview.md
+- API design patterns: @docs/backend/api-design.md
+- Database layer: @docs/backend/database-layer.md
+- Commands & quick reference: @backend/README.md
 
-```text
-README.md                         # Brief project overview + citation
-├── DEV.md                        # This file: minimal index (links only)
-├── docs/
-│   ├── SETTING-UP.md             # SINGLE SOURCE: All setup instructions
-│   ├── DEVELOPMENT.md            # SINGLE SOURCE: Docker dev workflows
-│   ├── ARCHITECTURE.md           # SINGLE SOURCE: System architecture
-│   ├── ENV.md                    # SINGLE SOURCE: All environment vars
-│   ├── TESTING.md                # SINGLE SOURCE: Testing strategy
-│   └── DEPLOYMENT.md             # SINGLE SOURCE: Production deployment
-├── backend/README.md             # Backend-specific commands & patterns
-├── frontend/README.md            # Frontend-specific commands & patterns
-├── processing/README.md          # ENHANCED: Complete processing pipeline docs
-└── webapp/README.md              # Webapp-specific usage
-└── src/common_funcs/README.md    # Webapp-specific usage
-```
+#### Frontend
 
-## Other docs
+- Frontend portal: @docs/frontend/overview.md
+- Frontend testing: @docs/frontend/testing.md
+- Commands & quick reference: @frontend/README.md
 
-- Details on the vector stores @processing/docs/databases.md
-- Details on the trait similarity profiles @processing/docs/trait-profile-similarity.md
+#### Processing
+
+- Processing portal: @docs/processing/overview.md
+- Vector stores: @docs/processing/databases.md
+- Database schema: @docs/processing/db-schema.md
+- Trait similarity: @docs/processing/trait-similarity.md
+- Commands & pipeline: @processing/README.md
+
+#### Common funcs
+
+- Common utilities: @src/common_funcs/README.md
+
+#### Legacy info
+
+- Streamlit webapp: @webapp/README.md
+
+## Auto-generated docs
+
+- @docs/processing/db-schema.md

@@ -2,7 +2,7 @@
 
 This guide walks you through one-time project setup and a simple quickstart
 so you can run MR-KG locally. It focuses on initial setup only. For day-to-day
-Docker development workflows, see @docs/DEVELOPMENT.md.
+Docker development workflows, see @docs/development.md.
 
 ## Overview and scope
 
@@ -10,7 +10,27 @@ Docker development workflows, see @docs/DEVELOPMENT.md.
 - Scope: clone the repo, prepare environments, ensure data prerequisites, and
   run a first local instance
 - Out of scope: ongoing Docker usage, container profiles, deployment details
-  (see @docs/DEVELOPMENT.md)
+  (see @docs/development.md)
+
+## Setup flow
+
+```mermaid
+flowchart TD
+    A[Clone repository] --> B[Install prerequisites]
+    B --> C[Run setup-dev]
+    C --> D[Create environment files]
+    D --> E[Prepare databases]
+    E --> F{Start services}
+    F -->|Backend| G[http://localhost:8000]
+    F -->|Frontend| H[http://localhost:3000]
+    F -->|Webapp| I[http://localhost:8501]
+    
+    style A fill:#e1f5ff
+    style E fill:#fff4e6
+    style G fill:#e8f5e9
+    style H fill:#e8f5e9
+    style I fill:#e8f5e9
+```
 
 ## Prerequisites
 
@@ -32,7 +52,7 @@ just setup-dev
 ## Environment setup examples
 
 Use the provided examples to create environment files per component. For the
-complete list of variables and explanations, see @docs/ENV.md.
+complete list of variables and explanations, see @docs/env.md.
 
 - Backend (FastAPI): create backend/.env from backend/.env.example, or run
   backend-specific setup recipes (see @backend/README.md). Minimal example:
@@ -55,7 +75,7 @@ VITE_APP_TITLE=MR-KG Explorer
 
 - Legacy webapp (Streamlit): see @webapp/README.md for its environment options.
 
-Refer to @docs/ENV.md for all supported variables and guidance on profiles.
+Refer to @docs/env.md for all supported variables and guidance on profiles.
 
 ## Data prerequisites overview
 
@@ -68,7 +88,7 @@ You can produce these via the processing pipeline or use prepared datasets if
 available. Start here:
 
 - Processing pipeline quickstart: @processing/README.md
-- Data structures and schema details: @docs/DATA.md
+- Data structures and schema details: @docs/data.md
 
 Ensure the VECTOR_STORE_PATH and TRAIT_PROFILE_PATH in backend/.env point to
 your local database files.
@@ -83,7 +103,7 @@ Local component quickstart (see component READMEs for exact commands):
 
 Docker development quickstart:
 
-- See @docs/DEVELOPMENT.md for Docker-based dev workflows and helpful commands
+- See @docs/development.md for Docker-based dev workflows and helpful commands
 
 ## Verify everything works
 
@@ -108,8 +128,8 @@ DuckDB files exist and the paths in backend/.env are correct.
 
 ## Next steps
 
-- Full environment reference: @docs/ENV.md
-- Docker development workflows: @docs/DEVELOPMENT.md
-- Architecture overview: @docs/ARCHITECTURE.md
-- Data model and schema: @docs/DATA.md
-- Testing guides: @docs/TESTING.md
+- Full environment reference: @docs/env.md
+- Docker development workflows: @docs/development.md
+- Architecture overview: @docs/architecture.md
+- Data model and schema: @docs/data.md
+- Testing guides: @docs/testing.md

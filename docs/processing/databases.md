@@ -24,7 +24,7 @@ search.
 - Model result querying by PMID and extraction model
 - Cosine similarity computation using DuckDB's built-in functions
 
-**Schema reference**: See @processing/docs/db_schema.md for complete
+**Schema reference**: See @docs/processing/db-schema.md for complete
 table definitions, indexes, and views.
 
 ### Trait profile database
@@ -40,7 +40,7 @@ study similarity profiles for network analysis.
 - Both semantic and Jaccard similarity metrics
 - Support for study network construction
 
-**Concepts**: See @processing/docs/trait-profile-similarity.md for details on
+**Concepts**: See @docs/processing/trait-similarity.md for details on
 trait profile similarity methodology.
 
 ## Embedding model
@@ -98,4 +98,4 @@ just generate-schema-docs
 
 ## Data sources
 
-See @docs/DATA.md for complete data structure documentation.
+See @docs/data.md for complete data structure documentation.

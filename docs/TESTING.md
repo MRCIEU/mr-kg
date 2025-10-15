@@ -1,6 +1,32 @@
 # Testing Strategy and Guidelines
 
-This document outlines the comprehensive testing strategy for the MR-KG fullstack application, covering testing approaches, tools, and best practices for backend, frontend, and integration testing.
+Comprehensive testing strategy for the MR-KG fullstack application.
+
+## Overview
+
+- **Backend testing**: Python/pytest-based testing (covered in this doc)
+- **Frontend testing**: Vue/Vitest/Playwright-based testing (see @docs/frontend/testing.md)
+- **Integration testing**: Cross-component validation
+
+## Test pyramid
+
+```mermaid
+graph TB
+    subgraph "Test Pyramid"
+        E2E[E2E Tests<br/>Playwright<br/>Full workflows]
+        INT[Integration Tests<br/>API contracts<br/>Component integration]
+        UNIT[Unit Tests<br/>Vitest + Pytest<br/>Isolated components]
+    end
+    
+    E2E --> INT
+    INT --> UNIT
+    
+    style E2E fill:#ffe1e1
+    style INT fill:#fff4e6
+    style UNIT fill:#e1f5ff
+```
+
+Higher levels provide more confidence but are slower. The majority of tests should be unit tests.
 
 ## Backend Testing
 
@@ -346,441 +372,16 @@ def create_test_vector_store():
 
 ## Frontend Testing
 
-### Test Structure
+For detailed frontend testing documentation including unit tests, integration tests, E2E tests, and MSW setup, see @docs/frontend/testing.md.
 
-```
-frontend/tests/
-├── setup.ts                         # Vitest setup with MSW
-├── unit/                            # Unit tests (isolated components)
-│   ├── components/
-│   │   ├── SearchInput.spec.ts      # Search component tests
-│   │   ├── TraitCard.spec.ts        # Trait card rendering tests
-│   │   └── PaginationControls.spec.ts  # Pagination component tests
-│   ├── stores/
-│   │   └── traits.spec.ts           # Traits store unit tests
-│   └── integration/
-│       └── traits-components.spec.ts   # Component integration tests
-├── integration/                     # API integration tests
-│   ├── setup.integration.ts         # Integration test setup
-│   ├── api/
-│   │   ├── api-integration.spec.ts     # API contract tests
-│   │   └── contract-validation.spec.ts # Zod schema validation tests
-│   └── README.md                    # Integration testing guide
-└── e2e/                            # End-to-end tests (Playwright)
-    ├── traits.spec.ts              # Traits page E2E tests
-    ├── studies.spec.ts             # Studies page E2E tests
-    ├── similarities.spec.ts        # Similarities page E2E tests
-    └── navigation.spec.ts          # Cross-page navigation tests
-```
+### Quick Overview
 
-### Running Frontend Tests
+Frontend testing uses:
+- Vitest + MSW for unit tests (isolated components)
+- Integration tests with Zod schema validation
+- Playwright for E2E tests (full workflows)
 
-```bash
-cd frontend
-
-npm run test:unit           # Unit tests with Vitest + MSW
-npm run test:integration    # Integration tests with real backend
-npm run test:e2e           # E2E tests with Playwright
-npm run test:e2e:ui        # E2E tests with Playwright UI
-npm run test:coverage      # All tests with coverage report
-
-just test                  # Alias for test:unit
-just test-integration      # Alias for test:integration
-just test-e2e              # Alias for test:e2e
-```
-
-### Test Categories
-
-#### 1. Unit Tests (Isolated, with Mocks)
-
-Unit tests run in isolation with MSW (Mock Service Worker) mocking API calls.
-They are fast and test individual components or stores in isolation.
-
-**When to use:**
-- Testing component rendering logic
-- Testing component event handling
-- Testing store state management
-- Testing utility functions
-- No real API calls needed
-
-**Example: Component Unit Test**
-
-```typescript
-// tests/unit/components/SearchInput.spec.ts
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
-import SearchInput from '@/components/common/SearchInput.vue'
-
-describe('SearchInput', () => {
-  it('renders search input field', () => {
-    const wrapper = mount(SearchInput, {
-      props: { modelValue: '', placeholder: 'Search...' }
-    })
-    
-    expect(wrapper.find('input').exists()).toBe(true)
-  })
-
-  it('emits update event on input', async () => {
-    const wrapper = mount(SearchInput, {
-      props: { modelValue: '' }
-    })
-    
-    await wrapper.find('input').setValue('diabetes')
-    
-    expect(wrapper.emitted('update:modelValue')).toBeTruthy()
-    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['diabetes'])
-  })
-})
-```
-
-**Example: Store Unit Test**
-
-```typescript
-// tests/unit/stores/traits.spec.ts
-import { setActivePinia, createPinia } from 'pinia'
-import { useTraitsStore } from '@/stores/traits'
-import { server } from '@/tests/mocks/server'
-
-describe('Traits Store', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    server.resetHandlers()
-  })
-
-  it('initializes with default state', () => {
-    const store = useTraitsStore()
-    
-    expect(store.traits).toEqual([])
-    expect(store.loading).toBe(false)
-    expect(store.error).toBe(null)
-  })
-
-  it('fetches traits successfully', async () => {
-    const store = useTraitsStore()
-    
-    await store.fetchTraits()
-    
-    expect(store.traits.length).toBeGreaterThan(0)
-    expect(store.loading).toBe(false)
-    expect(store.error).toBe(null)
-  })
-})
-```
-
-#### 2. Integration Tests (Component + Store + API)
-
-Integration tests verify that components, stores, and API interactions work
-together correctly. They test the integration between different parts of the
-system.
-
-**When to use:**
-- Testing component interactions with stores
-- Testing full user workflows (search, filter, paginate)
-- Testing API response handling
-- Testing error recovery workflows
-
-**Example: Component Integration Test**
-
-```typescript
-// tests/unit/integration/traits-components.spec.ts
-import { describe, it, expect, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
-import { useTraitsStore } from '@/stores/traits'
-import TraitsView from '@/views/TraitsView.vue'
-
-describe('Traits View Integration', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-  })
-
-  it('integrates search and pagination', async () => {
-    const wrapper = mount(TraitsView, {
-      global: { plugins: [createPinia()] }
-    })
-    const store = useTraitsStore()
-
-    await wrapper.find('input[type="text"]').setValue('diabetes')
-    await wrapper.vm.$nextTick()
-    
-    expect(store.currentPage).toBe(1)
-    expect(store.searchQuery).toBe('diabetes')
-    
-    await wrapper.find('button[aria-label="Next page"]').trigger('click')
-    
-    expect(store.currentPage).toBe(2)
-  })
-})
-```
-
-#### 3. Contract Validation Tests (Schema Testing)
-
-Contract tests use Zod schemas to validate that API responses match expected
-structures at runtime. This ensures type safety between frontend and backend.
-
-**When to use:**
-- Testing API response structure compliance
-- Validating pagination metadata
-- Ensuring data type consistency
-- Testing schema validation error handling
-
-**Example: Contract Validation Test**
-
-```typescript
-// tests/integration/api/contract-validation.spec.ts
-import { describe, it, expect } from 'vitest'
-import { z } from 'zod'
-import apiService from '@/services/api'
-import {
-  TraitsListResponseSchema,
-  TraitDetailResponseSchema,
-  TraitListItemSchema,
-} from '@/types/schemas'
-
-describe('API Contract Validation', () => {
-  describe('Traits API Contracts', () => {
-    it('validates traits list response schema', async () => {
-      const response = await apiService.getTraits({ page: 1, page_size: 10 })
-      
-      expect(() => TraitsListResponseSchema.parse(response)).not.toThrow()
-      
-      expect(response).toHaveProperty('data')
-      expect(response).toHaveProperty('total_count')
-      expect(response).toHaveProperty('page')
-      expect(response).toHaveProperty('page_size')
-      
-      if (response.data.length > 0) {
-        const firstTrait = response.data[0]
-        expect(() => TraitListItemSchema.parse(firstTrait)).not.toThrow()
-        expect(typeof firstTrait.trait_index).toBe('number')
-        expect(typeof firstTrait.trait_label).toBe('string')
-      }
-    })
-
-    it('validates trait detail response schema', async () => {
-      const listResponse = await apiService.getTraits({ page: 1, page_size: 1 })
-      const traitIndex = listResponse.data[0].trait_index
-      
-      const response = await apiService.getTraitDetails(traitIndex, {
-        include_studies: true,
-        include_similar: true,
-      })
-      
-      expect(() => TraitDetailResponseSchema.parse(response)).not.toThrow()
-      expect(response.data).toHaveProperty('trait')
-      expect(response.data).toHaveProperty('statistics')
-      expect(response.data).toHaveProperty('studies')
-      expect(response.data).toHaveProperty('similar_traits')
-    })
-  })
-})
-```
-
-#### 4. End-to-End Tests (Full User Workflows)
-
-E2E tests use Playwright to test the application as a real user would interact
-with it. They test complete workflows across multiple pages.
-
-**When to use:**
-- Testing complete user journeys
-- Testing cross-page navigation
-- Testing UI interactions (clicks, forms, etc.)
-- Testing browser behavior (back/forward)
-- Testing performance metrics
-
-**Example: E2E Test**
-
-```typescript
-// tests/e2e/traits.spec.ts
-import { test, expect } from '@playwright/test'
-
-test.describe('Traits Exploration', () => {
-  test('user can search and view trait details', async ({ page }) => {
-    await page.goto('/')
-    
-    await page.click('a[href="/traits"]')
-    await expect(page).toHaveURL(/\/traits/)
-    
-    await page.fill('input[type="text"]', 'diabetes')
-    await page.waitForLoadState('networkidle')
-    
-    const traitCards = page.locator('.trait-card')
-    await expect(traitCards).not.toHaveCount(0)
-    
-    await traitCards.first().click()
-    
-    await expect(page.locator('.trait-detail')).toBeVisible()
-    await expect(page.locator('.trait-statistics')).toBeVisible()
-  })
-})
-```
-
-**Example: Navigation E2E Test**
-
-```typescript
-// tests/e2e/navigation.spec.ts
-import { test, expect } from '@playwright/test'
-
-test.describe('Cross-Page Navigation', () => {
-  test('navigates from traits to studies', async ({ page }) => {
-    await page.goto('/traits')
-    
-    await page.click('.trait-card:first-child')
-    await expect(page).toHaveURL(/\/traits\/\d+/)
-    
-    await page.click('button:has-text("View Studies")')
-    await expect(page).toHaveURL(/\/studies/)
-    
-    const studiesFilter = page.locator('.filter-trait-index')
-    await expect(studiesFilter).toBeVisible()
-  })
-})
-```
-
-### Test Utilities and Mocks
-
-#### MSW (Mock Service Worker) Setup
-
-```typescript
-// tests/mocks/handlers.ts
-import { http, HttpResponse } from 'msw'
-
-export const handlers = [
-  http.get('/api/v1/traits', () => {
-    return HttpResponse.json({
-      data: [
-        { trait_index: 1, trait_label: 'Height', appearance_count: 100 },
-        { trait_index: 2, trait_label: 'Weight', appearance_count: 85 },
-      ],
-      total_count: 2,
-      page: 1,
-      page_size: 20,
-      total_pages: 1,
-      has_next: false,
-      has_previous: false,
-    })
-  }),
-  
-  http.get('/api/v1/traits/:id', ({ params }) => {
-    return HttpResponse.json({
-      data: {
-        trait: {
-          trait_index: Number(params.id),
-          trait_label: 'Height',
-        },
-        statistics: {
-          appearance_count: 100,
-          study_count: 50,
-        },
-        studies: [],
-        similar_traits: [],
-        efo_mappings: [],
-      },
-    })
-  }),
-]
-```
-
-```typescript
-// tests/mocks/server.ts
-import { setupServer } from 'msw/node'
-import { handlers } from './handlers'
-
-export const server = setupServer(...handlers)
-```
-
-```typescript
-// tests/setup.ts
-import { beforeAll, afterEach, afterAll } from 'vitest'
-import { server } from './mocks/server'
-
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
-```
-
-### Testing Best Practices
-
-#### When to Use Each Test Type
-
-| Test Type | Speed | Confidence | Use For |
-|-----------|-------|------------|---------|
-| Unit | ⚡⚡⚡ | ⭐⭐ | Component logic, isolated functions |
-| Integration | ⚡⚡ | ⭐⭐⭐ | Component + Store + API interactions |
-| Contract | ⚡⚡ | ⭐⭐⭐⭐ | API schema validation |
-| E2E | ⚡ | ⭐⭐⭐⭐⭐ | Full user workflows, critical paths |
-
-#### General Guidelines
-
-1. **Test Pyramid**: Write more unit tests, fewer integration tests, and even
-   fewer E2E tests.
-
-2. **Isolation**: Unit tests should be isolated and fast. Use MSW for mocking.
-
-3. **Integration**: Integration tests should test real interactions between
-   components and stores, but still use mocked API responses (MSW).
-
-4. **Contract**: Contract tests should connect to the real backend to validate
-   API response schemas.
-
-5. **E2E**: E2E tests should test critical user workflows with the full stack
-   running.
-
-6. **Test Data**: Use realistic test data that resembles production data.
-
-7. **Assertions**: Make specific assertions. Avoid generic tests.
-
-8. **Coverage**: Aim for >80% coverage on critical paths, but don't chase 100%.
-
-### Schema Validation with Zod
-
-The frontend uses Zod for runtime schema validation of API responses:
-
-```typescript
-// src/types/schemas.ts
-export const TraitListItemSchema = z.object({
-  trait_index: z.number().int().nonnegative(),
-  trait_label: z.string().min(1),
-  appearance_count: z.number().int().nonnegative(),
-})
-
-export const PaginatedDataResponseSchema = <T extends z.ZodTypeAny>(
-  dataSchema: T
-) =>
-  z.object({
-    data: dataSchema,
-    message: z.string().optional(),
-    total_count: z.number().int().nonnegative(),
-    page: z.number().int().positive(),
-    page_size: z.number().int().positive(),
-    total_pages: z.number().int().nonnegative(),
-    has_next: z.boolean(),
-    has_previous: z.boolean(),
-  })
-```
-
-**API Service with Validation:**
-
-```typescript
-// src/services/api.ts
-async getTraits(params = {}): Promise<PaginatedDataResponse<TraitListItem[]>> {
-  return this.get('/traits', params, TraitsListResponseSchema)
-}
-
-private async get<T>(
-  url: string,
-  params?: Record<string, any>,
-  schema?: z.ZodSchema<T>
-): Promise<T> {
-  const response = await this.client.get(url, { params })
-  if (schema) {
-    return schema.parse(response.data)
-  }
-  return response.data
-}
-```
-
-This ensures type safety at runtime and catches API contract violations early.
+See @docs/frontend/testing.md for complete frontend testing guide.
 
 ## Integration Testing
 

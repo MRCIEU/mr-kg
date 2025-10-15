@@ -2,9 +2,9 @@
 
 This guide covers local development using Docker and Docker Compose.
 It focuses on the development stack only and does not cover production.
-For production, see @docs/DEPLOYMENT.md.
+For production, see @docs/deployment.md.
 
-See @docs/ENV.md for environment variables and configuration. Avoid
+See @docs/env.md for environment variables and configuration. Avoid
 editing container commands directly; prefer adjusting your .env files.
 
 
@@ -20,7 +20,7 @@ editing container commands directly; prefer adjusting your .env files.
 
 ## Quick start
 
-Ensure your environment files are set up as described in @docs/ENV.md.
+Ensure your environment files are set up as described in @docs/env.md.
 Then bring up the whole development stack and follow logs as needed.
 
 ```sh
@@ -55,7 +55,7 @@ Access the apps after startup:
   - Streamlit legacy interface
 
 Port mappings can be customized via environment variables documented in
-@docs/ENV.md.
+@docs/env.md.
 
 
 ## Hot reload and file watching
@@ -167,7 +167,7 @@ Useful backend URLs:
 - Port conflicts on 8000, 3000, or 8501
   - Stop any processes using those ports.
   - Adjust BACKEND_PORT, FRONTEND_PORT, WEBAPP_PORT in your .env as
-    described in @docs/ENV.md.
+    described in @docs/env.md.
   - Restart the stack:
     ```sh
     just dev-down && just dev
@@ -186,8 +186,8 @@ Useful backend URLs:
 
 ## Related docs
 
-- Environment configuration: @docs/ENV.md
+- Environment configuration: @docs/env.md
 - Backend guide: @backend/README.md
 - Frontend guide: @frontend/README.md
 - Legacy webapp guide: @webapp/README.md
-- Production deployment: @docs/DEPLOYMENT.md
+- Production deployment: @docs/deployment.md

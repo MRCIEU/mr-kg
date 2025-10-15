@@ -3,8 +3,8 @@
 Scope and references
 
 - This guide focuses on production deployment only
-- Development-in-Docker is covered in @docs/DEVELOPMENT.md
-- Environment variables and configuration are documented in @docs/ENV.md
+- Development-in-Docker is covered in @docs/development.md
+- Environment variables and configuration are documented in @docs/env.md
 
 ## Overview
 
@@ -20,7 +20,7 @@ All examples assume the provided docker-compose.prod.yml at the repo root.
 ## Prerequisites
 
 - Docker Engine and Docker Compose plugin installed
-- A production environment file created (see @docs/ENV.md)
+- A production environment file created (see @docs/env.md)
 - Required databases present on the host under data/db/
   - data/db/vector_store.db
   - data/db/trait_profile_db.db
@@ -51,7 +51,7 @@ Notes
 - Databases under data/db are read-only in the backend container
 - Health checks are defined for all services
 - Resource limits are set via deploy.resources in compose
-- Port bindings can be customized with environment values (see @docs/ENV.md)
+- Port bindings can be customized with environment values (see @docs/env.md)
 
 ## Build Process
 
@@ -240,7 +240,7 @@ Backend
   ```
 
 - Configure timeouts, request sizes, and CORS via environment values
-  documented in @docs/ENV.md
+  documented in @docs/env.md
 - Ensure data and log volumes use fast storage
 
 Frontend
@@ -313,7 +313,7 @@ Secrets and config
 
 - Do not bake secrets into images
 - Provide secrets via environment or Docker secrets
-- See @docs/ENV.md for configuration guidance
+- See @docs/env.md for configuration guidance
 
 Headers and policies
 
@@ -348,5 +348,5 @@ Data access
 
 Port conflicts
 
-- Adjust host ports via environment values (see @docs/ENV.md)
+- Adjust host ports via environment values (see @docs/env.md)
 - Confirm nothing else is bound to the same ports on the host

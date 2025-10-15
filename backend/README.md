@@ -1,24 +1,12 @@
 # MR-KG Backend
 
 FastAPI backend for MR-KG (Mendelian Randomization Knowledge Graph).
-Provides RESTful APIs for trait exploration, study analysis, and
-similarity computation.
 
-## Features
+For comprehensive backend documentation, see @docs/backend/overview.md.
 
-- FastAPI with automatic OpenAPI documentation
-- DuckDB integration for vector similarity search
-- Environment-based configuration via `.env`
-- Hot reload development server
-- Comprehensive test suite with pytest
-- Code quality with ruff and type checking (ty)
-- Task automation with a curated `justfile`
+For initial setup and prerequisites, see @docs/setting-up.md.
 
-## Local Development
-
-For initial setup and prerequisites, see @docs/SETTING-UP.md.
-
-### Quick Start
+## Quick Start
 
 ```bash
 cd backend
@@ -31,27 +19,10 @@ just env-setup
 just dev
 ```
 
-### Access Points
-
+Access points:
 - Base URL: http://localhost:8000
 - API Documentation: http://localhost:8000/docs
 - Health Check: http://localhost:8000/api/v1/health/
-
-## Project Structure
-
-```
-backend/
-├── app/
-│   ├── api/          # API route handlers (v1 endpoints)
-│   ├── core/         # Config, database, dependencies
-│   ├── models/       # Pydantic data models
-│   ├── services/     # Business logic services
-│   ├── utils/        # Utilities and helpers
-│   └── main.py       # FastAPI application entry point
-├── tests/            # Test suite
-├── justfile          # Task runner commands
-└── pyproject.toml    # Python project configuration
-```
 
 ## Commands
 
@@ -111,47 +82,10 @@ just clean             # Remove caches and build artifacts
 just reset             # Clean and remove .env, uv caches
 ```
 
-## Configuration
+## Documentation
 
-Configuration is provided via environment variables in `.env`.
-Use `just env-setup` to create `.env` from `.env.example`.
-See @docs/ENV.md for complete variable documentation.
-
-## API Documentation
-
-Interactive API documentation is available when the server is running:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
-
-## Testing
-
-Run the test suite locally:
-
-```bash
-just test      # All tests
-just test-cov  # With coverage
-```
-
-The suite covers health checks, API routes, database integration, and
-basic error handling.
-
-## Code Quality
-
-Maintain code quality with provided commands:
-
-```bash
-just check     # Run all quality checks (lint + type check)
-just fmt       # Format code
-```
-
-Tools used:
-- ruff for formatting and linting
-- ty for type checking
-- pytest for tests
-
-## References
-
-- Environment configuration: @docs/ENV.md
-- Development workflows: @docs/DEVELOPMENT.md
-- Testing guidelines: @docs/TESTING.md
-- System architecture: @docs/ARCHITECTURE.md
+- Backend overview: @docs/backend/overview.md
+- API design patterns: @docs/backend/api-design.md
+- Database layer: @docs/backend/database-layer.md
+- Environment configuration: @docs/env.md
+- Testing guidelines: @docs/testing.md

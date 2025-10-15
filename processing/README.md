@@ -1,13 +1,12 @@
 # MR-KG Processing Pipeline
 
-Complete guide for the ETL processing pipeline that creates MR-KG databases from raw LLM results and EFO ontology data.
+ETL processing pipeline that creates MR-KG databases from raw LLM results and EFO ontology data.
 
-See @docs/SETTING-UP.md for initial repo setup.
-See @docs/ENV.md for environment variables (ACCOUNT_CODE and others).
+For complete processing documentation, see @docs/processing/overview.md.
+
+For initial setup and prerequisites, see @docs/setting-up.md.
 
 ## Overview
-
-The processing pipeline transforms raw inputs into vectorized databases consumed by the web stack:
 
 ```mermaid
 flowchart TD
@@ -198,7 +197,7 @@ sbatch scripts/bc4/compute-trait-similarity.sbatch
 
 ## Output Databases
 
-See @processing/docs/databases.md for architecture details and @processing/docs/db_schema.md for schema reference.
+See @docs/processing/databases.md for architecture details and @docs/processing/db-schema.md for schema reference.
 
 ### Vector Store Database
 
@@ -212,7 +211,7 @@ extraction results with optimized views for similarity search.
 **Path**: `data/db/trait_profile_db.db`
 
 Precomputed trait-to-trait similarities for study network analysis.
-See @processing/docs/trait-profile-similarity.md for similarity methodology.
+See @docs/processing/trait-similarity.md for similarity methodology.
 
 ## Development Tools
 
@@ -299,19 +298,13 @@ flowchart LR
 - `data/output/`: HPC job results
 - `data/db/`: Final database files
 
-See @docs/DATA.md for complete data structure.
+See @docs/data.md for complete data structure.
 
 ## Documentation
 
-### Technical References
-
-- **Database schema**: @processing/docs/db_schema.md (auto-generated, regenerate with `just generate-schema-docs`)
-- **Trait profile similarity concepts**: @processing/docs/trait-profile-similarity.md
-- **Vector store details**: @processing/docs/databases.md
-
-### External References
-
-- Shared schema definitions: @src/common_funcs/common_funcs/schema/database_schema.py
-- Environment configuration: @docs/ENV.md
-- System architecture: @docs/ARCHITECTURE.md
-- Data structure details: @docs/DATA.md
+- Processing overview: @docs/processing/overview.md
+- Database schema: @docs/processing/db-schema.md
+- Trait similarity: @docs/processing/trait-similarity.md
+- Vector stores: @docs/processing/databases.md
+- Data structure: @docs/data.md
+- Environment configuration: @docs/env.md
