@@ -96,34 +96,6 @@ Generate updated schema documentation:
 just generate-schema-docs
 ```
 
-## Performance considerations
-
-**Indexing**: All databases include indexes on commonly queried columns
-(trait labels, PMIDs, model IDs, trait indices).
-
-**Similarity search**: Uses DuckDB's `array_cosine_similarity` function
-for vectorized operations.
-
-**Memory**: Large-scale similarity computations require HPC resources
-and memory limits can be configured in build scripts.
-
-**Storage**: Final databases are stored as single `.db` files with
-optimized column layouts.
-
 ## Data sources
 
-Input data for database construction:
-
-- **Trait embeddings**: `data/processed/embeddings/aggregated_trait_embeddings.parquet`
-- **EFO embeddings**: `data/processed/embeddings/aggregated_efo_embeddings.parquet`
-- **Model results**: `data/processed/extracted-results/processed_results/`
-- **PubMed data**: `data/raw/pubmed/`
-
 See @docs/DATA.md for complete data structure documentation.
-
-## Technical details
-
-**Database engine**: DuckDB (>= 1.3.2)
-**Vector operations**: Native array functions with cosine similarity
-**Schema validation**: Automated validation during build process
-**Transaction safety**: Atomic database creation with rollback on errors
