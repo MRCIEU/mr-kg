@@ -4,36 +4,23 @@ See @processing/README.md for complete processing pipeline workflow.
 
 ## Overview
 
-Trait profile similarity is a method for comparing studies based on the
-traits they investigate. Each study (identified by PMID and extraction
-model) is represented by a trait profile - a set of traits extracted
-from the study's content. This allows us to find studies with similar
-research focuses and build a network of related research.
+Trait profile similarity is a method for comparing studies based on the exposure and outcome traits they investigate.
+Each study (identified by PMID and extraction model) is represented by a trait profile: a combined set of exposure and outcome traits extracted from the study's content.
+This enables discovery of studies with similar research focuses and construction of a network of related research.
 
-## Scientific rationale
-
-### Why trait profiles?
-
-In Mendelian randomization (MR) research, studies focus on specific
-traits or outcomes. Two studies investigating similar traits are more
-likely to:
+Studies investigating similar trait combinations are more likely to:
 
 - Address related research questions
-- Share methodological approaches
 - Have complementary findings
 - Be relevant for meta-analyses or systematic reviews
 
-By comparing trait profiles, we can discover these relationships even
-when studies use different terminology or are published in different
-domains.
+By comparing trait profiles, we can discover these relationships even when studies use different terminology or are published in different domains.
 
 ### Model-specific comparisons
 
-Trait profiles are computed per extraction model (e.g., gpt-4-1,
-claude-3). Comparisons are performed only within the same model to
-ensure consistency in extraction methodology. This design choice
-prevents artifacts from model differences influencing similarity
-measures.
+Trait profiles are computed per extraction model (e.g., gpt-4-1, llama3).
+Comparisons are performed only within the same model to ensure consistency in extraction methodology.
+This design choice prevents artifacts from model differences influencing similarity measures.
 
 ## Similarity metrics
 
@@ -41,40 +28,31 @@ We use two complementary metrics to measure trait profile similarity:
 
 ### 1. Semantic similarity
 
-**Definition**: Average of maximum cosine similarities between trait
-embeddings.
+Definition: Average of maximum cosine similarities between trait embeddings.
 
-**Rationale**: Captures semantic overlap between trait sets using
-high-dimensional vector representations. This metric recognizes that
-different trait terms may refer to similar concepts (e.g., "body mass
-index" and "BMI").
+Rationale: Captures semantic overlap between trait sets using high-dimensional vector representations.
+This metric recognizes that different trait terms may refer to similar concepts (e.g., "body mass index" and "BMI").
 
-**Computation**:
-1. For each trait in the query profile, find its most similar trait in
-   the comparison profile using cosine similarity of embeddings
+Computation:
+
+1. For each trait in query_traits, find its most similar trait in similar_traits using cosine similarity of embeddings
 2. Average these maximum similarities across all query traits
 
-**Range**: 0 to 1, where 1 indicates perfect semantic alignment
-
-**Advantages**:
-- Captures conceptual similarity beyond exact matches
-- Leverages pre-trained semantic representations
-- Robust to terminology variations
+Range: 0 to 1, where 1 indicates perfect semantic alignment
 
 ### 2. Jaccard similarity
 
-**Definition**: Size of intersection divided by size of union of trait
-sets.
+Definition: Size of intersection divided by size of union of trait sets.
 
-**Rationale**: Provides a set-based measure of overlap that is
-independent of trait order and embedding quality. This metric is more
-conservative, requiring exact trait index matches.
+Rationale: Provides a set-based measure of overlap that is independent of trait order and embedding quality.
+This metric is more conservative, requiring exact trait index matches.
 
-**Formula**: J(A,B) = |A intersect B| / |A union B|
+Formula: J(A,B) = |A ∩ B| / |A ∪ B|
 
-**Range**: 0 to 1, where 1 indicates identical trait sets
+Range: 0 to 1, where 1 indicates identical trait sets
 
-**Advantages**:
+Advantages:
+
 - Simple and interpretable
 - Does not depend on embedding quality
 - Complementary to semantic similarity
@@ -92,7 +70,7 @@ flowchart TD
     D --> F[Compute Jaccard similarity]
     E --> G[Rank by semantic score]
     F --> G
-    G --> H[Keep top-k results]
+    G --> H[Keep top-k results, by semantic score]
     H --> I{More queries?}
     I -->|Yes| C
     I -->|No| J[Aggregate results]
@@ -140,29 +118,7 @@ Each query produces a record containing:
   - Jaccard similarity score
   - Trait counts for comparison
 
-## Use cases
+## Glossary
 
-### Finding related studies
-
-Given a study of interest, retrieve the most similar studies based on
-trait profiles. Useful for:
-
-- Literature review
-- Identifying replication studies
-- Finding complementary evidence
-
-### Network analysis
-
-Build a similarity network where:
-
-- Nodes represent PMID-model combinations
-- Edges represent similarity above a threshold
-- Communities indicate related research areas
-
-### Model comparison
-
-By keeping model-specific similarities, we can:
-
-- Evaluate extraction consistency within models
-- Compare similarity patterns across models
-- Validate extraction quality
+- **Trait profile:** The combined set of exposure and outcome traits extracted from a study, representing all traits investigated in that research (identified uniquely by PMID and extraction model)
+- **Trait profile similarity:** A quantitative measure of research focus overlap between two studies, computed using both semantic similarity (embedding-based) and Jaccard similarity (set-based) of their trait profiles

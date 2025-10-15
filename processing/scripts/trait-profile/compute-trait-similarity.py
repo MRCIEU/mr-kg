@@ -1,4 +1,10 @@
-"""Compute trait profile similarities between PMID-model combinations.
+"""Compute trait profile similarities between the extracted data of two studies
+(i.e. PMID-model combinations).
+
+The "trait profile" here refers to the list of extracted
+exposure and outcome traits of a study.
+And the trait profile similarity is then the similarity of two studies based on
+the topics of their researched traits as represented by the trait profiles.
 
 This script processes PMID-model combinations to compute trait profile similarities:
 1. Loads PMID-model combinations from the database

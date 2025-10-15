@@ -51,4 +51,4 @@ README.md                         # Brief project overview + citation
 ## Other docs
 
 - Details on the vector stores @processing/docs/databases.md
-- Details on the trait similarity profiles @processing/docs/trait-similarity.md
+- Details on the trait similarity profiles @processing/docs/trait-profile-similarity.md
