@@ -1,12 +1,10 @@
-# MR-KG Legacy Webapp
+# MR-KG Webapp
 
-Legacy Streamlit interface for exploring MR-KG data.
+Streamlit interface for exploring MR-KG data.
 
-Note: This webapp is maintained for compatibility. The main Vue 3 frontend is recommended for new deployments.
+For initial setup and development workflows, see @DEV.md.
 
-For initial setup, see @DEV.md and @docs/setting-up.md.
-
-## Quick Start
+## Quick start
 
 ```bash
 cd webapp
@@ -18,6 +16,6 @@ Access at http://localhost:8501
 
 ## Documentation
 
-- Environment configuration: @docs/env.md
-- Development workflows: @docs/development.md
+- Development guide: @DEV.md
 - Database requirements: @docs/processing/databases.md
+- Data structure: @docs/DATA.md

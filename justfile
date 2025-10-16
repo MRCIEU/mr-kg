@@ -1,12 +1,11 @@
 # MR-KG Docker Management Commands
 
-# Default recipe
 default:
     @just --list --unsorted
 
 # ==== Development Commands ====
 
-# Start development environment with hot reload
+# Start development environment with Docker Compose
 [group('development')]
 dev:
     @echo "Starting development environment..."
@@ -18,20 +17,10 @@ dev-detached:
     @echo "Starting development environment in background..."
     docker-compose up --build -d
 
-# Start individual services for development
-[group('development')]
-backend-dev:
-    @echo "Starting backend development server..."
-    cd backend && just dev
-
-[group('development')]
-frontend-dev:
-    @echo "Starting frontend development server..."
-    cd frontend && just dev
-
+# Start webapp development server locally without Docker
 [group('development')]
 webapp-dev:
-    @echo "Starting legacy webapp development server..."
+    @echo "Starting webapp development server..."
     cd webapp && just local-run
 
 # Stop development environment
@@ -40,7 +29,7 @@ dev-down:
     @echo "Stopping development environment..."
     docker-compose down
 
-# View development logs
+# View development logs (optionally for specific service)
 [group('development')]
 dev-logs service="":
     @if [ "{{service}}" = "" ]; then \
@@ -49,7 +38,7 @@ dev-logs service="":
         docker-compose logs -f {{service}}; \
     fi
 
-# Restart development services
+# Restart development services (optionally specific service)
 [group('development')]
 dev-restart service="":
     @if [ "{{service}}" = "" ]; then \
@@ -60,7 +49,7 @@ dev-restart service="":
 
 # ==== Production Commands ====
 
-# Deploy production environment
+# Deploy production environment with Docker Compose
 [group('production')]
 prod:
     @echo "Deploying production environment..."
@@ -72,7 +61,7 @@ prod-down:
     @echo "Stopping production environment..."
     docker-compose -f docker-compose.prod.yml down
 
-# View production logs
+# View production logs (optionally for specific service)
 [group('production')]
 prod-logs service="":
     @if [ "{{service}}" = "" ]; then \
@@ -81,7 +70,7 @@ prod-logs service="":
         docker-compose -f docker-compose.prod.yml logs -f {{service}}; \
     fi
 
-# Update production deployment (rolling update)
+# Update production deployment with latest images
 [group('production')]
 prod-update:
     @echo "Updating production deployment..."
@@ -90,72 +79,34 @@ prod-update:
 
 # ==== Build Commands ====
 
-# Build all development images
+# Build development Docker images
 [group('build')]
 build-dev:
     @echo "Building development images..."
     docker-compose build
 
-# Build all production images
+# Build production Docker images
 [group('build')]
 build-prod:
     @echo "Building production images..."
     docker-compose -f docker-compose.prod.yml build
 
-# Build specific service
+# Build specific Docker service
 [group('build')]
 build service:
     @echo "Building {{service}}..."
     docker-compose build {{service}}
 
-# ==== Testing Commands ====
-
-# Run backend tests in Docker
-[group('testing')]
-test-backend:
-    @echo "Running backend tests in Docker..."
-    docker-compose exec backend uv run pytest -v
-
-# Run backend tests with coverage
-[group('testing')]
-test-backend-cov:
-    @echo "Running backend tests with coverage..."
-    docker-compose exec backend uv run pytest --cov=app --cov-report=term-missing
-
-# Run frontend tests in Docker
-[group('testing')]
-test-frontend:
-    @echo "Running frontend tests in Docker..."
-    docker-compose exec frontend npm test
-
-# Test production build locally
-[group('testing')]
-test-prod-local:
-    @echo "Testing production build locally..."
-    docker-compose -f docker-compose.prod.yml up --build -d
-    @echo "Production stack is running on:"
-    @echo "  Frontend: http://localhost"
-    @echo "  Backend API: http://localhost:8000"
-    @echo "  Legacy Webapp: http://localhost:8501"
-    @echo ""
-    @echo "Press Ctrl+C to stop when testing is complete..."
-    @read -p ""
-    docker-compose -f docker-compose.prod.yml down
-
 # ==== Health Checks ====
 
-# Check health of all services
+# Check health of running services
 [group('health')]
 health:
     @echo "Checking service health..."
-    @echo "\n=== Backend Health ==="
-    @curl -s http://localhost:8000/api/v1/health/ | python -m json.tool || echo "Backend not accessible"
-    @echo "\n=== Frontend Health ==="
-    @curl -s http://localhost:3000 > /dev/null && echo "Frontend is healthy" || echo "Frontend not accessible"
-    @echo "\n=== Legacy Webapp Health ==="
+    @echo "\n=== Webapp Health ==="
     @curl -s http://localhost:8501/_stcore/health > /dev/null && echo "Webapp is healthy" || echo "Webapp not accessible"
 
-# Check Docker container status
+# View status of Docker containers
 [group('health')]
 status:
     @echo "Docker container status:"
@@ -163,14 +114,14 @@ status:
 
 # ==== Maintenance Commands ====
 
-# Pull latest images
+# Pull latest Docker images
 [group('maintenance')]
 pull:
     @echo "Pulling latest images..."
     docker-compose pull
     docker-compose -f docker-compose.prod.yml pull
 
-# Clean up Docker resources
+# Clean up unused Docker resources
 [group('maintenance')]
 clean:
     @echo "Cleaning up Docker resources..."
@@ -178,7 +129,7 @@ clean:
     docker image prune -f
     docker volume prune -f
 
-# Clean up all Docker resources (including volumes)
+# Remove all Docker resources including volumes (with confirmation)
 [group('maintenance')]
 clean-all:
     @echo "WARNING: This will remove all Docker resources including volumes!"
@@ -188,7 +139,7 @@ clean-all:
     docker system prune -a -f
     docker volume prune -f
 
-# View Docker resource usage
+# Display Docker resource usage statistics
 [group('maintenance')]
 usage:
     @echo "Docker resource usage:"
@@ -196,13 +147,13 @@ usage:
 
 # ==== Database Commands ====
 
-# Create database backup
+# Create timestamped database backup
 [group('database')]
 backup:
     @echo "Creating database backup..."
     docker run --rm -v $(pwd)/data:/data alpine tar czf /data/backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /data db/
 
-# List database backups
+# List available database backups
 [group('database')]
 list-backups:
     @echo "Available backups:"
@@ -210,16 +161,15 @@ list-backups:
 
 # ==== Environment Management ====
 
-# Setup development environment
+# Set up development environment files
 [group('environment')]
 setup-dev:
     @echo "Setting up development environment..."
     @if [ ! -f .env ]; then echo "Creating .env from .env.development..."; cp .env.development .env; fi
-    @if [ ! -f backend/.env ]; then echo "Creating backend/.env..."; cp .env.development backend/.env; fi
-    @if [ ! -f frontend/.env ]; then echo "Creating frontend/.env..."; cp .env.development frontend/.env; fi
+    @if [ ! -f webapp/.env ]; then echo "Creating webapp/.env..."; cp .env.development webapp/.env; fi
     @echo "Development environment configured!"
 
-# Setup production environment
+# Set up production environment files
 [group('environment')]
 setup-prod:
     @echo "Setting up production environment..."
@@ -228,16 +178,16 @@ setup-prod:
 
 # ==== Quick Start Commands ====
 
-# Complete setup and start development
+# Quick start: setup and run development environment
 [group('quickstart')]
 start: setup-dev dev
 
-# Stop everything
+# Stop all Docker Compose environments
 [group('quickstart')]
 stop:
     docker-compose down
     docker-compose -f docker-compose.prod.yml down
 
-# Reset everything (development)
+# Reset: stop, clean, and restart development environment
 [group('quickstart')]
 reset: stop clean setup-dev dev

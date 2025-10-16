@@ -4,7 +4,7 @@ ETL processing pipeline that creates MR-KG databases from raw LLM results and EF
 
 For complete processing documentation, see @docs/processing/overview.md.
 
-For initial setup and prerequisites, see @docs/setting-up.md.
+For initial setup and prerequisites, see @DEV.md.
 
 ## Overview
 
@@ -302,9 +302,9 @@ See @docs/data.md for complete data structure.
 
 ## Documentation
 
+- Development guide: @DEV.md
 - Processing overview: @docs/processing/overview.md
 - Database schema: @docs/processing/db-schema.md
 - Trait similarity: @docs/processing/trait-similarity.md
 - Vector stores: @docs/processing/databases.md
-- Data structure: @docs/data.md
-- Environment configuration: @docs/env.md
+- Data structure: @docs/DATA.md

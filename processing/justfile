@@ -61,22 +61,27 @@ pipeline-full:
     just build-trait-profile-db
     echo "Pipeline complete! Databases are ready for use."
 
+# Preprocess trait data for embedding generation
 [group('main-processing')]
 preprocess-traits:
     uv run scripts/main-processing/preprocess-traits.py
 
+# Preprocess EFO ontology data for embedding generation
 [group('main-processing')]
 preprocess-efo:
     uv run scripts/main-processing/preprocess-efo.py
 
+# Submit HPC batch job to generate trait embeddings
 [group('main-processing'), group('hpc')]
 embed-traits:
     sbatch --account=${ACCOUNT_CODE} scripts/bc4/embed-traits.sbatch
 
+# Submit HPC batch job to generate EFO embeddings
 [group('main-processing'), group('hpc')]
 embed-efo:
     sbatch --account=${ACCOUNT_CODE} scripts/bc4/embed-efo.sbatch
 
+# Aggregate embedding results from HPC batch jobs
 [group('main-processing')]
 aggregate-embeddings:
     #!/bin/bash
@@ -89,6 +94,7 @@ aggregate-embeddings:
 
 # ==== main database ====
 
+# Build main vector store database with embeddings and model results
 [group('main-database')]
 build-main-db:
     uv run scripts/main-db/build-main-database.py \
@@ -97,10 +103,12 @@ build-main-db:
 
 # ==== trait profile similarity database ====
 
+# Submit HPC batch job to compute pairwise trait similarities
 [group('trait-profile'), group('hpc')]
 compute-trait-similarities:
     sbatch --account=${ACCOUNT_CODE} scripts/bc4/compute-trait-similarity.sbatch
 
+# Aggregate trait similarity results from HPC batch jobs
 [group('trait-profile')]
 aggregate-trait-similarities:
     #!/bin/bash
@@ -109,6 +117,7 @@ aggregate-trait-similarities:
     uv run scripts/trait-profile/aggregate-trait-similarities.py \
         --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
+# Build trait profile database with similarity data
 [group('trait-profile')]
 build-trait-profile-db:
     uv run scripts/trait-profile/build-trait-profile-database.py \
@@ -118,6 +127,7 @@ build-trait-profile-db:
 
 # ==== postprocessing ====
 
+# Generate database schema documentation
 [group('postprocessing')]
 generate-schema-docs:
     uv run python scripts/postprocessing/generate-schema-docs.py
