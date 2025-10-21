@@ -38,6 +38,7 @@ Access the webapp at http://localhost:8501
 - Docker and Docker Compose
 
 For the processing pipeline:
+
 - Additional Python dependencies managed via uv
 - Access to HPC resources for large-scale embedding jobs
 
@@ -49,6 +50,7 @@ The `just setup-dev` command creates .env files from templates. You can also
 create them manually:
 
 Development (.env.development):
+
 ```env
 WEBAPP_PORT=8501
 PYTHON_ENV=development
@@ -58,6 +60,7 @@ LOG_FORMAT=text
 ```
 
 Production (.env.production):
+
 ```env
 WEBAPP_PORT=8501
 LOG_LEVEL=INFO
@@ -120,6 +123,7 @@ uv run python scripts/main-processing/<script_name>.py
 ```
 
 For HPC batch jobs and embedding generation:
+
 - See scripts/bc4/ for SLURM batch job templates
 - See @docs/processing/trait-similarity.md for trait similarity computation
 
@@ -133,16 +137,19 @@ components. See @src/common_funcs/README.md for details.
 All Docker commands use the top-level justfile:
 
 Development:
+
 ```bash
 just dev              # Start development stack
 ```
 
 Production:
+
 ```bash
 just prod             # Deploy production stack
 ```
 
 Build:
+
 ```bash
 just build-dev        # Build development images
 just build-prod       # Build production images
@@ -150,6 +157,7 @@ just build webapp     # Build specific service
 ```
 
 Health and maintenance:
+
 ```bash
 just health           # Check service health
 just status           # View container status
@@ -158,6 +166,7 @@ just usage            # View Docker resource usage
 ```
 
 Database:
+
 ```bash
 just backup           # Create database backup
 just list-backups     # List available backups
@@ -188,6 +197,7 @@ just list-backups     # List available backups
 The production stack uses Docker Compose with the docker-compose.prod.yml file.
 
 Prerequisites:
+
 - Docker Engine and Docker Compose installed
 - Production environment file created (.env.production)
 - Required databases present under data/db/
@@ -208,7 +218,7 @@ just prod-update
 just prod-down
 ```
 
-Access the webapp at http://localhost:8501
+Access the webapp at <http://localhost:8501>
 
 ### Resource limits
 
@@ -223,7 +233,8 @@ Adjust these in docker-compose.prod.yml as needed for your workload.
 ### Health checks
 
 The webapp includes a health check endpoint:
-- Endpoint: http://localhost:8501/_stcore/health
+
+- Endpoint: <http://localhost:8501/_stcore/health>
 - Interval: 30s
 - Timeout: 10s
 - Retries: 3

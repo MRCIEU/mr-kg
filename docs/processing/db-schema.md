@@ -3,6 +3,7 @@
 Auto-generated documentation from schema definitions and live database statistics.
 
 This document covers two databases:
+
 - **Vector store database** (`vector_store.db`): MR-KG embeddings and analysis
 - **Trait profile database** (`trait_profile_db.db`): Trait similarity profiles
 
@@ -12,28 +13,27 @@ Live statistics from the actual database files.
 
 ### Vector store database
 
-| Table/View | Row Count |
-|------------|-----------|
-| `efo_embeddings` | 67,270 |
-| `model_result_traits` | 114,276 |
-| `model_results` | 26,165 |
-| `mr_pubmed_data` | 15,635 |
-| `pmid_model_analysis` | 26,165 |
+| Table/View                    | Row Count     |
+| ----------------------------- | ------------- |
+| `efo_embeddings`              | 67,270        |
+| `model_result_traits`         | 114,276       |
+| `model_results`               | 26,165        |
+| `mr_pubmed_data`              | 15,635        |
+| `pmid_model_analysis`         | 26,165        |
 | `trait_efo_similarity_search` | 1,707,648,950 |
-| `trait_embeddings` | 25,385 |
-| `trait_similarity_search` | 644,372,840 |
-| `trait_stats` | 25,385 |
+| `trait_embeddings`            | 25,385        |
+| `trait_similarity_search`     | 644,372,840   |
+| `trait_stats`                 | 25,385        |
 
 ### Trait profile database
 
-| Table/View | Row Count |
-|------------|-----------|
-| `model_similarity_stats` | 5 |
-| `query_combinations` | 24,856 |
-| `top_similarity_pairs` | 87,459 |
-| `trait_similarities` | 248,560 |
-| `trait_similarity_analysis` | 248,560 |
-
+| Table/View                  | Row Count |
+| --------------------------- | --------- |
+| `model_similarity_stats`    | 5         |
+| `query_combinations`        | 24,856    |
+| `top_similarity_pairs`      | 87,459    |
+| `trait_similarities`        | 248,560   |
+| `trait_similarity_analysis` | 248,560   |
 
 ## Vector store database
 
@@ -119,14 +119,13 @@ erDiagram
 
 ### Quick reference
 
-| Table | Description | Key Columns |
-|-------|-------------|-------------|
-| `trait_embeddings` | Trait embeddings indexed by unique_traits | trait_index |
-| `efo_embeddings` | EFO (Experimental Factor Ontology) term embeddings | id |
-| `model_results` | Extracted structural data from model results organized by PMID | id |
-| `model_result_traits` | Links model results to traits based on unique_traits indices | id |
-| `mr_pubmed_data` | Raw PubMed metadata for papers with MR analysis | pmid |
-
+| Table                 | Description                                                    | Key Columns |
+| --------------------- | -------------------------------------------------------------- | ----------- |
+| `trait_embeddings`    | Trait embeddings indexed by unique_traits                      | trait_index |
+| `efo_embeddings`      | EFO (Experimental Factor Ontology) term embeddings             | id          |
+| `model_results`       | Extracted structural data from model results organized by PMID | id          |
+| `model_result_traits` | Links model results to traits based on unique_traits indices   | id          |
+| `mr_pubmed_data`      | Raw PubMed metadata for papers with MR analysis                | pmid        |
 
 ### Tables
 
@@ -324,7 +323,6 @@ SELECT
             mpd.journal_issn, mpd.author_affil
 ```
 
-
 ## Trait profile database
 
 ### Overview
@@ -396,11 +394,10 @@ erDiagram
 
 ### Quick reference
 
-| Table | Description | Key Columns |
-|-------|-------------|-------------|
-| `query_combinations` | PMID-model combinations with trait profile metadata | id |
-| `trait_similarities` | Similarity relationships between PMID-model combinations within same model | id |
-
+| Table                | Description                                                                | Key Columns |
+| -------------------- | -------------------------------------------------------------------------- | ----------- |
+| `query_combinations` | PMID-model combinations with trait profile metadata                        | id          |
+| `trait_similarities` | Similarity relationships between PMID-model combinations within same model | id          |
 
 ### Tables
 

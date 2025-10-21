@@ -19,6 +19,7 @@ embeddings, model extraction results, and optimized views for similarity
 search.
 
 **Key capabilities**:
+
 - Semantic search across traits using 200-dimensional embeddings
 - EFO term mapping and similarity lookup
 - Model result querying by PMID and extraction model
@@ -35,6 +36,7 @@ table definitions, indexes, and views.
 study similarity profiles for network analysis.
 
 **Key capabilities**:
+
 - Fast lookup of similar studies based on trait profiles
 - Model-specific similarity comparisons
 - Both semantic and Jaccard similarity metrics
@@ -48,6 +50,7 @@ trait profile similarity methodology.
 **Model**: SciSpaCy `en_core_sci_lg` (v0.5.4)
 **Dimensions**: 200
 **Use cases**:
+
 - Trait label vectorization
 - EFO term vectorization
 - Semantic similarity computation

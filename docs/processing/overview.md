@@ -35,23 +35,27 @@ For complete pipeline workflow and commands, see @processing/README.md.
 ### 1. Preprocessing
 
 Extract and normalize traits and EFO data:
+
 - preprocess-traits: Extract unique traits, create indices
 - preprocess-efo: Process EFO ontology
 
 ### 2. Embedding generation
 
 Generate embeddings for traits and EFO terms:
+
 - embed-traits: Generate trait embeddings (SLURM batch)
 - embed-efo: Generate EFO embeddings (SLURM batch)
 
 ### 3. Database building
 
 Create the main vector store database:
+
 - build-main-db: Create vector_store.db
 
 ### 4. Trait profile analysis
 
 Generate trait-trait similarity matrices:
+
 - compute-trait-similarities: Compute similarities (SLURM batch)
 - aggregate-trait-similarities: Combine similarity results
 - build-trait-profile-db: Create trait_profile_db.db
@@ -80,13 +84,15 @@ The pipeline uses SLURM batch jobs for computationally intensive tasks:
 - Result aggregation: Combines distributed results into final databases
 
 Requirements:
+
 - Environment variable ACCOUNT_CODE required for HPC submissions
 - Results stored in data/output/ with experiment IDs
-- SLURM job definitions in scripts/bc4/*.sbatch
+- SLURM job definitions in `scripts/bc4/*.sbatch`
 
 ## Development
 
 See @processing/README.md for:
+
 - Complete pipeline workflow
 - Prerequisites and setup
 - Manual step-by-step process

@@ -293,6 +293,7 @@ flowchart LR
 ```
 
 **Directories**:
+
 - `data/raw/`: Source data (EFO, LLM outputs, PubMed)
 - `data/processed/`: Normalized traits, embeddings, indices
 - `data/output/`: HPC job results
