@@ -62,7 +62,7 @@ embed-efo:
 aggregate-embeddings:
     #!/bin/bash
     # NOTE: note about the hardcoded path with hpc experiements
-    TRAIT_EXPERIMENT_ID="bc4-12790155"
+    TRAIT_EXPERIMENT_ID="bc4-12790166"
     EFO_EXPERIMENT_ID="bc4-12432782"
     uv run scripts/main-processing/aggregate-embeddings.py \
         --trait-results-dir {{PROJECT_ROOT}}/data/output/${TRAIT_EXPERIMENT_ID}/results \
