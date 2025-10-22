@@ -24,7 +24,14 @@ DATA_DIR = PROJECT_ROOT / "data"
 RAW_RESULTS_DIR = DATA_DIR / "raw" / "llm-results-aggregated"
 
 # List of models to process
-MODELS = ["llama3", "llama3-2", "deepseek-r1-distilled", "gpt-4-1", "o4-mini"]
+MODELS = [
+    "llama3",
+    "llama3-2",
+    "deepseek-r1-distilled",
+    "gpt-4-1",
+    "o4-mini",
+    "gpt-5",
+]
 
 
 class TraitLabelResults(TypedDict):
