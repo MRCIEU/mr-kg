@@ -141,6 +141,9 @@ def main():
     # Process traits in this chunk
     for record in tqdm(trait_records, desc="Processing traits"):
         trait_text = record["trait"]
+        if pd.isna(trait_text):
+            logger.warning(f"Skipping null trait at index {record['index']}")
+            continue
         doc = nlp(trait_text)
         vector = list(doc.vector.astype(float))
         record["vector"] = vector
