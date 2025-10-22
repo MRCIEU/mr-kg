@@ -76,7 +76,7 @@ MR-KG services expect local DuckDB databases:
 
 You can produce these via the processing pipeline. See:
 
-- Processing pipeline documentation: @docs/processing/overview.md
+- Processing pipeline documentation: @docs/processing/pipeline.md
 - Data structures and schema details: @docs/DATA.md
 
 ## Development workflows
@@ -102,7 +102,7 @@ The webapp is accessible at http://localhost:8501
 ### Processing pipeline
 
 The processing pipeline runs data transformations to create the databases.
-See @docs/processing/overview.md for detailed documentation.
+See @docs/processing/pipeline.md for detailed documentation.
 
 Key commands:
 
@@ -254,7 +254,7 @@ mr-kg/
 ├── docs/
 │   ├── DATA.md                # Data structure documentation
 │   └── processing/            # Processing pipeline docs
-│       ├── overview.md
+│       ├── pipeline.md
 │       ├── databases.md
 │       ├── db-schema.md       # Auto-generated schema
 │       └── trait-similarity.md
@@ -277,7 +277,7 @@ mr-kg/
 
 ## Component documentation
 
-- Processing pipeline: @docs/processing/overview.md
+- Processing pipeline: @docs/processing/pipeline.md
 - Webapp: @webapp/README.md
 - Common utilities: @src/common_funcs/README.md
 - Data structure: @docs/DATA.md
