@@ -139,21 +139,29 @@ def main():
     logger.info(f"Chunk contains {len(trait_records)} traits to process.")
 
     # Process traits in this chunk
+    processed_records = []
+    skipped_count = 0
     for record in tqdm(trait_records, desc="Processing traits"):
         trait_text = record["trait"]
         if pd.isna(trait_text):
             logger.warning(f"Skipping null trait at index {record['index']}")
+            skipped_count += 1
             continue
         doc = nlp(trait_text)
         vector = list(doc.vector.astype(float))
         record["vector"] = vector
+        processed_records.append(record)
+
+    logger.info(
+        f"Processed {len(processed_records)} traits, skipped {skipped_count} null traits"
+    )
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"trait_vectors_chunk_{args.array_id}.json"
     logger.info(f"Write to output file: {output_path}")
     with output_path.open("w") as f:
-        json.dump(trait_records, f, indent=2)
+        json.dump(processed_records, f, indent=2)
 
 
 if __name__ == "__main__":
