@@ -84,15 +84,20 @@ def read_efo_file(file_path: Path) -> List[RawEfoRecord]:
     return data
 
 
-def convert_trait_record(record: RawTraitRecord) -> EmbeddingRecord:
+def convert_trait_record(record: RawTraitRecord) -> EmbeddingRecord | None:
     """Convert a raw trait record to EmbeddingRecord format.
 
     Args:
         record: Raw trait record containing trait and vector
 
     Returns:
-        Processed embedding record
+        Processed embedding record or None if record lacks required fields
     """
+    if "vector" not in record:
+        logger.warning(
+            f"Skipping trait record at index {record.get('index', 'unknown')}: missing vector field"
+        )
+        return None
     res: EmbeddingRecord = {
         "id": f"trait_{record['index']}",
         "label": record["trait"],
@@ -182,7 +187,10 @@ def main():
     # ==== Process data ====
     logger.info("Processing trait data...")
     trait_embeddings: List[EmbeddingRecord] = (
-        py_.chain(raw_trait_data).map(convert_trait_record).value()
+        py_.chain(raw_trait_data)
+        .map(convert_trait_record)
+        .filter(lambda x: x is not None)
+        .value()
     )
 
     logger.info("Processing EFO data...")
