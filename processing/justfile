@@ -89,7 +89,7 @@ compute-trait-similarities:
 aggregate-trait-similarities:
     #!/bin/bash
     # NOTE: note about the hardcoded path with hpc experiement
-    EXPERIMENT_ID="bc4-12468629"
+    EXPERIMENT_ID="bc4-12790944"
     uv run scripts/trait-profile/aggregate-trait-similarities.py \
         --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
