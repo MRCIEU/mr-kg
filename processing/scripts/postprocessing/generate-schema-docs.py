@@ -52,7 +52,7 @@ def make_args():
         "-o",
         "--output-file",
         type=str,
-        default=str(PROJECT_ROOT / "processing" / "docs" / "db_schema.md"),
+        default=str(PROJECT_ROOT / "docs" / "processing" / "db-schema.md"),
         help="Output markdown file path",
     )
 

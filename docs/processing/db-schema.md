@@ -13,27 +13,31 @@ Live statistics from the actual database files.
 
 ### Vector store database
 
+**DuckDB Version:** v1.3.2
+
 | Table/View                    | Row Count     |
 | ----------------------------- | ------------- |
 | `efo_embeddings`              | 67,270        |
-| `model_result_traits`         | 114,276       |
-| `model_results`               | 26,165        |
+| `model_result_traits`         | 283,537       |
+| `model_results`               | 50,402        |
 | `mr_pubmed_data`              | 15,635        |
-| `pmid_model_analysis`         | 26,165        |
-| `trait_efo_similarity_search` | 1,707,648,950 |
-| `trait_embeddings`            | 25,385        |
-| `trait_similarity_search`     | 644,372,840   |
-| `trait_stats`                 | 25,385        |
+| `pmid_model_analysis`         | 50,402        |
+| `trait_efo_similarity_search` | 5,053,389,670 |
+| `trait_embeddings`            | 75,121        |
+| `trait_similarity_search`     | 5,643,089,520 |
+| `trait_stats`                 | 75,121        |
 
 ### Trait profile database
 
+**DuckDB Version:** v1.3.2
+
 | Table/View                  | Row Count |
 | --------------------------- | --------- |
-| `model_similarity_stats`    | 5         |
-| `query_combinations`        | 24,856    |
-| `top_similarity_pairs`      | 87,459    |
-| `trait_similarities`        | 248,560   |
-| `trait_similarity_analysis` | 248,560   |
+| `model_similarity_stats`    | 6         |
+| `query_combinations`        | 50,402    |
+| `top_similarity_pairs`      | 154,115   |
+| `trait_similarities`        | 504,020   |
+| `trait_similarity_analysis` | 504,020   |
 
 ## Vector store database
 
