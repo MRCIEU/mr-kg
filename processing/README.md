@@ -14,7 +14,8 @@ data into queryable DuckDB databases through five main stages:
 2. Embedding: Generate 200-dim vectors using SciSpacy (HPC)
 3. Database build: Create vector_store.db with embeddings and results
 4. Similarity: Compute trait profile similarities (HPC)
-5. Profile database: Create trait_profile_db.db for network analysis
+5. Profile databases: Create trait_profile_db.db and evidence_profile_db.db
+   for network analysis of similarity between studies
 
 ## Setup
 

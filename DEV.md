@@ -125,7 +125,7 @@ uv run python scripts/main-processing/<script_name>.py
 For HPC batch jobs and embedding generation:
 
 - See scripts/bc4/ for SLURM batch job templates
-- See @docs/processing/trait-similarity.md for trait similarity computation
+- See @docs/processing/trait-profile-similarity.md for trait similarity computation
 
 ### Common utilities
 
@@ -257,7 +257,7 @@ mr-kg/
 │       ├── pipeline.md
 │       ├── databases.md
 │       ├── db-schema.md       # Auto-generated schema
-│       └── trait-similarity.md
+│       └── trait-profile-similarity.md
 ├── data/                      # Data files (gitignored)
 │   ├── raw/                   # Raw input data
 │   ├── processed/             # Processed data
@@ -290,4 +290,5 @@ processing:
 - Data overview: @docs/DATA.md
 - Vector stores: @docs/processing/databases.md
 - Database schema: @docs/processing/db-schema.md
-- Trait similarity: @docs/processing/trait-similarity.md
+- Trait profile similarity: @docs/processing/trait-profile-similarity.md
+- Evidence profile similarity: @docs/processing/evidence-profile-similarity.md

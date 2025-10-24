@@ -2,10 +2,10 @@
 
 Auto-generated documentation from schema definitions and live database statistics.
 
-This document covers two databases:
-
+This document covers three databases:
 - **Vector store database** (`vector_store.db`): MR-KG embeddings and analysis
 - **Trait profile database** (`trait_profile_db.db`): Trait similarity profiles
+- **Evidence profile database** (`evidence_profile_db.db`): Evidence similarity profiles
 
 ## Database statistics
 
@@ -15,29 +15,30 @@ Live statistics from the actual database files.
 
 **DuckDB Version:** v1.3.2
 
-| Table/View                    | Row Count     |
-| ----------------------------- | ------------- |
-| `efo_embeddings`              | 67,270        |
-| `model_result_traits`         | 283,537       |
-| `model_results`               | 50,402        |
-| `mr_pubmed_data`              | 15,635        |
-| `pmid_model_analysis`         | 50,402        |
+| Table/View | Row Count |
+|------------|-----------|
+| `efo_embeddings` | 67,270 |
+| `model_result_traits` | 283,537 |
+| `model_results` | 50,402 |
+| `mr_pubmed_data` | 15,635 |
+| `pmid_model_analysis` | 50,402 |
 | `trait_efo_similarity_search` | 5,053,389,670 |
-| `trait_embeddings`            | 75,121        |
-| `trait_similarity_search`     | 5,643,089,520 |
-| `trait_stats`                 | 75,121        |
+| `trait_embeddings` | 75,121 |
+| `trait_similarity_search` | 5,643,089,520 |
+| `trait_stats` | 75,121 |
 
 ### Trait profile database
 
 **DuckDB Version:** v1.3.2
 
-| Table/View                  | Row Count |
-| --------------------------- | --------- |
-| `model_similarity_stats`    | 6         |
-| `query_combinations`        | 50,402    |
-| `top_similarity_pairs`      | 154,115   |
-| `trait_similarities`        | 504,020   |
-| `trait_similarity_analysis` | 504,020   |
+| Table/View | Row Count |
+|------------|-----------|
+| `model_similarity_stats` | 6 |
+| `query_combinations` | 50,402 |
+| `top_similarity_pairs` | 154,115 |
+| `trait_similarities` | 504,020 |
+| `trait_similarity_analysis` | 504,020 |
+
 
 ## Vector store database
 
@@ -123,13 +124,14 @@ erDiagram
 
 ### Quick reference
 
-| Table                 | Description                                                    | Key Columns |
-| --------------------- | -------------------------------------------------------------- | ----------- |
-| `trait_embeddings`    | Trait embeddings indexed by unique_traits                      | trait_index |
-| `efo_embeddings`      | EFO (Experimental Factor Ontology) term embeddings             | id          |
-| `model_results`       | Extracted structural data from model results organized by PMID | id          |
-| `model_result_traits` | Links model results to traits based on unique_traits indices   | id          |
-| `mr_pubmed_data`      | Raw PubMed metadata for papers with MR analysis                | pmid        |
+| Table | Description | Key Columns |
+|-------|-------------|-------------|
+| `trait_embeddings` | Trait embeddings indexed by unique_traits | trait_index |
+| `efo_embeddings` | EFO (Experimental Factor Ontology) term embeddings | id |
+| `model_results` | Extracted structural data from model results organized by PMID | id |
+| `model_result_traits` | Links model results to traits based on unique_traits indices | id |
+| `mr_pubmed_data` | Raw PubMed metadata for papers with MR analysis | pmid |
+
 
 ### Tables
 
@@ -327,6 +329,7 @@ SELECT
             mpd.journal_issn, mpd.author_affil
 ```
 
+
 ## Trait profile database
 
 ### Overview
@@ -398,10 +401,11 @@ erDiagram
 
 ### Quick reference
 
-| Table                | Description                                                                | Key Columns |
-| -------------------- | -------------------------------------------------------------------------- | ----------- |
-| `query_combinations` | PMID-model combinations with trait profile metadata                        | id          |
-| `trait_similarities` | Similarity relationships between PMID-model combinations within same model | id          |
+| Table | Description | Key Columns |
+|-------|-------------|-------------|
+| `query_combinations` | PMID-model combinations with trait profile metadata | id |
+| `trait_similarities` | Similarity relationships between PMID-model combinations within same model | id |
+
 
 ### Tables
 
@@ -538,4 +542,297 @@ SELECT
         JOIN query_combinations qc ON ts.query_combination_id = qc.id
         WHERE ts.trait_profile_similarity >= 0.8
         ORDER BY ts.similar_model, ts.trait_profile_similarity DESC
+```
+
+
+## Evidence profile database
+
+### Overview
+
+```mermaid
+erDiagram
+    query_combinations {
+        INTEGER id PK
+        VARCHAR pmid
+        VARCHAR model
+        VARCHAR title
+        INTEGER result_count
+        INTEGER complete_result_count
+        DOUBLE data_completeness
+    }
+    evidence_similarities {
+        INTEGER id PK
+        INTEGER query_combination_id FK
+        VARCHAR similar_pmid
+        VARCHAR similar_model
+        VARCHAR similar_title
+        INTEGER matched_pairs
+        DOUBLE effect_size_similarity
+        DOUBLE direction_concordance
+        DOUBLE statistical_consistency
+        DOUBLE evidence_overlap
+        DOUBLE composite_similarity_equal
+        DOUBLE composite_similarity_direction
+        INTEGER query_result_count
+        INTEGER similar_result_count
+    }
+    evidence_similarity_analysis {
+        VARCHAR query_pmid "from_qc.pmid"
+        VARCHAR query_model "from_qc.model"
+        VARCHAR query_title "from_qc.title"
+        VARCHAR query_result_count "from_qc.result_count"
+        VARCHAR query_completeness "from_qc.data_completeness"
+        VARCHAR similar_pmid "from_es.similar_pmid"
+        VARCHAR similar_model "from_es.similar_model"
+        VARCHAR similar_title "from_es.similar_title"
+        VARCHAR similar_result_count "from_es.similar_result_count"
+        VARCHAR matched_pairs "from_es.matched_pairs"
+        VARCHAR effect_size_similarity "from_es.effect_size_similarity"
+        VARCHAR direction_concordance "from_es.direction_concordance"
+        VARCHAR statistical_consistency "from_es.statistical_consistency"
+        VARCHAR evidence_overlap "from_es.evidence_overlap"
+        VARCHAR composite_similarity_equal "from_es.composite_similarity_equal"
+        VARCHAR composite_similarity_direction "from_es.composite_similarity_direction"
+        VARCHAR similarity_rank "from_qc.id"
+    }
+    model_evidence_stats {
+        VARCHAR model "from_unknown"
+        VARCHAR total_combinations "from_computed"
+        VARCHAR avg_result_count "from_computed"
+        VARCHAR avg_completeness "from_computed"
+        VARCHAR min_result_count "from_computed"
+        VARCHAR max_result_count "from_computed"
+        FLOAT total_similarity_pairs "from_computed"
+    }
+    high_concordance_pairs {
+        VARCHAR model "from_es.similar_model"
+        VARCHAR query_pmid "from_qc.pmid"
+        VARCHAR similar_pmid "from_es.similar_pmid"
+        VARCHAR query_title "from_qc.title"
+        VARCHAR similar_title "from_es.similar_title"
+        VARCHAR direction_concordance "from_es.direction_concordance"
+        VARCHAR effect_size_similarity "from_es.effect_size_similarity"
+        VARCHAR evidence_overlap "from_es.evidence_overlap"
+        VARCHAR matched_pairs "from_es.matched_pairs"
+        VARCHAR query_result_count "from_qc.result_count"
+        VARCHAR similar_result_count "from_es.similar_result_count"
+    }
+    discordant_evidence_pairs {
+        VARCHAR model "from_es.similar_model"
+        VARCHAR query_pmid "from_qc.pmid"
+        VARCHAR similar_pmid "from_es.similar_pmid"
+        VARCHAR query_title "from_qc.title"
+        VARCHAR similar_title "from_es.similar_title"
+        VARCHAR direction_concordance "from_es.direction_concordance"
+        VARCHAR matched_pairs "from_es.matched_pairs"
+        VARCHAR evidence_overlap "from_es.evidence_overlap"
+        VARCHAR query_result_count "from_qc.result_count"
+        VARCHAR similar_result_count "from_es.similar_result_count"
+    }
+    evidence_similarities }o--|| query_combinations : "query_combination_id references id"
+    evidence_similarity_analysis }o..o{ evidence_similarities : "uses"
+    evidence_similarity_analysis }o..o{ query_combinations : "uses"
+    model_evidence_stats }o..o{ query_combinations : "uses"
+    high_concordance_pairs }o..o{ evidence_similarities : "uses"
+    high_concordance_pairs }o..o{ query_combinations : "uses"
+    discordant_evidence_pairs }o..o{ evidence_similarities : "uses"
+    discordant_evidence_pairs }o..o{ query_combinations : "uses"
+
+    %% Styling
+    style evidence_similarity_analysis fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style model_evidence_stats fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style high_concordance_pairs fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style discordant_evidence_pairs fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+```
+
+### Quick reference
+
+| Table | Description | Key Columns |
+|-------|-------------|-------------|
+| `query_combinations` | PMID-model combinations with evidence profile metadata and data quality metrics | id |
+| `evidence_similarities` | Similarity relationships between PMID-model combinations within same model based on quantitative causal evidence | id |
+
+
+### Tables
+
+#### query_combinations
+
+PMID-model combinations with evidence profile metadata and data quality metrics
+
+**Columns:**
+
+- **`id`** (INTEGER, NOT NULL) (PRIMARY KEY)
+
+- **`pmid`** (VARCHAR, NOT NULL)
+
+- **`model`** (VARCHAR, NOT NULL)
+
+- **`title`** (VARCHAR, NOT NULL)
+
+- **`result_count`** (INTEGER, NOT NULL)
+
+- **`complete_result_count`** (INTEGER, NOT NULL)
+
+- **`data_completeness`** (DOUBLE, NOT NULL)
+
+#### evidence_similarities
+
+Similarity relationships between PMID-model combinations within same model based on quantitative causal evidence
+
+**Columns:**
+
+- **`id`** (INTEGER, NOT NULL) (PRIMARY KEY)
+
+- **`query_combination_id`** (INTEGER, NOT NULL)
+
+- **`similar_pmid`** (VARCHAR, NOT NULL)
+
+- **`similar_model`** (VARCHAR, NOT NULL)
+
+- **`similar_title`** (VARCHAR, NOT NULL)
+
+- **`matched_pairs`** (INTEGER, NOT NULL)
+
+- **`effect_size_similarity`** (DOUBLE, nullable)
+
+- **`direction_concordance`** (DOUBLE, NOT NULL)
+
+- **`statistical_consistency`** (DOUBLE, nullable)
+
+- **`evidence_overlap`** (DOUBLE, NOT NULL)
+
+- **`composite_similarity_equal`** (DOUBLE, NOT NULL)
+
+- **`composite_similarity_direction`** (DOUBLE, NOT NULL)
+
+- **`query_result_count`** (INTEGER, NOT NULL)
+
+- **`similar_result_count`** (INTEGER, NOT NULL)
+
+**Foreign Keys:**
+
+- `query_combination_id` -> `query_combinations.id`
+
+### Indexes
+
+Performance optimization indexes:
+
+#### evidence_similarities
+
+- **`idx_evidence_similarities_query_id`** on (query_combination_id)
+
+- **`idx_evidence_similarities_similar_pmid`** on (similar_pmid)
+
+- **`idx_evidence_similarities_similar_model`** on (similar_model)
+
+- **`idx_evidence_similarities_composite_equal`** on (composite_similarity_equal)
+
+- **`idx_evidence_similarities_composite_direction`** on (composite_similarity_direction)
+
+- **`idx_evidence_similarities_direction_concordance`** on (direction_concordance)
+
+#### query_combinations
+
+- **`idx_query_combinations_pmid`** on (pmid)
+
+- **`idx_query_combinations_model`** on (model)
+
+- **`idx_query_combinations_pmid_model`** on (pmid, model)
+
+### Views
+
+Pre-computed views for common queries:
+
+#### evidence_similarity_analysis
+
+**SQL Definition:**
+
+```sql
+SELECT
+            qc.pmid as query_pmid,
+            qc.model as query_model,
+            qc.title as query_title,
+            qc.result_count as query_result_count,
+            qc.data_completeness as query_completeness,
+            es.similar_pmid,
+            es.similar_model,
+            es.similar_title,
+            es.similar_result_count,
+            es.matched_pairs,
+            es.effect_size_similarity,
+            es.direction_concordance,
+            es.statistical_consistency,
+            es.evidence_overlap,
+            es.composite_similarity_equal,
+            es.composite_similarity_direction,
+            RANK() OVER (
+                PARTITION BY qc.id 
+                ORDER BY es.composite_similarity_direction DESC
+            ) as similarity_rank
+        FROM query_combinations qc
+        JOIN evidence_similarities es ON qc.id = es.query_combination_id
+        ORDER BY qc.pmid, qc.model, es.composite_similarity_direction DESC
+```
+
+#### model_evidence_stats
+
+**SQL Definition:**
+
+```sql
+SELECT
+            model,
+            COUNT(*) as total_combinations,
+            AVG(result_count) as avg_result_count,
+            AVG(data_completeness) as avg_completeness,
+            MIN(result_count) as min_result_count,
+            MAX(result_count) as max_result_count,
+            COUNT(*) * 10 as total_similarity_pairs
+        FROM query_combinations
+        GROUP BY model
+        ORDER BY model
+```
+
+#### high_concordance_pairs
+
+**SQL Definition:**
+
+```sql
+SELECT
+            es.similar_model as model,
+            qc.pmid as query_pmid,
+            es.similar_pmid,
+            qc.title as query_title,
+            es.similar_title,
+            es.direction_concordance,
+            es.effect_size_similarity,
+            es.evidence_overlap,
+            es.matched_pairs,
+            qc.result_count as query_result_count,
+            es.similar_result_count
+        FROM evidence_similarities es
+        JOIN query_combinations qc ON es.query_combination_id = qc.id
+        WHERE es.direction_concordance >= 0.8
+        ORDER BY es.similar_model, es.direction_concordance DESC
+```
+
+#### discordant_evidence_pairs
+
+**SQL Definition:**
+
+```sql
+SELECT
+            es.similar_model as model,
+            qc.pmid as query_pmid,
+            es.similar_pmid,
+            qc.title as query_title,
+            es.similar_title,
+            es.direction_concordance,
+            es.matched_pairs,
+            es.evidence_overlap,
+            qc.result_count as query_result_count,
+            es.similar_result_count
+        FROM evidence_similarities es
+        JOIN query_combinations qc ON es.query_combination_id = qc.id
+        WHERE es.direction_concordance < 0
+        ORDER BY es.similar_model, es.direction_concordance ASC
 ```

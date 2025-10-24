@@ -7,7 +7,7 @@ for each processing step.
 ## Pipeline overview
 
 The processing pipeline transforms raw LLM extraction results and EFO ontology
-data into queryable DuckDB databases through five main stages:
+data into queryable DuckDB databases through six main stages:
 
 ```mermaid
 flowchart TD
@@ -722,6 +722,526 @@ Processing details
 Creates tables, populates data, creates indexes (skipping float indexes due to
 DuckDB limitations), creates views, and validates database.
 
+## Stage 6: Evidence profile similarity database
+
+Build database of evidence-based similarities between studies using quantitative
+causal evidence patterns.
+
+See @docs/processing/evidence-profile-similarity.md for detailed methodology
+and conceptual framework.
+
+### Evidence profile preprocessing
+
+Extract and harmonize evidence profiles from model results.
+
+Command reference
+
+Just recipe:
+
+```bash
+just preprocess-evidence-profiles
+```
+
+Python script:
+
+```bash
+uv run scripts/evidence-profile/preprocess-evidence-profiles.py [FLAGS]
+```
+
+Flags
+
+`--dry-run`, `-n`
+
+Perform dry run without processing.
+
+`--database-path <PATH>`
+
+Path to vector_store.db database.
+Default: data/db/vector_store.db.
+
+`--output-dir <PATH>`
+
+Output directory for processed evidence profiles.
+Default: data/processed/evidence-profiles.
+
+`--min-results <INT>`
+
+Minimum number of complete results required per study.
+Default: 3.
+
+`--max-missing-rate <FLOAT>`
+
+Maximum allowed proportion of missing data (0-1).
+Default: 0.75.
+
+`--limit <INT>`
+
+Limit number of combinations to process (for testing).
+Optional.
+
+Input files
+
+`data/db/vector_store.db`
+
+Vector store database from Stage 4 containing model_results table.
+
+Output files
+
+`data/processed/evidence-profiles/evidence-profiles.json`
+
+JSON array of evidence profiles with harmonized effect sizes and metadata.
+
+`data/processed/evidence-profiles/preprocessing-stats.json`
+
+Statistics including total combinations, included/excluded counts, effect type
+distribution, data completeness metrics, and unrecognized direction report.
+
+Processing details
+
+Queries database to extract all PMID-model combinations, harmonizes effect
+sizes (log transformation for OR/HR), classifies directions and significance,
+assesses data quality, filters by completeness thresholds.
+Tracks unrecognized direction strings for quality improvement.
+
+### Evidence similarity computation
+
+Compute pairwise evidence profile similarities between studies.
+
+Command reference
+
+Just recipe (HPC submission):
+
+```bash
+just compute-evidence-similarities
+```
+
+SLURM submission:
+
+```bash
+sbatch --account=${ACCOUNT_CODE} scripts/bc4/compute-evidence-similarity.sbatch
+```
+
+Python script (for manual execution):
+
+```bash
+uv run scripts/evidence-profile/compute-evidence-similarity.py [FLAGS]
+```
+
+Flags
+
+`--dry-run`, `-n`
+
+Perform dry run without processing.
+
+`--array-length <INT>`
+
+Total number of array chunks for parallel processing.
+Default: 20.
+
+`--array-id <INT>`
+
+Current array chunk ID (0-based indexing).
+Default: 0.
+
+`--input-file <PATH>`
+
+Path to evidence profiles JSON file.
+Default: data/processed/evidence-profiles/evidence-profiles.json.
+
+`--output-dir <PATH>`
+
+Output directory for similarity files.
+Default: data/output/evidence-similarities.
+
+`--top-k <INT>`
+
+Number of top similar results to keep per combination.
+Default: 10.
+
+`--min-matched-pairs <INT>`
+
+Minimum matched pairs required for comparison.
+Default: 3.
+
+`--workers <INT>`
+
+Number of worker processes for parallelization.
+Default: 4.
+
+Input files
+
+`data/processed/evidence-profiles/evidence-profiles.json`
+
+Evidence profiles from preprocessing step.
+
+Output files
+
+`<output-dir>/evidence_similarities_chunk_<array-id>.json`
+
+Chunk file containing similarity results.
+Each record contains query info and top-k similar combinations from same model.
+
+HPC configuration
+
+SLURM batch script: scripts/bc4/compute-evidence-similarity.sbatch
+
+Resources:
+
+- Array size: 0-19 (20 chunks)
+- Time limit: 12 hours
+- Memory: 32GB per node
+- CPUs per task: 8
+- Partition: cpu
+
+Environment:
+
+- Requires micromamba environment: mr-kg-processing
+- Uses environment variable: ACCOUNT_CODE
+
+Processing details
+
+Matches exposure-outcome pairs by trait indices, computes six similarity
+metrics (effect size, within-type, cross-type, direction concordance,
+statistical consistency, evidence overlap, null concordance), calculates
+quality-weighted composite scores.
+Uses multiprocessing for parallel computation.
+Only compares within same model.
+
+### Evidence similarity aggregation
+
+Combine similarity results from HPC array jobs.
+
+Command reference
+
+Just recipe:
+
+```bash
+just aggregate-evidence-similarities
+```
+
+Python script:
+
+```bash
+uv run scripts/evidence-profile/aggregate-evidence-similarities.py [FLAGS]
+```
+
+Flags
+
+`--dry-run`, `-n`
+
+Perform dry run.
+
+`--input-dir <PATH>`
+
+Directory containing chunk files from SLURM job array.
+Required.
+
+`--output-dir <PATH>`
+
+Output directory.
+Default: data/processed/evidence-profiles.
+
+Input files
+
+`<input-dir>/evidence_similarities_chunk_*.json`
+
+All similarity chunk files from HPC job.
+
+Output files
+
+`data/processed/evidence-profiles/evidence-similarities.json`
+
+Aggregated similarity data.
+JSON array of all similarity records.
+
+`data/processed/evidence-profiles/aggregation_stats.json`
+
+Validation statistics.
+Contains total records, unique queries, total similarities, averages.
+
+Processing details
+
+Loads all chunk files, validates completeness, combines into single dataset.
+
+### Evidence profile database build
+
+Create evidence profile similarity database.
+
+Command reference
+
+Just recipe:
+
+```bash
+just build-evidence-profile-db
+```
+
+Python script:
+
+```bash
+uv run scripts/evidence-profile/build-evidence-profile-database.py [FLAGS]
+```
+
+Flags
+
+`--input-file <PATH>`
+
+Path to evidence-similarities.json file.
+Default: data/processed/evidence-profiles/evidence-similarities.json.
+
+`--dry-run`, `-n`
+
+Perform dry run without creating database.
+
+`--database-name <NAME>`, `-db <NAME>`
+
+Database name without .db extension.
+Default: evidence_profile_db.
+
+`--skip-indexes`
+
+Skip index creation (for troubleshooting).
+
+`--memory-limit <SIZE>`
+
+Memory limit for DuckDB.
+Default: 4GB.
+
+`--force-write`
+
+Remove existing database and create new one.
+
+Input files
+
+`data/processed/evidence-profiles/evidence-similarities.json`
+
+Aggregated similarity data from previous step.
+
+Output files
+
+`data/db/evidence_profile_db.db`
+
+DuckDB evidence profile similarity database.
+
+Database schema
+
+Tables:
+
+query_combinations
+
+PMID-model pairs with evidence profiles.
+Primary key: id.
+Unique constraint: (pmid, model).
+Includes publication_year for temporal analysis.
+
+evidence_similarities
+
+Similarity relationships between combinations.
+Foreign key: query_combination_id.
+Includes all metrics: effect_size_similarity, effect_size_within_type,
+effect_size_cross_type, direction_concordance, statistical_consistency,
+evidence_overlap, null_concordance, composite scores, completeness values.
+
+Views:
+
+evidence_similarity_analysis
+
+Comprehensive similarity analysis with ranking.
+
+model_evidence_stats
+
+Per-model statistics (total combinations, avg result count, avg completeness).
+
+high_concordance_pairs
+
+High-similarity pairs (direction_concordance >= 0.8).
+
+discordant_evidence_pairs
+
+Studies with contradictory evidence (direction_concordance < 0).
+
+Processing details
+
+Creates tables, populates data, creates indexes, creates views, validates
+database structure and content.
+
+## Stage 7: Evidence profile similarity analysis
+
+Analytical tools for understanding statistical evidence patterns in MR studies
+through four complementary analysis scripts.
+
+See @docs/processing/evidence-profile-similarity.md for detailed methodology.
+
+### Summary statistics analysis
+
+Generate model-level statistics, similarity distributions, and metric
+correlations.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-evidence-summary-stats
+```
+
+Python script:
+
+```bash
+cd processing
+uv run python scripts/analysis/analyze-evidence-summary-stats.py \
+  --evidence-db ../data/db/evidence_profile_db.db \
+  --output-dir ../data/processed/evidence-profiles/analysis
+```
+
+Flags:
+
+- `--evidence-db`: Path to evidence profile database (default:
+  data/db/evidence_profile_db.db)
+- `--output-dir`: Output directory for analysis results (default:
+  data/processed/evidence-profiles/analysis)
+- `-n, --dry-run`: Show what would be done without executing
+
+Outputs:
+
+- `summary-stats-by-model.csv`: Per-model statistics (count, mean, median,
+  std, min, max for each metric)
+- `similarity-distributions.csv`: Percentile distributions (5th, 25th, 50th,
+  75th, 95th) for each metric
+- `metric-correlations.csv`: Pairwise Pearson correlations between all
+  similarity metrics
+
+### Trait comparison analysis
+
+Compare evidence-based similarities with trait-based similarities to identify
+concordant and discordant cases.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-evidence-trait-comparison
+```
+
+Python script:
+
+```bash
+cd processing
+uv run python scripts/analysis/analyze-evidence-trait-comparison.py \
+  --evidence-db ../data/db/evidence_profile_db.db \
+  --trait-db ../data/db/trait_profile_db.db \
+  --output-dir ../data/processed/evidence-profiles/analysis
+```
+
+Flags:
+
+- `--evidence-db`: Path to evidence profile database (default:
+  data/db/evidence_profile_db.db)
+- `--trait-db`: Path to trait profile database (default:
+  data/db/trait_profile_db.db)
+- `--output-dir`: Output directory for analysis results (default:
+  data/processed/evidence-profiles/analysis)
+- `-n, --dry-run`: Show what would be done without executing
+
+Outputs:
+
+- `trait-vs-evidence-correlation.csv`: Correlations between trait and
+  evidence metrics by model
+- `quadrant-classification.csv`: Classification of study pairs into four
+  quadrants based on trait and evidence similarity
+- `interesting-cases.csv`: Top discordant cases (high trait similarity with
+  low evidence similarity, and vice versa)
+
+### Data quality analysis
+
+Assess completeness and distribution of evidence data across models and study
+pairs.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-evidence-data-quality
+```
+
+Python script:
+
+```bash
+cd processing
+uv run python scripts/analysis/analyze-evidence-data-quality.py \
+  --evidence-db ../data/db/evidence_profile_db.db \
+  --output-dir ../data/processed/evidence-profiles/analysis
+```
+
+Flags:
+
+- `--evidence-db`: Path to evidence profile database (default:
+  data/db/evidence_profile_db.db)
+- `--output-dir`: Output directory for analysis results (default:
+  data/processed/evidence-profiles/analysis)
+- `-n, --dry-run`: Show what would be done without executing
+
+Outputs:
+
+- `data-quality-report.json`: Comprehensive quality metrics including total
+  pairs, matched pairs count, field completeness percentages
+- `completeness-by-model.csv`: Field-level completeness statistics per model
+- `matched-pairs-distribution.csv`: Distribution of matched exposure-outcome
+  pairs per study pair
+
+### Validation analysis
+
+Validate similarity computation through examination of top similar pairs and
+discordant evidence patterns.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-evidence-validation
+```
+
+Python script:
+
+```bash
+cd processing
+uv run python scripts/analysis/analyze-evidence-validation.py \
+  --evidence-db ../data/db/evidence_profile_db.db \
+  --output-dir ../data/processed/evidence-profiles/analysis \
+  --top-n 100
+```
+
+Flags:
+
+- `--evidence-db`: Path to evidence profile database (default:
+  data/db/evidence_profile_db.db)
+- `--output-dir`: Output directory for analysis results (default:
+  data/processed/evidence-profiles/analysis)
+- `--top-n`: Number of top similar pairs to extract (default: 100)
+- `-n, --dry-run`: Show what would be done without executing
+
+Outputs:
+
+- `validation-report.json`: Summary statistics for top similar pairs
+  including mean values, standard deviations, and ranges for each metric
+- `top-similar-pairs.csv`: Detailed records of top-N most similar study
+  pairs ranked by combined evidence score
+- `discordant-pairs.csv`: Study pairs with conflicting direction concordance
+  and statistical consistency metrics
+
+### Running all analyses
+
+Execute all four analysis scripts sequentially:
+
+```bash
+just analyze-evidence-profile
+```
+
+This meta-recipe runs all analysis scripts in order, generating a complete
+analytical report.
+
 ## Key processing scripts
 
 ### Script locations
@@ -736,12 +1256,23 @@ processing/scripts/
 ├── main-db/            Database building scripts
 │   ├── build-main-database.py
 │   └── query-database.py
-├── trait-profile/      Similarity computation
+├── trait-profile/      Trait similarity computation
 │   ├── compute-trait-similarity.py
 │   ├── aggregate-trait-similarities.py
 │   └── build-trait-profile-database.py
+├── evidence-profile/   Evidence similarity computation
+│   ├── preprocess-evidence-profiles.py
+│   ├── compute-evidence-similarity.py
+│   ├── aggregate-evidence-similarities.py
+│   └── build-evidence-profile-database.py
+├── analysis/           Analysis scripts for evidence profiles
+│   ├── analyze-evidence-summary-stats.py
+│   ├── analyze-evidence-trait-comparison.py
+│   ├── analyze-evidence-data-quality.py
+│   └── analyze-evidence-validation.py
 └── bc4/               HPC batch job scripts
     ├── compute-trait-similarity.sbatch
+    ├── compute-evidence-similarity.sbatch
     ├── embed-efo.sbatch
     └── embed-traits.sbatch
 ```
@@ -758,6 +1289,12 @@ processing/scripts/
 - `compute-trait-similarity.py`: Computes pairwise trait similarities
 - `build-trait-profile-database.py`: Creates trait_profile_db.db for
   similarity analysis
+- `preprocess-evidence-profiles.py`: Extracts and harmonizes evidence profiles
+  from model results
+- `compute-evidence-similarity.py`: Computes pairwise evidence similarities
+- `build-evidence-profile-database.py`: Creates evidence_profile_db.db for
+  evidence-based similarity analysis
+- `analyze-evidence-*.py`: Analysis scripts for evidence profile exploration
 
 ## HPC integration
 
@@ -785,6 +1322,7 @@ export ACCOUNT_CODE=your-hpc-account
 sbatch scripts/bc4/embed-traits.sbatch
 sbatch scripts/bc4/embed-efo.sbatch
 sbatch scripts/bc4/compute-trait-similarity.sbatch
+sbatch scripts/bc4/compute-evidence-similarity.sbatch
 ```
 
 ## Output databases
@@ -804,7 +1342,16 @@ extraction results with optimized views for similarity search.
 Path: `data/db/trait_profile_db.db`
 
 Precomputed trait-to-trait similarities for study network analysis.
-See @docs/processing/trait-similarity.md for similarity methodology.
+See @docs/processing/trait-profile-similarity.md for similarity methodology.
+
+### Evidence profile database
+
+Path: `data/db/evidence_profile_db.db`
+
+Precomputed evidence-based similarities comparing statistical evidence
+patterns across MR studies.
+See @docs/processing/evidence-profile-similarity.md for methodology and
+metrics.
 
 ## Data flow
 
@@ -820,24 +1367,30 @@ flowchart LR
         P1[traits/]
         P2[efo/]
         P3[embeddings/]
+        P4[evidence-profiles/]
     end
 
     subgraph Output["Databases"]
         O1[vector_store.db]
         O2[trait_profile_db.db]
+        O3[evidence_profile_db.db]
     end
 
     R1 --> P2
     R2 --> P1
     R2 --> P3
+    R2 --> P4
     P1 --> P3
     P2 --> P3
     P3 --> O1
     R3 --> O1
     O1 --> O2
+    O1 --> O3
+    P4 --> O3
 
     style O1 fill:#ffe1e1
     style O2 fill:#ffe1e1
+    style O3 fill:#ffe1e1
 ```
 
 Directories:

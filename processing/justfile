@@ -31,9 +31,14 @@ ruff:
 ty:
     uv run ty check
 
+# Run unit tests
+[group('codebase')]
+test:
+    uv run pytest tests/ -v
+
 # run all quality checks
 [group('codebase')]
-check: ruff ty
+check: ruff ty test
 
 # ==== main-processing ====
 
@@ -100,6 +105,74 @@ build-trait-profile-db:
         -db trait_profile_db \
         --memory-limit 8GB \
         --force-write
+
+# ==== evidence profile similarity ====
+
+# Preprocess evidence profiles from model results
+[group('evidence-profile')]
+preprocess-evidence-profiles:
+    uv run scripts/evidence-profile/preprocess-evidence-profiles.py
+
+# Submit HPC batch job to compute evidence similarities
+[group('evidence-profile'), group('hpc')]
+compute-evidence-similarities:
+    sbatch --account=${ACCOUNT_CODE} scripts/bc4/compute-evidence-similarity.sbatch
+
+# Aggregate evidence similarity results from HPC batch jobs
+[group('evidence-profile')]
+aggregate-evidence-similarities:
+    #!/bin/bash
+    # NOTE: Update EXPERIMENT_ID after job completion
+    EXPERIMENT_ID="bc4-XXXXXXX"
+    uv run scripts/evidence-profile/aggregate-evidence-similarities.py \
+        --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
+
+# Build evidence profile database
+[group('evidence-profile')]
+build-evidence-profile-db:
+    uv run scripts/evidence-profile/build-evidence-profile-database.py \
+        -db evidence_profile_db \
+        --memory-limit 8GB \
+        --force-write
+
+# Analyze evidence similarity patterns
+[group('evidence-profile')]
+analyze-evidence-similarity:
+    uv run scripts/evidence-profile/analyze-evidence-similarity.py
+
+# Generate summary statistics and distributions for evidence similarities
+[group('evidence-profile'), group('analysis')]
+analyze-evidence-summary-stats:
+    uv run scripts/analysis/analyze-evidence-summary-stats.py \
+        --evidence-db {{PROJECT_ROOT}}/data/db/evidence_profile_db.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis
+
+# Compare evidence-based and trait-based similarities
+[group('evidence-profile'), group('analysis')]
+analyze-evidence-trait-comparison:
+    uv run scripts/analysis/analyze-evidence-trait-comparison.py \
+        --evidence-db {{PROJECT_ROOT}}/data/db/evidence_profile_db.db \
+        --trait-db {{PROJECT_ROOT}}/data/db/trait_profile_db.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis
+
+# Assess data quality and completeness of evidence profiles
+[group('evidence-profile'), group('analysis')]
+analyze-evidence-data-quality:
+    uv run scripts/analysis/analyze-evidence-data-quality.py \
+        --evidence-db {{PROJECT_ROOT}}/data/db/evidence_profile_db.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis
+
+# Validate evidence similarity computation
+[group('evidence-profile'), group('analysis')]
+analyze-evidence-validation:
+    uv run scripts/analysis/analyze-evidence-validation.py \
+        --evidence-db {{PROJECT_ROOT}}/data/db/evidence_profile_db.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis \
+        --top-n 100
+
+# Run all evidence profile analysis scripts
+[group('evidence-profile'), group('analysis')]
+analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation
 
 # ==== postprocessing ====
 

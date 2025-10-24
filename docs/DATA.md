@@ -313,7 +313,7 @@ based on their trait profiles (combined exposure and outcome traits).
 - **trait_jaccard_similarity**: Set overlap (|intersection| / |union|,
   range 0-1)
 
-See @docs/processing/trait-similarity.md for detailed methodology.
+See @docs/processing/trait-profile-similarity.md for detailed methodology.
 
 **aggregation_stats.json**: Summary statistics (mean, median, std)
 across all similarity pairs per model.

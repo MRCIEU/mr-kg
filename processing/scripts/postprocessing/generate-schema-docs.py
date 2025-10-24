@@ -38,6 +38,11 @@ from common_funcs.schema.trait_profile_schema import (  # noqa: E402
     TRAIT_PROFILE_SCHEMA,
     TRAIT_PROFILE_VIEWS,
 )
+from common_funcs.schema.evidence_profile_schema import (  # noqa: E402
+    EVIDENCE_PROFILE_INDEXES,
+    EVIDENCE_PROFILE_SCHEMA,
+    EVIDENCE_PROFILE_VIEWS,
+)
 
 
 def make_args():
@@ -582,13 +587,14 @@ def get_database_statistics(
 
 
 def generate_database_statistics_section(
-    vector_stats: Dict, trait_stats: Dict
+    vector_stats: Dict, trait_stats: Dict, evidence_stats: Dict
 ) -> str:
     """Generate markdown section with live database statistics.
 
     Args:
         vector_stats: Statistics dict for vector_store.db
         trait_stats: Statistics dict for trait_profile_db.db
+        evidence_stats: Statistics dict for evidence_profile_db.db
 
     Returns:
         Markdown section with statistics
@@ -646,6 +652,29 @@ def generate_database_statistics_section(
             lines.append(f"| `{name}` | {count_str} |")
         lines.append("")
 
+    if evidence_stats:
+        lines.extend(
+            [
+                "### Evidence profile database",
+                "",
+            ]
+        )
+        if evidence_stats.get("version"):
+            lines.append(f"**DuckDB Version:** {evidence_stats['version']}")
+            lines.append("")
+
+        lines.extend(
+            [
+                "| Table/View | Row Count |",
+                "|------------|-----------|",
+            ]
+        )
+        for name in sorted(evidence_stats.get("tables", {}).keys()):
+            count = evidence_stats["tables"][name]
+            count_str = f"{count:,}" if count >= 0 else "Error"
+            lines.append(f"| `{name}` | {count_str} |")
+        lines.append("")
+
     res = "\n".join(lines)
     return res
 
@@ -657,10 +686,14 @@ def generate_schema_documentation(
     trait_tables: Dict[str, TableDef],
     trait_indexes: List[IndexDef],
     trait_views: List[ViewDef],
+    evidence_tables: Dict[str, TableDef],
+    evidence_indexes: List[IndexDef],
+    evidence_views: List[ViewDef],
     vector_stats: Dict[str, int],
     trait_stats: Dict[str, int],
+    evidence_stats: Dict[str, int],
 ) -> str:
-    """Generate complete schema documentation for both databases.
+    """Generate complete schema documentation for all databases.
 
     Args:
         vector_tables: Vector store table definitions
@@ -669,8 +702,12 @@ def generate_schema_documentation(
         trait_tables: Trait profile table definitions
         trait_indexes: Trait profile index definitions
         trait_views: Trait profile view definitions
+        evidence_tables: Evidence profile table definitions
+        evidence_indexes: Evidence profile index definitions
+        evidence_views: Evidence profile view definitions
         vector_stats: Vector store database statistics
         trait_stats: Trait profile database statistics
+        evidence_stats: Evidence profile database statistics
 
     Returns:
         Complete markdown documentation
@@ -680,11 +717,14 @@ def generate_schema_documentation(
         "",
         "Auto-generated documentation from schema definitions and live database statistics.",
         "",
-        "This document covers two databases:",
+        "This document covers three databases:",
         "- **Vector store database** (`vector_store.db`): MR-KG embeddings and analysis",
         "- **Trait profile database** (`trait_profile_db.db`): Trait similarity profiles",
+        "- **Evidence profile database** (`evidence_profile_db.db`): Evidence similarity profiles",
         "",
-        generate_database_statistics_section(vector_stats, trait_stats),
+        generate_database_statistics_section(
+            vector_stats, trait_stats, evidence_stats
+        ),
         "",
         "## Vector store database",
         "",
@@ -742,6 +782,36 @@ def generate_schema_documentation(
         )
     )
 
+    sections.extend(
+        [
+            "",
+            "## Evidence profile database",
+            "",
+            "### Overview",
+            "",
+            generate_mermaid_diagram(evidence_tables, evidence_views),
+            "",
+            generate_quick_reference(evidence_tables),
+            "",
+            "### Tables",
+            "",
+        ]
+    )
+
+    for table_name, table_def in evidence_tables.items():
+        sections.append(generate_table_documentation(table_name, table_def))
+
+    sections.append(
+        generate_index_documentation(evidence_indexes).replace(
+            "## Indexes", "### Indexes"
+        )
+    )
+    sections.append(
+        generate_view_documentation(evidence_views).replace(
+            "## Views", "### Views"
+        )
+    )
+
     res = "\n".join(sections)
     return res
 
@@ -754,16 +824,20 @@ def main():
     """
     args = make_args()
 
-    print("Generating schema documentation for both databases...")
+    print("Generating schema documentation for all databases...")
     print(f"  Vector store - Tables: {len(DATABASE_SCHEMA)}")
     print(f"  Vector store - Indexes: {len(DATABASE_INDEXES)}")
     print(f"  Vector store - Views: {len(DATABASE_VIEWS)}")
     print(f"  Trait profile - Tables: {len(TRAIT_PROFILE_SCHEMA)}")
     print(f"  Trait profile - Indexes: {len(TRAIT_PROFILE_INDEXES)}")
     print(f"  Trait profile - Views: {len(TRAIT_PROFILE_VIEWS)}")
+    print(f"  Evidence profile - Tables: {len(EVIDENCE_PROFILE_SCHEMA)}")
+    print(f"  Evidence profile - Indexes: {len(EVIDENCE_PROFILE_INDEXES)}")
+    print(f"  Evidence profile - Views: {len(EVIDENCE_PROFILE_VIEWS)}")
 
     vector_stats: Dict[str, int] = {}
     trait_stats: Dict[str, int] = {}
+    evidence_stats: Dict[str, int] = {}
 
     try:
         print("\nConnecting to databases for live statistics...")
@@ -772,12 +846,35 @@ def main():
         vector_conn = duckdb.connect(str(vector_db_path), read_only=True)
         vector_stats = get_database_statistics(vector_conn, "Vector Store")
         vector_conn.close()
-        print(f"  Vector store: {len(vector_stats)} tables/views found")
+        print(
+            f"  Vector store: {len(vector_stats.get('tables', {}))} tables/views found"
+        )
 
         trait_conn = duckdb.connect(str(trait_db_path), read_only=True)
         trait_stats = get_database_statistics(trait_conn, "Trait Profile")
         trait_conn.close()
-        print(f"  Trait profile: {len(trait_stats)} tables/views found")
+        print(
+            f"  Trait profile: {len(trait_stats.get('tables', {}))} tables/views found"
+        )
+
+        evidence_db_path = (
+            PROJECT_ROOT / "data" / "db" / "evidence_profile_db.db"
+        )
+        if evidence_db_path.exists():
+            evidence_conn = duckdb.connect(
+                str(evidence_db_path), read_only=True
+            )
+            evidence_stats = get_database_statistics(
+                evidence_conn, "Evidence Profile"
+            )
+            evidence_conn.close()
+            print(
+                f"  Evidence profile: {len(evidence_stats.get('tables', {}))} tables/views found"
+            )
+        else:
+            print(
+                "  Warning: Evidence profile database not found, skipping statistics"
+            )
     except Exception as e:
         print(f"Warning: Could not connect to databases: {e}")
         print("Continuing without live statistics...")
@@ -789,8 +886,12 @@ def main():
         TRAIT_PROFILE_SCHEMA,
         TRAIT_PROFILE_INDEXES,
         TRAIT_PROFILE_VIEWS,
+        EVIDENCE_PROFILE_SCHEMA,
+        EVIDENCE_PROFILE_INDEXES,
+        EVIDENCE_PROFILE_VIEWS,
         vector_stats,
         trait_stats,
+        evidence_stats,
     )
 
     if args.dry_run:
