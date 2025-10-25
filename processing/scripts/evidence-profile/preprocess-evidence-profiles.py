@@ -204,7 +204,7 @@ def get_pmid_model_combinations(
         mr.pmid,
         mr.model,
         mpd.title,
-        mpd.publication_year
+        CAST(SUBSTR(mpd.pub_date, 1, 4) AS INTEGER) as publication_year
     FROM model_results mr
     LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
     ORDER BY mr.model, mr.pmid
@@ -705,7 +705,9 @@ def compute_preprocessing_stats(
         "unique_strings": len(UNRECOGNIZED_DIRECTIONS),
         "examples": dict(
             sorted(
-                UNRECOGNIZED_DIRECTIONS.items(), key=lambda x: x[1], reverse=True
+                UNRECOGNIZED_DIRECTIONS.items(),
+                key=lambda x: x[1],
+                reverse=True,
             )[:20]
         ),
     }
