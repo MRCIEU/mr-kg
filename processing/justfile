@@ -113,6 +113,11 @@ build-trait-profile-db:
 preprocess-evidence-profiles:
     uv run scripts/evidence-profile/preprocess-evidence-profiles.py
 
+# Submit HPC batch job to compute evidence similarities (lite)
+[group('evidence-profile'), group('hpc')]
+compute-evidence-similarities-lite:
+    sbatch --account=${ACCOUNT_CODE} scripts/bc4/compute-evidence-similarity-lite.sbatch
+
 # Submit HPC batch job to compute evidence similarities
 [group('evidence-profile'), group('hpc')]
 compute-evidence-similarities:
