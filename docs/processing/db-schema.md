@@ -39,6 +39,19 @@ Live statistics from the actual database files.
 | `trait_similarities` | 504,020 |
 | `trait_similarity_analysis` | 504,020 |
 
+### Evidence profile database
+
+**DuckDB Version:** v1.3.2
+
+| Table/View | Row Count |
+|------------|-----------|
+| `discordant_evidence_pairs` | 5 |
+| `evidence_similarities` | 69 |
+| `evidence_similarity_analysis` | 69 |
+| `high_concordance_pairs` | 61 |
+| `model_evidence_stats` | 6 |
+| `query_combinations` | 3,728 |
+
 
 ## Vector store database
 
@@ -559,6 +572,7 @@ erDiagram
         INTEGER result_count
         INTEGER complete_result_count
         DOUBLE data_completeness
+        INTEGER publication_year
     }
     evidence_similarities {
         INTEGER id PK
@@ -571,6 +585,14 @@ erDiagram
         DOUBLE direction_concordance
         DOUBLE statistical_consistency
         DOUBLE evidence_overlap
+        DOUBLE null_concordance
+        DOUBLE effect_size_within_type
+        DOUBLE effect_size_cross_type
+        INTEGER n_within_type_pairs
+        INTEGER n_cross_type_pairs
+        INTEGER similar_publication_year
+        DOUBLE query_completeness
+        DOUBLE similar_completeness
         DOUBLE composite_similarity_equal
         DOUBLE composite_similarity_direction
         INTEGER query_result_count
@@ -675,6 +697,8 @@ PMID-model combinations with evidence profile metadata and data quality metrics
 
 - **`data_completeness`** (DOUBLE, NOT NULL)
 
+- **`publication_year`** (INTEGER, nullable)
+
 #### evidence_similarities
 
 Similarity relationships between PMID-model combinations within same model based on quantitative causal evidence
@@ -701,9 +725,25 @@ Similarity relationships between PMID-model combinations within same model based
 
 - **`evidence_overlap`** (DOUBLE, NOT NULL)
 
-- **`composite_similarity_equal`** (DOUBLE, NOT NULL)
+- **`null_concordance`** (DOUBLE, NOT NULL)
 
-- **`composite_similarity_direction`** (DOUBLE, NOT NULL)
+- **`effect_size_within_type`** (DOUBLE, nullable)
+
+- **`effect_size_cross_type`** (DOUBLE, nullable)
+
+- **`n_within_type_pairs`** (INTEGER, NOT NULL)
+
+- **`n_cross_type_pairs`** (INTEGER, NOT NULL)
+
+- **`similar_publication_year`** (INTEGER, nullable)
+
+- **`query_completeness`** (DOUBLE, NOT NULL)
+
+- **`similar_completeness`** (DOUBLE, NOT NULL)
+
+- **`composite_similarity_equal`** (DOUBLE, nullable)
+
+- **`composite_similarity_direction`** (DOUBLE, nullable)
 
 - **`query_result_count`** (INTEGER, NOT NULL)
 
