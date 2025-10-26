@@ -234,19 +234,24 @@ def load_trait_efo_mappings(
     conn = duckdb.connect(str(db_path), read_only=True)
 
     query = """
-    SELECT trait_index, efo_id, similarity
-    FROM trait_efo_similarity_search
-    WHERE similarity >= ?
-    ORDER BY trait_index, similarity DESC
+    WITH ranked AS (
+        SELECT 
+            trait_index, 
+            efo_id,
+            ROW_NUMBER() OVER (
+                PARTITION BY trait_index 
+                ORDER BY similarity DESC
+            ) as rn
+        FROM trait_efo_similarity_search
+        WHERE similarity >= ?
+    )
+    SELECT trait_index, efo_id
+    FROM ranked
+    WHERE rn = 1
     """
     results = conn.execute(query, [min_similarity]).fetchall()
 
-    trait_efo_map = {}
-    for row in results:
-        trait_idx = row[0]
-        efo_id = row[1]
-        if trait_idx not in trait_efo_map:
-            trait_efo_map[trait_idx] = efo_id
+    trait_efo_map = {row[0]: row[1] for row in results}
 
     total_traits_result = conn.execute(
         "SELECT COUNT(DISTINCT trait_index) FROM trait_embeddings"
