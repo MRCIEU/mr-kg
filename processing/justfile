@@ -130,7 +130,7 @@ compute-evidence-similarities:
 aggregate-evidence-similarities:
     #!/bin/bash
     # NOTE: Update EXPERIMENT_ID after job completion
-    EXPERIMENT_ID="bc4-12799841"
+    EXPERIMENT_ID="bc4-12799864"
     uv run scripts/evidence-profile/aggregate-evidence-similarities.py \
         --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
