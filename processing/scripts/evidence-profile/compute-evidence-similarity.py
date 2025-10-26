@@ -214,11 +214,11 @@ def load_trait_embeddings(db_path: Path) -> Dict[int, np.ndarray]:
 def load_trait_efo_mappings(
     db_path: Path, min_similarity: float = 0.5
 ) -> Dict[int, str]:
-    """Load top EFO term for each trait index.
+    """Load top EFO term for each trait index using in-memory computation.
 
     For each trait, selects the EFO term with highest similarity score
-    above the minimum threshold. This provides a category-level mapping
-    for traits.
+    above the minimum threshold. Computes similarities in-memory using
+    numpy to avoid expensive database CROSS JOIN operations.
 
     Args:
         db_path: Path to vector_store.db
@@ -227,42 +227,58 @@ def load_trait_efo_mappings(
     Returns:
         Dictionary mapping trait_index to best EFO ID
     """
+    import numpy as np
+    from sklearn.metrics.pairwise import cosine_similarity
+
     logger.info(
         f"Loading trait-EFO mappings from: {db_path} "
         f"(min_similarity={min_similarity})"
     )
     conn = duckdb.connect(str(db_path), read_only=True)
 
-    query = """
-    WITH ranked AS (
-        SELECT 
-            trait_index, 
-            efo_id,
-            ROW_NUMBER() OVER (
-                PARTITION BY trait_index 
-                ORDER BY similarity DESC
-            ) as rn
-        FROM trait_efo_similarity_search
-        WHERE similarity >= ?
-    )
-    SELECT trait_index, efo_id
-    FROM ranked
-    WHERE rn = 1
+    logger.info("Loading trait vectors...")
+    trait_query = """
+    SELECT trait_index, vector
+    FROM trait_embeddings
+    ORDER BY trait_index
     """
-    results = conn.execute(query, [min_similarity]).fetchall()
+    trait_results = conn.execute(trait_query).fetchall()
+    trait_indices = [r[0] for r in trait_results]
+    trait_vectors = np.array([r[1] for r in trait_results])
 
-    trait_efo_map = {row[0]: row[1] for row in results}
+    logger.info("Loading EFO vectors...")
+    efo_query = """
+    SELECT id, vector
+    FROM efo_embeddings
+    ORDER BY id
+    """
+    efo_results = conn.execute(efo_query).fetchall()
+    efo_ids = [r[0] for r in efo_results]
+    efo_vectors = np.array([r[1] for r in efo_results])
 
-    total_traits_result = conn.execute(
-        "SELECT COUNT(DISTINCT trait_index) FROM trait_embeddings"
-    ).fetchone()
-    total_traits = total_traits_result[0] if total_traits_result else 0
+    conn.close()
+
+    logger.info(
+        f"Computing similarities for {len(trait_indices)} traits "
+        f"and {len(efo_ids)} EFO terms..."
+    )
+
+    similarities = cosine_similarity(trait_vectors, efo_vectors)
+
+    trait_efo_map = {}
+    for i, trait_idx in enumerate(trait_indices):
+        trait_sims = similarities[i]
+        max_idx = np.argmax(trait_sims)
+        max_sim = trait_sims[max_idx]
+
+        if max_sim >= min_similarity:
+            trait_efo_map[trait_idx] = efo_ids[max_idx]
 
     logger.info(
         f"Loaded EFO mappings for {len(trait_efo_map)} traits "
-        f"(out of {total_traits} total)"
+        f"(out of {len(trait_indices)} total)"
     )
-    conn.close()
+
     return trait_efo_map
 
 

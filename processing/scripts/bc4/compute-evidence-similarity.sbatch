@@ -45,7 +45,7 @@ micromamba run -n mr-kg-processing \
   --use-fuzzy-matching \
   --fuzzy-threshold 0.80 \
   --use-efo-matching \
-  --efo-similarity-threshold 0.70 \
+  --efo-similarity-threshold 0.80 \
   >"${output_log_file}" 2>&1
 
 date "+%Y-%m-%dT%H-%M"
