@@ -452,6 +452,127 @@ cases.
 - Identify potential computation errors or edge cases
 - Find interesting biological examples of consistent or contradictory evidence
 
+### 5. Match type quality stratification
+
+**Purpose:** Analyze whether match quality varies by trait matching strategy
+(exact, fuzzy, EFO).
+
+**Script:** `scripts/analysis/analyze-match-type-quality.py`
+
+**Key outputs:**
+
+- Quality metrics stratified by predominant match type
+- Direction concordance, effect size similarity, statistical consistency by
+  match type
+- Match type distribution across similarity quartiles
+- Data completeness analysis by match type
+
+**Use cases:**
+
+- Validate that exact matches produce higher quality similarities than fuzzy
+  or EFO matches
+- Identify whether EFO category-level matching introduces noise
+- Assess trade-off between match rate and match quality for fuzzy matching
+- Inform decisions about fuzzy matching thresholds
+
+**Note:** This analysis operates on intermediate chunk files from HPC jobs
+(before aggregation into the database).
+
+**Command reference:**
+
+Just recipe:
+
+```bash
+just analyze-match-type-quality
+```
+
+Python script:
+
+```bash
+cd processing
+uv run scripts/analysis/analyze-match-type-quality.py \
+  --input-dir ../data/output/<experiment-id>/results
+```
+
+The script expects chunk files at the specified input directory with pattern
+`evidence_similarities_chunk_*.json`.
+
+### 6. Alternative metrics analysis
+
+**Purpose:** Assess feasibility of alternative similarity metrics beyond the
+core six metrics.
+
+**Script:** `scripts/evidence-profile/analyze-alternative-metrics.py`
+
+**Key outputs:**
+
+- Evaluation of alternative metric formulations
+- Comparison with existing metrics
+- Feasibility assessment for implementation
+
+**Use cases:**
+
+- Explore whether alternative metrics capture additional aspects of evidence
+  similarity
+- Validate that current metrics provide comprehensive coverage
+- Inform future metric development decisions
+
+**Command reference:**
+
+Just recipe:
+
+```bash
+just analyze-alternative-metrics
+```
+
+Python script:
+
+```bash
+cd processing
+uv run scripts/evidence-profile/analyze-alternative-metrics.py \
+  --evidence-db ../data/db/evidence_profile_db.db \
+  --output-dir ../data/processed/evidence-profiles/analysis
+```
+
+### 7. EFO matching failure analysis
+
+**Purpose:** Investigate EFO matching performance and threshold sensitivity to
+understand why trait matching may fail.
+
+**Script:** `scripts/evidence-profile/analyze-efo-matching-failure.py`
+
+**Key outputs:**
+
+- Analysis of EFO matching success rates
+- Threshold sensitivity evaluation
+- Common failure patterns identification
+
+**Use cases:**
+
+- Identify systematic issues in EFO-based trait matching
+- Optimize matching thresholds for better coverage
+- Understand trade-offs between precision and recall in trait matching
+
+**Note:** This analysis operates on intermediate chunk files from HPC jobs.
+
+**Command reference:**
+
+Just recipe:
+
+```bash
+just analyze-efo-matching-failure
+```
+
+Python script:
+
+```bash
+cd processing
+uv run scripts/evidence-profile/analyze-efo-matching-failure.py \
+  --batch-output-dir ../data/output/<experiment-id>/results
+```
+
+The script expects chunk files at the specified batch output directory.
+
 ## Database schema
 
 The evidence profile database contains a single table:

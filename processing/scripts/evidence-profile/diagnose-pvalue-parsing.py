@@ -151,13 +151,15 @@ def analyze_statistical_consistency_failure() -> None:
 
     conn = duckdb.connect(str(EVIDENCE_DB_PATH), read_only=True)
 
-    total = conn.execute(
+    total_row = conn.execute(
         "SELECT COUNT(*) FROM evidence_similarities"
-    ).fetchone()[0]
-    with_stat_cons = conn.execute(
+    ).fetchone()
+    total = total_row[0] if total_row else 0
+    with_stat_cons_row = conn.execute(
         "SELECT COUNT(*) FROM evidence_similarities WHERE "
         "statistical_consistency IS NOT NULL"
-    ).fetchone()[0]
+    ).fetchone()
+    with_stat_cons = with_stat_cons_row[0] if with_stat_cons_row else 0
 
     logger.info(
         f"Comparisons with statistical_consistency: {with_stat_cons:,} / "
@@ -184,9 +186,10 @@ def analyze_statistical_consistency_failure() -> None:
             f"({pct:5.2f}%) have stat_cons"
         )
 
-    three_plus = conn.execute(
+    three_plus_row = conn.execute(
         "SELECT COUNT(*) FROM evidence_similarities WHERE matched_pairs >= 3"
-    ).fetchone()[0]
+    ).fetchone()
+    three_plus = three_plus_row[0] if three_plus_row else 0
     logger.info(
         f"\nComparisons with >= 3 pairs: {three_plus:,} / {total:,} "
         f"({100.0 * three_plus / total:.2f}%)"

@@ -1067,7 +1067,7 @@ database structure and content.
 ## Stage 7: Evidence profile similarity analysis
 
 Analytical tools for understanding statistical evidence patterns in MR studies
-through four complementary analysis scripts.
+through seven complementary analysis scripts.
 
 See @docs/processing/evidence-profile-similarity.md for detailed methodology.
 
@@ -1231,9 +1231,154 @@ Outputs:
 - `discordant-pairs.csv`: Study pairs with conflicting direction concordance
   and statistical consistency metrics
 
+### Match type quality analysis
+
+Analyze quality stratification by trait matching strategy (exact, fuzzy, EFO).
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-match-type-quality
+```
+
+Python script:
+
+```bash
+cd processing
+uv run scripts/analysis/analyze-match-type-quality.py \
+  --input-dir ../data/output/<experiment-id>/results
+```
+
+Flags
+
+`--input-dir <PATH>`
+
+Directory containing chunk files from SLURM job array.
+Required.
+
+`--output-dir <PATH>`
+
+Output directory for analysis results.
+Default: data/processed/evidence-profiles/analysis.
+
+Input files
+
+`<input-dir>/evidence_similarities_chunk_*.json`
+
+All similarity chunk files from HPC job containing match type information.
+
+Output files
+
+Analysis outputs written to specified output directory with match type quality
+metrics and distributions.
+
+Processing details
+
+Operates on intermediate chunk files before database aggregation to analyze
+how trait matching strategy affects similarity quality metrics.
+
+### Alternative metrics analysis
+
+Assess feasibility of alternative similarity metric formulations.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-alternative-metrics
+```
+
+Python script:
+
+```bash
+cd processing
+uv run scripts/evidence-profile/analyze-alternative-metrics.py \
+  --evidence-db ../data/db/evidence_profile_db.db \
+  --output-dir ../data/processed/evidence-profiles/analysis
+```
+
+Flags
+
+`--evidence-db <PATH>`
+
+Path to evidence profile database.
+Default: data/db/evidence_profile_db.db.
+
+`--output-dir <PATH>`
+
+Output directory for analysis results.
+Default: data/processed/evidence-profiles/analysis.
+
+Input files
+
+`data/db/evidence_profile_db.db`
+
+Evidence profile database from Stage 6.
+
+Output files
+
+Analysis outputs evaluating alternative metric formulations and comparisons
+with existing metrics.
+
+Processing details
+
+Explores alternative similarity metrics beyond the core six to assess whether
+they capture additional aspects of evidence similarity.
+
+### EFO matching failure analysis
+
+Investigate EFO-based trait matching performance and threshold sensitivity.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-efo-matching-failure
+```
+
+Python script:
+
+```bash
+cd processing
+uv run scripts/evidence-profile/analyze-efo-matching-failure.py \
+  --batch-output-dir ../data/output/<experiment-id>/results
+```
+
+Flags
+
+`--batch-output-dir <PATH>`
+
+Directory containing chunk files from SLURM job array.
+Required.
+
+`--output-dir <PATH>`
+
+Output directory for analysis results.
+Default: data/processed/evidence-profiles/analysis.
+
+Input files
+
+`<batch-output-dir>/evidence_similarities_chunk_*.json`
+
+All similarity chunk files from HPC job containing EFO matching information.
+
+Output files
+
+Analysis outputs examining EFO matching success rates, threshold sensitivity,
+and common failure patterns.
+
+Processing details
+
+Operates on intermediate chunk files to analyze trait matching performance,
+particularly for EFO-based matching strategies.
+
 ### Running all analyses
 
-Execute all four analysis scripts sequentially:
+Execute all evidence profile analysis scripts sequentially:
 
 ```bash
 just analyze-evidence-profile

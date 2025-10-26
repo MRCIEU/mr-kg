@@ -442,20 +442,74 @@ def parse_pvalue_robust(p_value: Any) -> Optional[float]:
         return None
 
 
-def classify_significance(p_value: Optional[float]) -> bool:
-    """Classify statistical significance based on p-value.
+def extract_ci_significance(
+    ci_lower: Optional[float],
+    ci_upper: Optional[float],
+    effect_type: Optional[str],
+) -> Optional[bool]:
+    """Determine statistical significance from confidence interval bounds.
+
+    For beta coefficients, checks if CI excludes zero.
+    For OR/HR, checks if CI excludes one.
+
+    Args:
+        ci_lower: Lower bound of 95% CI
+        ci_upper: Upper bound of 95% CI
+        effect_type: Type of effect size (beta, OR, HR)
+
+    Returns:
+        True if CI excludes null value, False if includes null,
+        None if CI data is invalid or missing
+    """
+    if ci_lower is None or ci_upper is None or effect_type is None:
+        return None
+
+    try:
+        ci_lower = float(ci_lower)
+        ci_upper = float(ci_upper)
+    except (ValueError, TypeError):
+        return None
+
+    if effect_type == "beta":
+        res = not (ci_lower <= 0 <= ci_upper)
+    elif effect_type in ["OR", "HR"]:
+        res = not (ci_lower <= 1 <= ci_upper)
+    else:
+        return None
+
+    return res
+
+
+def classify_significance(
+    p_value: Optional[float],
+    ci_lower: Optional[float] = None,
+    ci_upper: Optional[float] = None,
+    effect_type: Optional[str] = None,
+) -> bool:
+    """Classify statistical significance based on p-value or CI.
+
+    Primary method uses p-value (p < 0.05).
+    If p-value is missing, falls back to CI-based classification.
 
     Args:
         p_value: P-value (nullable, can be float or string)
+        ci_lower: Lower bound of 95% CI (optional, for fallback)
+        ci_upper: Upper bound of 95% CI (optional, for fallback)
+        effect_type: Type of effect size (optional, for CI fallback)
 
     Returns:
-        True if p < 0.05, False otherwise
+        True if p < 0.05 or CI excludes null value, False otherwise
     """
     parsed = parse_pvalue_robust(p_value)
-    if parsed is None:
-        return False
-    res = parsed < 0.05
-    return res
+    if parsed is not None:
+        res = parsed < 0.05
+        return res
+
+    ci_sig = extract_ci_significance(ci_lower, ci_upper, effect_type)
+    if ci_sig is not None:
+        return ci_sig
+
+    return False
 
 
 # ==== Result processing functions ====
@@ -578,7 +632,6 @@ def process_single_result(
     # Extract p-value and significance
     p_value_raw = result.get("P-value")
     p_value = parse_pvalue_robust(p_value_raw)
-    is_significant = classify_significance(p_value_raw)
 
     # Extract uncertainty measures
     se = result.get("SE")
@@ -589,6 +642,10 @@ def process_single_result(
     if ci is not None and isinstance(ci, list) and len(ci) == 2:
         ci_lower = ci[0]
         ci_upper = ci[1]
+
+    is_significant = classify_significance(
+        p_value_raw, ci_lower, ci_upper, effect_info["effect_type"]
+    )
 
     # Create harmonized result
     res = HarmonizedResult(

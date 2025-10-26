@@ -33,7 +33,7 @@ from typing import Dict, List, Optional, Tuple
 import duckdb
 import numpy as np
 from loguru import logger
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import cohen_kappa_score
 from tqdm import tqdm
 from yiutils.chunking import calculate_chunk_start_end
@@ -54,7 +54,7 @@ DEFAULT_DB_PATH = DB_DIR / "vector_store.db"
 MIN_MATCHED_PAIRS = 1
 MIN_PAIRS_FOR_CORRELATION = 3
 TOP_K_DEFAULT = 50
-DEFAULT_FUZZY_THRESHOLD = 0.80
+DEFAULT_FUZZY_THRESHOLD = 0.70
 
 
 def make_args():
@@ -788,6 +788,67 @@ def compute_evidence_overlap(matched_pairs: List[Tuple[Dict, Dict]]) -> float:
     return res
 
 
+def compute_precision_concordance(
+    matched_pairs: List[Tuple[Dict, Dict]],
+) -> Optional[float]:
+    """Compute similarity of effect estimate precision using CI widths.
+
+    Measures how similar two studies are in terms of the precision
+    of their effect estimates by comparing confidence interval widths.
+    Uses Spearman correlation of log-transformed CI widths to handle
+    the skewed distribution typical of effect size uncertainty.
+
+    Args:
+        matched_pairs: List of matched (query, similar) result pairs
+
+    Returns:
+        Spearman correlation of log CI widths, or None if insufficient
+        valid pairs for computation
+    """
+    if len(matched_pairs) < MIN_PAIRS_FOR_CORRELATION:
+        return None
+
+    query_widths = []
+    similar_widths = []
+
+    for query_result, similar_result in matched_pairs:
+        query_ci_lower = query_result.get("ci_lower")
+        query_ci_upper = query_result.get("ci_upper")
+        similar_ci_lower = similar_result.get("ci_lower")
+        similar_ci_upper = similar_result.get("ci_upper")
+
+        if (
+            query_ci_lower is not None
+            and query_ci_upper is not None
+            and similar_ci_lower is not None
+            and similar_ci_upper is not None
+        ):
+            query_width = abs(query_ci_upper - query_ci_lower)
+            similar_width = abs(similar_ci_upper - similar_ci_lower)
+
+            if query_width > 0 and similar_width > 0:
+                query_widths.append(query_width)
+                similar_widths.append(similar_width)
+
+    if len(query_widths) < MIN_PAIRS_FOR_CORRELATION:
+        return None
+
+    try:
+        log_query_widths = np.log(query_widths)
+        log_similar_widths = np.log(similar_widths)
+
+        if np.any(np.isnan(log_query_widths)) or np.any(
+            np.isnan(log_similar_widths)
+        ):
+            return None
+
+        correlation, _ = spearmanr(log_query_widths, log_similar_widths)
+        return float(correlation) if not np.isnan(correlation) else None
+    except Exception as e:
+        logger.warning(f"Error computing precision concordance: {e}")
+        return None
+
+
 def compute_composite_scores(
     effect_similarity: Optional[float],
     direction_concordance: float,
@@ -929,6 +990,7 @@ def compute_pairwise_similarity(
     statistical_consistency = compute_statistical_consistency(matched_pairs)
     evidence_overlap = compute_evidence_overlap(matched_pairs)
     null_concordance = compute_null_concordance(matched_pairs)
+    precision_concordance = compute_precision_concordance(matched_pairs)
 
     # Get data completeness
     query_completeness = query_profile["data_completeness"]
@@ -972,6 +1034,7 @@ def compute_pairwise_similarity(
         "statistical_consistency": statistical_consistency,
         "evidence_overlap": evidence_overlap,
         "null_concordance": null_concordance,
+        "precision_concordance": precision_concordance,
         "composite_similarity_equal": composite_equal,
         "composite_similarity_direction": composite_direction,
         "query_result_count": query_profile["result_count"],
@@ -1105,6 +1168,44 @@ def compute_similarities_for_chunk(
     logger.info(
         f"Completed similarity computation for {len(similarity_records)} queries"
     )
+
+    total_exact = 0
+    total_fuzzy = 0
+    total_efo = 0
+    total_matched_pairs = 0
+    total_comparisons = 0
+
+    for record in similarity_records:
+        for sim in record["top_similarities"]:
+            total_comparisons += 1
+            total_exact += sim["match_type_exact"]
+            total_fuzzy += sim["match_type_fuzzy"]
+            total_efo += sim["match_type_efo"]
+            total_matched_pairs += sim["matched_pairs"]
+
+    if total_matched_pairs > 0:
+        exact_pct = (total_exact / total_matched_pairs) * 100
+        fuzzy_pct = (total_fuzzy / total_matched_pairs) * 100
+        efo_pct = (total_efo / total_matched_pairs) * 100
+
+        logger.info(
+            f"Match type distribution across {total_comparisons} comparisons:"
+        )
+        logger.info(f"  Total matched pairs: {total_matched_pairs}")
+        logger.info(f"  Exact matches: {total_exact} ({exact_pct:.2f}%)")
+        logger.info(f"  Fuzzy matches: {total_fuzzy} ({fuzzy_pct:.2f}%)")
+        logger.info(f"  EFO matches: {total_efo} ({efo_pct:.2f}%)")
+
+        if trait_efo_map is not None and total_efo > 0:
+            logger.info(
+                f"  EFO contribution rate: {efo_pct:.2f}% "
+                f"(expected: 1-2%, alert if >5%)"
+            )
+            if efo_pct > 5.0:
+                logger.warning(
+                    f"HIGH EFO CONTRIBUTION: {efo_pct:.2f}% exceeds 5% threshold"
+                )
+
     return similarity_records
 
 

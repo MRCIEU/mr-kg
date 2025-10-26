@@ -178,6 +178,9 @@ def create_evidence_similarities_table(
             similar_model VARCHAR NOT NULL,
             similar_title VARCHAR NOT NULL,
             matched_pairs INTEGER NOT NULL,
+            match_type_exact INTEGER NOT NULL,
+            match_type_fuzzy INTEGER NOT NULL,
+            match_type_efo INTEGER NOT NULL,
             effect_size_similarity DOUBLE,
             effect_size_within_type DOUBLE,
             effect_size_cross_type DOUBLE,
@@ -187,6 +190,7 @@ def create_evidence_similarities_table(
             statistical_consistency DOUBLE,
             evidence_overlap DOUBLE NOT NULL,
             null_concordance DOUBLE NOT NULL,
+            precision_concordance DOUBLE,
             composite_similarity_equal DOUBLE,
             composite_similarity_direction DOUBLE,
             query_result_count INTEGER NOT NULL,
@@ -211,6 +215,9 @@ def create_evidence_similarities_table(
                     similarity["similar_model"],
                     similarity["similar_title"],
                     similarity["matched_pairs"],
+                    similarity.get("match_type_exact", 0),
+                    similarity.get("match_type_fuzzy", 0),
+                    similarity.get("match_type_efo", 0),
                     similarity.get("effect_size_similarity"),
                     similarity.get("effect_size_within_type"),
                     similarity.get("effect_size_cross_type"),
@@ -220,6 +227,7 @@ def create_evidence_similarities_table(
                     similarity.get("statistical_consistency"),
                     similarity["evidence_overlap"],
                     similarity.get("null_concordance", 0.0),
+                    similarity.get("precision_concordance"),
                     similarity.get("composite_similarity_equal"),
                     similarity.get("composite_similarity_direction"),
                     similarity["query_result_count"],
@@ -239,13 +247,14 @@ def create_evidence_similarities_table(
         conn.executemany(
             """INSERT INTO evidence_similarities
                (id, query_combination_id, similar_pmid, similar_model, similar_title,
-                matched_pairs, effect_size_similarity, effect_size_within_type, 
+                matched_pairs, match_type_exact, match_type_fuzzy, match_type_efo,
+                effect_size_similarity, effect_size_within_type, 
                 effect_size_cross_type, n_within_type_pairs, n_cross_type_pairs,
                 direction_concordance, statistical_consistency, evidence_overlap,
-                null_concordance, composite_similarity_equal, composite_similarity_direction,
-                query_result_count, similar_result_count, query_completeness,
-                similar_completeness, similar_publication_year)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                null_concordance, precision_concordance, composite_similarity_equal,
+                composite_similarity_direction, query_result_count, similar_result_count,
+                query_completeness, similar_completeness, similar_publication_year)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             similarities_data,
         )
         logger.info(

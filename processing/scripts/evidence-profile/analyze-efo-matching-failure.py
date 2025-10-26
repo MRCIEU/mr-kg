@@ -340,7 +340,10 @@ def parse_batch3_results(output_dir: Path) -> Dict:
                 match_type_counts["efo"] += sim.get("match_type_efo", 0)
 
                 # Collect EFO match examples
-                if sim.get("match_type_efo", 0) > 0 and len(efo_match_examples) < 10:
+                if (
+                    sim.get("match_type_efo", 0) > 0
+                    and len(efo_match_examples) < 10
+                ):
                     efo_match_examples.append(
                         {
                             "query_pmid": record["query_pmid"],
@@ -366,7 +369,9 @@ def parse_batch3_results(output_dir: Path) -> Dict:
         "total_matched_pairs": total_match_count,
         "match_type_counts": match_type_counts,
         "match_type_percentages": {
-            k: round((v / total_match_count) * 100, 2) if total_match_count > 0 else 0
+            k: round((v / total_match_count) * 100, 2)
+            if total_match_count > 0
+            else 0
             for k, v in match_type_counts.items()
         },
         "efo_match_examples": efo_match_examples,
@@ -463,7 +468,10 @@ def simulate_threshold_sensitivity(
                         exp2 = result2["exposure_trait_index"]
                         out2 = result2["outcome_trait_index"]
 
-                        if exp2 not in trait_efo_map or out2 not in trait_efo_map:
+                        if (
+                            exp2 not in trait_efo_map
+                            or out2 not in trait_efo_map
+                        ):
                             continue
 
                         exp2_efo = trait_efo_map[exp2]
@@ -500,7 +508,9 @@ def main():
     logger.info("\n1. EFO MAPPING COVERAGE")
     logger.info("-" * 60)
 
-    df_dist, summary = load_trait_efo_similarity_distribution(VECTOR_STORE_PATH)
+    df_dist, summary = load_trait_efo_similarity_distribution(
+        VECTOR_STORE_PATH
+    )
 
     logger.info(f"\nTotal traits in vector_store: {summary['total_traits']}")
     logger.info(
@@ -555,7 +565,9 @@ def main():
 
     batch3_results = parse_batch3_results(BATCH3_OUTPUT_DIR)
 
-    logger.info(f"\nTotal queries processed: {batch3_results['total_queries']}")
+    logger.info(
+        f"\nTotal queries processed: {batch3_results['total_queries']}"
+    )
     logger.info(
         f"Total match instances: {batch3_results['total_match_instances']}"
     )
@@ -573,7 +585,7 @@ def main():
     )
 
     if batch3_results["efo_match_examples"]:
-        logger.info(f"\nEFO match examples (showing first 10):")
+        logger.info("\nEFO match examples (showing first 10):")
         for i, example in enumerate(batch3_results["efo_match_examples"], 1):
             logger.info(
                 f"\n  Example {i}:"

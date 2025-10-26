@@ -71,7 +71,7 @@ def parse_batch3_results(output_dir: Path) -> Dict:
                             ),
                         }
                     )
-                    
+
                     pairs_with_efo_matches.append(
                         (record["query_pmid"], sim["similar_pmid"])
                     )
@@ -120,7 +120,9 @@ def main():
 
     batch3_results = parse_batch3_results(BATCH3_OUTPUT_DIR)
 
-    logger.info(f"\nTotal queries processed: {batch3_results['total_queries']:,}")
+    logger.info(
+        f"\nTotal queries processed: {batch3_results['total_queries']:,}"
+    )
     logger.info(
         f"Total match instances (query-similar pairs): "
         f"{batch3_results['total_match_instances']:,}"
@@ -130,7 +132,7 @@ def main():
         f"{batch3_results['total_matched_pairs']:,}"
     )
 
-    logger.info(f"\nMatch type breakdown:")
+    logger.info("\nMatch type breakdown:")
     logger.info(
         f"  - Exact:  {batch3_results['match_type_counts']['exact']:>6,} "
         f"({batch3_results['match_type_percentages']['exact']:>5.2f}%)"
@@ -151,7 +153,7 @@ def main():
 
     # ---- Show EFO match examples ----
     if batch3_results["efo_match_examples"]:
-        logger.info(f"\n[EFO MATCH EXAMPLES (first 10)]")
+        logger.info("\n[EFO MATCH EXAMPLES (first 10)]")
         logger.info("-" * 70)
         for i, example in enumerate(
             batch3_results["efo_match_examples"][:10], 1
@@ -180,7 +182,7 @@ def main():
     exact_percentage = batch3_results["match_type_percentages"]["exact"]
 
     logger.info(
-        f"\nDespite 75% of traits having EFO mappings at threshold 0.70,"
+        "\nDespite 75% of traits having EFO mappings at threshold 0.70,"
     )
     logger.info(f"EFO matching contributed only {efo_percentage}% of matches.")
     logger.info("")
@@ -210,10 +212,10 @@ def main():
 
     if efo_percentage < 1:
         logger.info("\nTERTIARY CAUSE: EFO ontology granularity mismatch")
-        logger.info("  → EFO categories may be too broad for MR trait matching")
         logger.info(
-            "  → Multiple distinct MR traits map to same EFO category"
+            "  → EFO categories may be too broad for MR trait matching"
         )
+        logger.info("  → Multiple distinct MR traits map to same EFO category")
         logger.info("  → This creates false positive matches")
         logger.info(
             "  → The tiered system correctly prioritizes more precise matches"
@@ -225,14 +227,10 @@ def main():
 
     logger.info("\n1. EFO matching is WORKING AS DESIGNED")
     logger.info("   ✓ It serves as a fallback tier for unmatched pairs")
-    logger.info(
-        "   ✓ It correctly avoids overriding exact and fuzzy matches"
-    )
+    logger.info("   ✓ It correctly avoids overriding exact and fuzzy matches")
 
     logger.info("\n2. LOW EFO MATCH RATE IS EXPECTED")
-    logger.info(
-        f"   → Exact matching captured {exact_percentage}% of matches"
-    )
+    logger.info(f"   → Exact matching captured {exact_percentage}% of matches")
     logger.info(f"   → Fuzzy matching captured {fuzzy_percentage}% of matches")
     logger.info("   → Only ~2% of pairs reach EFO tier")
 
@@ -242,13 +240,9 @@ def main():
     logger.info("   ✓ Current threshold balances precision and recall")
 
     logger.info("\n4. CONSIDER for batch 4:")
-    logger.info(
-        "   • Monitor exact vs fuzzy match distribution by model"
-    )
+    logger.info("   • Monitor exact vs fuzzy match distribution by model")
     logger.info("   • Evaluate if EFO tier adds meaningful matches")
-    logger.info(
-        "   • Consider removing EFO tier if it adds <0.5% value"
-    )
+    logger.info("   • Consider removing EFO tier if it adds <0.5% value")
     logger.info("   • Focus optimization efforts on fuzzy matching instead")
 
     # ---- Summary statistics ----

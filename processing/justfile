@@ -174,9 +174,49 @@ analyze-evidence-validation:
         --output-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis \
         --top-n 100
 
+# Analyze match type quality stratification from HPC chunk files
+[group('evidence-profile'), group('analysis')]
+analyze-match-type-quality:
+    #!/bin/bash
+    EXPERIMENT_ID="bc4-12799649"
+    uv run scripts/analysis/analyze-match-type-quality.py \
+        --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
+
+# Analyze feasibility of alternative similarity metrics
+[group('evidence-profile'), group('analysis')]
+analyze-alternative-metrics:
+    uv run scripts/evidence-profile/analyze-alternative-metrics.py \
+        --evidence-db {{PROJECT_ROOT}}/data/db/evidence_profile_db.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis
+
+# Investigate EFO matching performance and threshold sensitivity
+[group('evidence-profile'), group('analysis')]
+analyze-efo-matching-failure:
+    #!/bin/bash
+    EXPERIMENT_ID="bc4-12799864"
+    uv run scripts/evidence-profile/analyze-efo-matching-failure.py \
+        --batch-output-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
+
 # Run all evidence profile analysis scripts
 [group('analysis')]
-analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation
+analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation analyze-match-type-quality analyze-alternative-metrics analyze-efo-matching-failure
+
+# ==== diagnostic and development tools ====
+
+# Debug single PMID-model combination preprocessing
+[group('diagnostic')]
+debug-single-combination PMID MODEL:
+    uv run scripts/evidence-profile/debug-single-combination.py {{PMID}} {{MODEL}}
+
+# Diagnose p-value parsing and statistical consistency issues
+[group('diagnostic')]
+diagnose-pvalue-parsing:
+    uv run scripts/evidence-profile/diagnose-pvalue-parsing.py
+
+# Test fuzzy matching implementation
+[group('diagnostic')]
+test-fuzzy-matching:
+    uv run scripts/evidence-profile/test-fuzzy-matching.py
 
 # ==== postprocessing ====
 
