@@ -112,7 +112,8 @@ build-trait-profile-db:
 [group('evidence-profile')]
 preprocess-evidence-profiles:
     uv run scripts/evidence-profile/preprocess-evidence-profiles.py \
-        --max-missing-rate 0.85
+        --min-results 1 \
+        --max-missing-rate 0.90
 
 # Submit HPC batch job to compute evidence similarities (lite)
 [group('evidence-profile'), group('hpc')]

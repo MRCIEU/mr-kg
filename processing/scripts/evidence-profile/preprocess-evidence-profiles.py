@@ -161,16 +161,16 @@ def parse_args():
     parser.add_argument(
         "--min-results",
         type=int,
-        default=3,
-        help="Minimum number of complete results required per study (default: 3)",
+        default=1,
+        help="Minimum number of complete results required per study (default: 1)",
     )
 
     # ---- --max-missing-rate ----
     parser.add_argument(
         "--max-missing-rate",
         type=float,
-        default=0.85,
-        help="Maximum allowed proportion of missing data (default: 0.85)",
+        default=0.90,
+        help="Maximum allowed proportion of missing data (default: 0.90)",
     )
 
     # ---- --limit ----
