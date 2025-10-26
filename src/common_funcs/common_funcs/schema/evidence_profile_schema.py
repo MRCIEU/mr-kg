@@ -163,9 +163,36 @@ EVIDENCE_PROFILE_SCHEMA = {
                 "matched_pairs",
                 ColumnType.INTEGER,
                 nullable=False,
-                # Number of matched exposure-outcome pairs between the two studies.
-                # Pairs matched by exact trait index correspondence. Minimum of 3 required
-                # for meaningful similarity metrics. Higher values increase reliability.
+                # Total number of matched exposure-outcome pairs between the two studies.
+                # Sum of exact + fuzzy + EFO matches. Minimum of 1 required for comparison.
+                # Higher values increase reliability of similarity metrics.
+            ),
+            ColumnDef(
+                "match_type_exact",
+                ColumnType.INTEGER,
+                nullable=False,
+                # Number of pairs matched by exact trait index correspondence.
+                # Highest precision matching tier. Both exposure and outcome trait indices
+                # must be identical. Most reliable match type for direct comparisons.
+            ),
+            ColumnDef(
+                "match_type_fuzzy",
+                ColumnType.INTEGER,
+                nullable=False,
+                # Number of pairs matched by semantic similarity (cosine >= 0.80).
+                # Second tier matching using 200-dim trait embeddings from vector_store.db.
+                # Captures semantic variants like "BMI" vs "body mass index" or "BMI" vs "obesity".
+                # Both exposure and outcome must meet similarity threshold.
+            ),
+            ColumnDef(
+                "match_type_efo",
+                ColumnType.INTEGER,
+                nullable=False,
+                # Number of pairs matched by EFO category correspondence.
+                # Third tier matching using ontology-based category mapping from trait_efo_similarity_search.
+                # Enables category-level meta-analysis by matching traits mapped to same EFO terms.
+                # Both exposure and outcome must map to EFO terms (similarity >= 0.50).
+                # Less precise than exact/fuzzy but provides broader coverage.
             ),
             ColumnDef(
                 "effect_size_similarity",
@@ -375,6 +402,30 @@ EVIDENCE_PROFILE_INDEXES = [
         # Built after evidence_similarities table with concordance computation
         # Used for finding highly concordant or discordant study pairs
     ),
+    IndexDef(
+        "idx_evidence_similarities_match_type_exact",
+        "evidence_similarities",
+        ["match_type_exact"],
+        # Optimizes queries filtering by exact match count
+        # Built after evidence_similarities table with match type tracking
+        # Used for quality control and filtering by match precision
+    ),
+    IndexDef(
+        "idx_evidence_similarities_match_type_fuzzy",
+        "evidence_similarities",
+        ["match_type_fuzzy"],
+        # Optimizes queries filtering by fuzzy match count
+        # Built after evidence_similarities table with match type tracking
+        # Used for analyzing semantic matching effectiveness
+    ),
+    IndexDef(
+        "idx_evidence_similarities_match_type_efo",
+        "evidence_similarities",
+        ["match_type_efo"],
+        # Optimizes queries filtering by EFO category match count
+        # Built after evidence_similarities table with match type tracking
+        # Used for category-level analysis and EFO matching validation
+    ),
 ]
 
 # Define expected views for common evidence similarity analysis operations
@@ -403,6 +454,9 @@ EVIDENCE_PROFILE_VIEWS = [
             es.similar_title,
             es.similar_result_count,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             es.effect_size_similarity,
             es.direction_concordance,
             es.statistical_consistency,
@@ -461,6 +515,9 @@ EVIDENCE_PROFILE_VIEWS = [
             es.effect_size_similarity,
             es.evidence_overlap,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             qc.result_count as query_result_count,
             es.similar_result_count
         FROM evidence_similarities es
@@ -487,6 +544,9 @@ EVIDENCE_PROFILE_VIEWS = [
             es.similar_title,
             es.direction_concordance,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             es.evidence_overlap,
             qc.result_count as query_result_count,
             es.similar_result_count
@@ -494,6 +554,35 @@ EVIDENCE_PROFILE_VIEWS = [
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance < 0
         ORDER BY es.similar_model, es.direction_concordance ASC
+        """,
+    ),
+    ViewDef(
+        name="match_type_distribution",
+        # Build process: Aggregates evidence_similarities by model
+        # Computes statistics about match type usage across all comparisons
+        # Built after evidence_similarities table with match type tracking
+        # Statistical summary of matching strategy effectiveness per model.
+        # Shows distribution of exact, fuzzy, and EFO category matches.
+        # Includes total pairs and average matches per type for quality assessment.
+        # Useful for validating three-tier matching implementation and coverage analysis.
+        sql="""
+        SELECT
+            es.similar_model as model,
+            COUNT(*) as total_comparisons,
+            SUM(es.match_type_exact) as total_exact_matches,
+            SUM(es.match_type_fuzzy) as total_fuzzy_matches,
+            SUM(es.match_type_efo) as total_efo_matches,
+            SUM(es.matched_pairs) as total_matched_pairs,
+            AVG(es.match_type_exact) as avg_exact_per_comparison,
+            AVG(es.match_type_fuzzy) as avg_fuzzy_per_comparison,
+            AVG(es.match_type_efo) as avg_efo_per_comparison,
+            AVG(es.matched_pairs) as avg_total_pairs_per_comparison,
+            ROUND(100.0 * SUM(es.match_type_exact) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_exact,
+            ROUND(100.0 * SUM(es.match_type_fuzzy) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_fuzzy,
+            ROUND(100.0 * SUM(es.match_type_efo) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_efo
+        FROM evidence_similarities es
+        GROUP BY es.similar_model
+        ORDER BY es.similar_model
         """,
     ),
 ]
