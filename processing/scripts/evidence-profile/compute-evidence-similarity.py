@@ -52,9 +52,9 @@ DEFAULT_DB_PATH = DB_DIR / "vector_store.db"
 # ==== Constants ====
 
 MIN_MATCHED_PAIRS = 1
-MIN_PAIRS_FOR_CORRELATION = 2
+MIN_PAIRS_FOR_CORRELATION = 3
 TOP_K_DEFAULT = 50
-DEFAULT_FUZZY_THRESHOLD = 0.90
+DEFAULT_FUZZY_THRESHOLD = 0.80
 
 
 def make_args():
@@ -153,6 +153,21 @@ def make_args():
         help="Path to vector_store.db for trait embeddings",
     )
 
+    # ---- --use-efo-matching ----
+    parser.add_argument(
+        "--use-efo-matching",
+        action="store_true",
+        help="Use EFO-based category matching as third tier",
+    )
+
+    # ---- --efo-similarity-threshold ----
+    parser.add_argument(
+        "--efo-similarity-threshold",
+        type=float,
+        default=0.5,
+        help="Minimum trait-EFO similarity for category mapping (default: 0.5)",
+    )
+
     return parser.parse_args()
 
 
@@ -194,6 +209,56 @@ def load_trait_embeddings(db_path: Path) -> Dict[int, np.ndarray]:
     logger.info(f"Loaded {len(trait_embeddings)} trait embeddings")
     conn.close()
     return trait_embeddings
+
+
+def load_trait_efo_mappings(
+    db_path: Path, min_similarity: float = 0.5
+) -> Dict[int, str]:
+    """Load top EFO term for each trait index.
+
+    For each trait, selects the EFO term with highest similarity score
+    above the minimum threshold. This provides a category-level mapping
+    for traits.
+
+    Args:
+        db_path: Path to vector_store.db
+        min_similarity: Minimum similarity threshold for EFO mapping
+
+    Returns:
+        Dictionary mapping trait_index to best EFO ID
+    """
+    logger.info(
+        f"Loading trait-EFO mappings from: {db_path} "
+        f"(min_similarity={min_similarity})"
+    )
+    conn = duckdb.connect(str(db_path), read_only=True)
+
+    query = """
+    SELECT trait_index, efo_id, similarity
+    FROM trait_efo_similarity_search
+    WHERE similarity >= ?
+    ORDER BY trait_index, similarity DESC
+    """
+    results = conn.execute(query, [min_similarity]).fetchall()
+
+    trait_efo_map = {}
+    for row in results:
+        trait_idx = row[0]
+        efo_id = row[1]
+        if trait_idx not in trait_efo_map:
+            trait_efo_map[trait_idx] = efo_id
+
+    total_traits_result = conn.execute(
+        "SELECT COUNT(DISTINCT trait_index) FROM trait_embeddings"
+    ).fetchone()
+    total_traits = total_traits_result[0] if total_traits_result else 0
+
+    logger.info(
+        f"Loaded EFO mappings for {len(trait_efo_map)} traits "
+        f"(out of {total_traits} total)"
+    )
+    conn.close()
+    return trait_efo_map
 
 
 def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
@@ -315,6 +380,180 @@ def match_exposure_outcome_pairs(
             matched_pairs.append((query_result, similar_dict[key]))
 
     return matched_pairs
+
+
+def match_exposure_outcome_pairs_efo(
+    query_results: List[Dict],
+    similar_results: List[Dict],
+    trait_efo_map: Dict[int, str],
+) -> List[Tuple[Dict, Dict]]:
+    """Match exposure-outcome pairs using EFO categories.
+
+    Pairs are matched if both exposure and outcome traits map to
+    the same EFO terms (category-level matching).
+
+    Args:
+        query_results: Results from query combination
+        similar_results: Results from similar combination
+        trait_efo_map: Dictionary mapping trait_index to EFO ID
+
+    Returns:
+        List of matched pairs as (query_result, similar_result) tuples
+    """
+    similar_dict = {}
+    for result in similar_results:
+        exp_idx = result["exposure_trait_index"]
+        out_idx = result["outcome_trait_index"]
+
+        if exp_idx not in trait_efo_map or out_idx not in trait_efo_map:
+            continue
+
+        exp_efo = trait_efo_map[exp_idx]
+        out_efo = trait_efo_map[out_idx]
+        key = (exp_efo, out_efo)
+
+        if key not in similar_dict:
+            similar_dict[key] = []
+        similar_dict[key].append(result)
+
+    matched_pairs = []
+    for query_result in query_results:
+        q_exp_idx = query_result["exposure_trait_index"]
+        q_out_idx = query_result["outcome_trait_index"]
+
+        if q_exp_idx not in trait_efo_map or q_out_idx not in trait_efo_map:
+            continue
+
+        q_exp_efo = trait_efo_map[q_exp_idx]
+        q_out_efo = trait_efo_map[q_out_idx]
+        key = (q_exp_efo, q_out_efo)
+
+        if key in similar_dict:
+            for similar_result in similar_dict[key]:
+                matched_pairs.append((query_result, similar_result))
+
+    return matched_pairs
+
+
+def match_exposure_outcome_pairs_tiered(
+    query_results: List[Dict],
+    similar_results: List[Dict],
+    trait_embeddings: Optional[Dict[int, np.ndarray]] = None,
+    trait_efo_map: Optional[Dict[int, str]] = None,
+    fuzzy_threshold: float = 0.80,
+) -> List[Tuple[Dict, Dict, str]]:
+    """Match pairs using three-tier approach with match type tracking.
+
+    Tries matching in order of precision:
+    1. Exact: Same trait indices
+    2. Fuzzy: Similar trait embeddings (cosine >= threshold)
+    3. EFO: Same EFO categories
+
+    Each query result is matched at most once per similar result,
+    with preference given to higher-precision matches.
+
+    Args:
+        query_results: Results from query combination
+        similar_results: Results from similar combination
+        trait_embeddings: Dictionary of trait embeddings for fuzzy matching
+        trait_efo_map: Dictionary of trait-to-EFO mappings for category matching
+        fuzzy_threshold: Similarity threshold for fuzzy matching
+
+    Returns:
+        List of (query_result, similar_result, match_type) tuples
+        match_type in ["exact", "fuzzy", "efo"]
+    """
+    matched_pairs_with_type = []
+    matched_query_indices = set()
+
+    exact_pairs = match_exposure_outcome_pairs(query_results, similar_results)
+    for q_res, s_res in exact_pairs:
+        q_idx = (
+            q_res["exposure_trait_index"],
+            q_res["outcome_trait_index"],
+        )
+        s_idx = (
+            s_res["exposure_trait_index"],
+            s_res["outcome_trait_index"],
+        )
+        pair_key = (q_idx, s_idx)
+
+        if pair_key not in matched_query_indices:
+            matched_pairs_with_type.append((q_res, s_res, "exact"))
+            matched_query_indices.add(pair_key)
+
+    if trait_embeddings is not None:
+        unmatched_query = [
+            r
+            for r in query_results
+            if (
+                r["exposure_trait_index"],
+                r["outcome_trait_index"],
+            )
+            not in {
+                (m[0]["exposure_trait_index"], m[0]["outcome_trait_index"])
+                for m in matched_pairs_with_type
+            }
+        ]
+        unmatched_similar = similar_results
+
+        fuzzy_pairs = match_exposure_outcome_pairs_fuzzy(
+            unmatched_query,
+            unmatched_similar,
+            trait_embeddings,
+            fuzzy_threshold,
+        )
+
+        for q_res, s_res in fuzzy_pairs:
+            q_idx = (
+                q_res["exposure_trait_index"],
+                q_res["outcome_trait_index"],
+            )
+            s_idx = (
+                s_res["exposure_trait_index"],
+                s_res["outcome_trait_index"],
+            )
+            pair_key = (q_idx, s_idx)
+
+            if pair_key not in matched_query_indices:
+                matched_pairs_with_type.append((q_res, s_res, "fuzzy"))
+                matched_query_indices.add(pair_key)
+
+    if trait_efo_map is not None:
+        unmatched_query = [
+            r
+            for r in query_results
+            if (
+                r["exposure_trait_index"],
+                r["outcome_trait_index"],
+            )
+            not in {
+                (m[0]["exposure_trait_index"], m[0]["outcome_trait_index"])
+                for m in matched_pairs_with_type
+            }
+        ]
+        unmatched_similar = similar_results
+
+        efo_pairs = match_exposure_outcome_pairs_efo(
+            unmatched_query, unmatched_similar, trait_efo_map
+        )
+
+        for q_res, s_res in efo_pairs:
+            q_idx = (
+                q_res["exposure_trait_index"],
+                q_res["outcome_trait_index"],
+            )
+            s_idx = (
+                s_res["exposure_trait_index"],
+                s_res["outcome_trait_index"],
+            )
+            pair_key = (q_idx, s_idx)
+
+            if pair_key not in matched_query_indices:
+                matched_pairs_with_type.append((q_res, s_res, "efo"))
+                matched_query_indices.add(pair_key)
+
+    return matched_pairs_with_type
 
 
 def compute_effect_size_similarity(
@@ -631,7 +870,8 @@ def compute_pairwise_similarity(
     similar_profile: Dict,
     min_matched_pairs: int,
     trait_embeddings: Optional[Dict[int, np.ndarray]] = None,
-    fuzzy_threshold: float = 0.95,
+    trait_efo_map: Optional[Dict[int, str]] = None,
+    fuzzy_threshold: float = 0.80,
 ) -> Optional[Dict]:
     """Compute similarity between two evidence profiles.
 
@@ -640,26 +880,26 @@ def compute_pairwise_similarity(
         similar_profile: Similar evidence profile
         min_matched_pairs: Minimum matched pairs required
         trait_embeddings: Dictionary of trait embeddings for fuzzy matching
+        trait_efo_map: Dictionary of trait-to-EFO mappings for category matching
         fuzzy_threshold: Similarity threshold for fuzzy matching
 
     Returns:
         Similarity dictionary or None if insufficient matches or
         insufficient non-null metrics for composite scores
     """
-    if trait_embeddings is not None:
-        matched_pairs = match_exposure_outcome_pairs_fuzzy(
-            query_profile["results"],
-            similar_profile["results"],
-            trait_embeddings,
-            fuzzy_threshold,
-        )
-    else:
-        matched_pairs = match_exposure_outcome_pairs(
-            query_profile["results"], similar_profile["results"]
-        )
+    matched_pairs_with_type = match_exposure_outcome_pairs_tiered(
+        query_profile["results"],
+        similar_profile["results"],
+        trait_embeddings,
+        trait_efo_map,
+        fuzzy_threshold,
+    )
 
-    if len(matched_pairs) < min_matched_pairs:
+    if len(matched_pairs_with_type) < min_matched_pairs:
         return None
+
+    matched_pairs = [(q, s) for q, s, _ in matched_pairs_with_type]
+    match_types = [mt for _, _, mt in matched_pairs_with_type]
 
     # Compute all similarity metrics
     effect_similarity = compute_effect_size_similarity(matched_pairs)
@@ -687,12 +927,21 @@ def compute_pairwise_similarity(
     if composite_equal is None or composite_direction is None:
         return None
 
+    match_type_counts = {
+        "exact": match_types.count("exact"),
+        "fuzzy": match_types.count("fuzzy"),
+        "efo": match_types.count("efo"),
+    }
+
     res = {
         "similar_pmid": similar_profile["pmid"],
         "similar_model": similar_profile["model"],
         "similar_title": similar_profile["title"],
         "similar_publication_year": similar_profile.get("publication_year"),
         "matched_pairs": len(matched_pairs),
+        "match_type_exact": match_type_counts["exact"],
+        "match_type_fuzzy": match_type_counts["fuzzy"],
+        "match_type_efo": match_type_counts["efo"],
         "effect_size_similarity": effect_similarity,
         "effect_size_within_type": effect_by_type["within_type"],
         "effect_size_cross_type": effect_by_type["cross_type"],
@@ -721,7 +970,8 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
 
     Args:
         args_tuple: Tuple containing (query_profile, all_profiles, top_k,
-                    min_matched_pairs, trait_embeddings, fuzzy_threshold)
+                    min_matched_pairs, trait_embeddings, trait_efo_map,
+                    fuzzy_threshold)
 
     Returns:
         Dictionary containing similarity results for the query
@@ -732,6 +982,7 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
         top_k,
         min_matched_pairs,
         trait_embeddings,
+        trait_efo_map,
         fuzzy_threshold,
     ) = args_tuple
 
@@ -753,6 +1004,7 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
             similar_profile,
             min_matched_pairs,
             trait_embeddings,
+            trait_efo_map,
             fuzzy_threshold,
         )
 
@@ -785,7 +1037,8 @@ def compute_similarities_for_chunk(
     min_matched_pairs: int,
     workers: int,
     trait_embeddings: Optional[Dict[int, np.ndarray]] = None,
-    fuzzy_threshold: float = 0.95,
+    trait_efo_map: Optional[Dict[int, str]] = None,
+    fuzzy_threshold: float = 0.80,
 ) -> List[Dict]:
     """Compute similarities for a chunk of profiles using multiprocessing.
 
@@ -796,6 +1049,7 @@ def compute_similarities_for_chunk(
         min_matched_pairs: Minimum matched pairs required
         workers: Number of worker processes
         trait_embeddings: Optional trait embeddings for fuzzy matching
+        trait_efo_map: Optional trait-to-EFO mappings for category matching
         fuzzy_threshold: Similarity threshold for fuzzy matching
 
     Returns:
@@ -808,6 +1062,7 @@ def compute_similarities_for_chunk(
             top_k,
             min_matched_pairs,
             trait_embeddings,
+            trait_efo_map,
             fuzzy_threshold,
         )
         for query_profile in profiles_chunk
@@ -883,17 +1138,35 @@ def main():
     logger.info(f"Minimum matched pairs required: {args.min_matched_pairs}")
 
     trait_embeddings = None
+    trait_efo_map = None
+    db_path = Path(args.database_path)
+
+    if args.use_fuzzy_matching or args.use_efo_matching:
+        if not db_path.exists():
+            logger.error(f"Database not found: {db_path}")
+            logger.error("Fuzzy and EFO matching require vector_store.db")
+            return 1
+
     if args.use_fuzzy_matching:
         logger.info("Fuzzy matching enabled")
         logger.info(f"Fuzzy matching threshold: {args.fuzzy_threshold}")
-        db_path = Path(args.database_path)
-        if not db_path.exists():
-            logger.error(f"Database not found: {db_path}")
-            logger.error("Fuzzy matching requires vector_store.db")
-            return 1
         trait_embeddings = load_trait_embeddings(db_path)
     else:
-        logger.info("Using exact trait index matching")
+        logger.info("Fuzzy matching disabled")
+
+    if args.use_efo_matching:
+        logger.info("EFO category matching enabled")
+        logger.info(
+            f"EFO similarity threshold: {args.efo_similarity_threshold}"
+        )
+        trait_efo_map = load_trait_efo_mappings(
+            db_path, args.efo_similarity_threshold
+        )
+    else:
+        logger.info("EFO matching disabled")
+
+    if not args.use_fuzzy_matching and not args.use_efo_matching:
+        logger.info("Using exact trait index matching only")
 
     start_time = time.time()
     similarity_records = compute_similarities_for_chunk(
@@ -903,6 +1176,7 @@ def main():
         args.min_matched_pairs,
         args.workers,
         trait_embeddings,
+        trait_efo_map,
         args.fuzzy_threshold,
     )
 

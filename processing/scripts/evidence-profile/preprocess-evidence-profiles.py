@@ -384,6 +384,64 @@ def classify_direction(direction_str: str) -> int:
         return 0
 
 
+def parse_pvalue_robust(p_value: Any) -> Optional[float]:
+    """Robustly parse p-value from various formats.
+
+    Handles:
+    - String or numeric input
+    - Case-insensitive "P" prefix
+    - Inequality operators (<, >, <=, >=)
+    - Scientific notation (1.2e-5, 1.2×10-5, 1.2x10-5)
+    - Extra whitespace
+    - Null values ("null", "N/A", "na", None)
+
+    Args:
+        p_value: P-value in any format
+
+    Returns:
+        Parsed p-value as float in [0, 1], or None if unparseable
+    """
+    if p_value is None:
+        return None
+
+    if isinstance(p_value, (int, float)):
+        if 0 <= p_value <= 1:
+            return float(p_value)
+        return None
+
+    if not isinstance(p_value, str):
+        return None
+
+    value_str = str(p_value).strip().lower()
+
+    if not value_str or value_str in ["null", "n/a", "na", "none", ""]:
+        return None
+
+    value_str = value_str.replace("p-value", "").replace("p value", "")
+    if value_str.startswith("p"):
+        value_str = value_str[1:].strip()
+
+    value_str = value_str.strip()
+
+    for op in ["<=", ">=", "<", ">"]:
+        if value_str.startswith(op):
+            value_str = value_str[len(op) :].strip()
+            break
+
+    value_str = value_str.replace("×", "e").replace("x", "e")
+
+    value_str = value_str.replace(" ", "")
+
+    try:
+        parsed = float(value_str)
+        if 0 <= parsed <= 1:
+            return parsed
+        return None
+    except (ValueError, TypeError):
+        logger.debug(f"Could not parse p-value: '{p_value}'")
+        return None
+
+
 def classify_significance(p_value: Optional[float]) -> bool:
     """Classify statistical significance based on p-value.
 
@@ -393,22 +451,10 @@ def classify_significance(p_value: Optional[float]) -> bool:
     Returns:
         True if p < 0.05, False otherwise
     """
-    if p_value is None:
+    parsed = parse_pvalue_robust(p_value)
+    if parsed is None:
         return False
-
-    # Handle string p-values
-    if isinstance(p_value, str):
-        try:
-            p_value = float(p_value)
-        except (ValueError, TypeError):
-            logger.debug(f"Could not parse p-value: '{p_value}'")
-            return False
-
-    # Check if numeric
-    if not isinstance(p_value, (int, float)):
-        return False
-
-    res = p_value < 0.05
+    res = parsed < 0.05
     return res
 
 
@@ -530,8 +576,9 @@ def process_single_result(
         return None
 
     # Extract p-value and significance
-    p_value = result.get("P-value")
-    is_significant = classify_significance(p_value)
+    p_value_raw = result.get("P-value")
+    p_value = parse_pvalue_robust(p_value_raw)
+    is_significant = classify_significance(p_value_raw)
 
     # Extract uncertainty measures
     se = result.get("SE")
