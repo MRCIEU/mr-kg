@@ -38,9 +38,12 @@ micromamba run -n mr-kg-processing \
   --array-id "${SLURM_ARRAY_TASK_ID}" \
   --output-dir "${output_results_dir}" \
   --input-file "${SLURM_SUBMIT_DIR}"/../data/processed/evidence-profiles/evidence-profiles.json \
-  --top-k 10 \
+  --database-path "${SLURM_SUBMIT_DIR}"/../data/db/vector_store.db \
+  --top-k 20 \
   --workers 8 \
-  --min-matched-pairs 3 \
+  --min-matched-pairs 2 \
+  --use-fuzzy-matching \
+  --fuzzy-threshold 0.95 \
   >"${output_log_file}" 2>&1
 
 date "+%Y-%m-%dT%H-%M"

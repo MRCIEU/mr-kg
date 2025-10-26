@@ -30,6 +30,7 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+import duckdb
 import numpy as np
 from loguru import logger
 from scipy.stats import pearsonr
@@ -45,12 +46,15 @@ DATA_DIR = PROJECT_ROOT / "data"
 INPUT_DIR = DATA_DIR / "processed" / "evidence-profiles"
 OUTPUT_DIR = DATA_DIR / "output" / "evidence-similarities"
 DEFAULT_INPUT_FILE = INPUT_DIR / "evidence-profiles.json"
+DB_DIR = DATA_DIR / "db"
+DEFAULT_DB_PATH = DB_DIR / "vector_store.db"
 
 # ==== Constants ====
 
-MIN_MATCHED_PAIRS = 3
+MIN_MATCHED_PAIRS = 2
 MIN_PAIRS_FOR_CORRELATION = 3
-TOP_K_DEFAULT = 10
+TOP_K_DEFAULT = 20
+DEFAULT_FUZZY_THRESHOLD = 0.95
 
 
 def make_args():
@@ -126,6 +130,29 @@ def make_args():
         help="Minimum number of matched pairs required for similarity",
     )
 
+    # ---- --use-fuzzy-matching ----
+    parser.add_argument(
+        "--use-fuzzy-matching",
+        action="store_true",
+        help="Use fuzzy trait matching based on embedding similarity",
+    )
+
+    # ---- --fuzzy-threshold ----
+    parser.add_argument(
+        "--fuzzy-threshold",
+        type=float,
+        default=DEFAULT_FUZZY_THRESHOLD,
+        help="Similarity threshold for fuzzy matching (default: 0.95)",
+    )
+
+    # ---- --database-path ----
+    parser.add_argument(
+        "--database-path",
+        type=str,
+        default=str(DEFAULT_DB_PATH),
+        help="Path to vector_store.db for trait embeddings",
+    )
+
     return parser.parse_args()
 
 
@@ -145,6 +172,120 @@ def load_evidence_profiles(input_file: Path) -> List[Dict]:
 
     logger.info(f"Loaded {len(profiles)} evidence profiles")
     return profiles
+
+
+def load_trait_embeddings(db_path: Path) -> Dict[int, np.ndarray]:
+    """Load trait embeddings from vector_store.db.
+
+    Args:
+        db_path: Path to vector_store.db database
+
+    Returns:
+        Dictionary mapping trait_index to embedding vector
+    """
+    logger.info(f"Loading trait embeddings from: {db_path}")
+    conn = duckdb.connect(str(db_path), read_only=True)
+
+    query = "SELECT trait_index, vector FROM trait_embeddings"
+    results = conn.execute(query).fetchall()
+
+    trait_embeddings = {row[0]: np.array(row[1]) for row in results}
+
+    logger.info(f"Loaded {len(trait_embeddings)} trait embeddings")
+    conn.close()
+    return trait_embeddings
+
+
+def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    """Compute cosine similarity between two vectors.
+
+    Args:
+        vec1: First vector
+        vec2: Second vector
+
+    Returns:
+        Cosine similarity score (0 to 1)
+    """
+    dot_product = float(np.dot(vec1, vec2))
+    norm1 = float(np.linalg.norm(vec1))
+    norm2 = float(np.linalg.norm(vec2))
+
+    if norm1 == 0.0 or norm2 == 0.0:
+        return 0.0
+
+    res = dot_product / (norm1 * norm2)
+    return res
+
+
+def match_exposure_outcome_pairs_fuzzy(
+    query_results: List[Dict],
+    similar_results: List[Dict],
+    trait_embeddings: Dict[int, np.ndarray],
+    threshold: float = 0.95,
+) -> List[Tuple[Dict, Dict]]:
+    """Match exposure-outcome pairs using fuzzy trait matching.
+
+    Pairs are matched if both exposure and outcome traits have
+    similarity >= threshold.
+
+    Args:
+        query_results: Results from query combination
+        similar_results: Results from similar combination
+        trait_embeddings: Dictionary of trait embeddings
+        threshold: Similarity threshold for matching (default: 0.95)
+
+    Returns:
+        List of matched pairs as (query_result, similar_result) tuples
+    """
+    matched_pairs = []
+    used_similar_indices = set()
+
+    for query_result in query_results:
+        q_exp_idx = query_result["exposure_trait_index"]
+        q_out_idx = query_result["outcome_trait_index"]
+
+        if (
+            q_exp_idx not in trait_embeddings
+            or q_out_idx not in trait_embeddings
+        ):
+            continue
+
+        q_exp_vec = trait_embeddings[q_exp_idx]
+        q_out_vec = trait_embeddings[q_out_idx]
+
+        best_match = None
+        best_score = 0.0
+
+        for sim_idx, similar_result in enumerate(similar_results):
+            if sim_idx in used_similar_indices:
+                continue
+
+            s_exp_idx = similar_result["exposure_trait_index"]
+            s_out_idx = similar_result["outcome_trait_index"]
+
+            if (
+                s_exp_idx not in trait_embeddings
+                or s_out_idx not in trait_embeddings
+            ):
+                continue
+
+            s_exp_vec = trait_embeddings[s_exp_idx]
+            s_out_vec = trait_embeddings[s_out_idx]
+
+            exp_sim = cosine_similarity(q_exp_vec, s_exp_vec)
+            out_sim = cosine_similarity(q_out_vec, s_out_vec)
+
+            if exp_sim >= threshold and out_sim >= threshold:
+                combined_score = (exp_sim + out_sim) / 2
+                if combined_score > best_score:
+                    best_score = combined_score
+                    best_match = (sim_idx, similar_result)
+
+        if best_match is not None:
+            matched_pairs.append((query_result, best_match[1]))
+            used_similar_indices.add(best_match[0])
+
+    return matched_pairs
 
 
 def match_exposure_outcome_pairs(
@@ -190,7 +331,9 @@ def compute_effect_size_similarity(
     if len(matched_pairs) < MIN_PAIRS_FOR_CORRELATION:
         return None
 
-    query_effects = [pair[0]["harmonized_effect_size"] for pair in matched_pairs]
+    query_effects = [
+        pair[0]["harmonized_effect_size"] for pair in matched_pairs
+    ]
     similar_effects = [
         pair[1]["harmonized_effect_size"] for pair in matched_pairs
     ]
@@ -246,20 +389,6 @@ def compute_effect_size_similarity_by_type(
         "n_within_type": len(within_type_pairs),
         "n_cross_type": len(cross_type_pairs),
     }
-
-    query_effects = [
-        pair[0]["harmonized_effect_size"] for pair in matched_pairs
-    ]
-    similar_effects = [
-        pair[1]["harmonized_effect_size"] for pair in matched_pairs
-    ]
-
-    try:
-        correlation, _ = pearsonr(query_effects, similar_effects)
-        return float(correlation) if not np.isnan(correlation) else None
-    except Exception as e:
-        logger.warning(f"Error computing effect size correlation: {e}")
-        return None
 
 
 def compute_direction_concordance(
@@ -436,7 +565,9 @@ def compute_composite_scores(
         Returns (None, None) if insufficient non-null metrics available
     """
     # Normalize all metrics to [0, 1]
-    effect_norm = (effect_similarity + 1) / 2 if effect_similarity is not None else None
+    effect_norm = (
+        (effect_similarity + 1) / 2 if effect_similarity is not None else None
+    )
     direction_norm = (direction_concordance + 1) / 2
     consistency_norm = (
         (statistical_consistency + 1) / 2
@@ -447,7 +578,8 @@ def compute_composite_scores(
 
     # Count available metrics
     available_metrics = [
-        m for m in [effect_norm, direction_norm, consistency_norm, overlap_norm]
+        m
+        for m in [effect_norm, direction_norm, consistency_norm, overlap_norm]
         if m is not None
     ]
 
@@ -479,7 +611,9 @@ def compute_composite_scores(
     weighted_sum += 0.15 * overlap_norm
     total_weight += 0.15
 
-    composite_direction = weighted_sum / total_weight if total_weight > 0 else None
+    composite_direction = (
+        weighted_sum / total_weight if total_weight > 0 else None
+    )
 
     # Apply quality weighting
     quality_weight = min(query_completeness, similar_completeness)
@@ -496,6 +630,8 @@ def compute_pairwise_similarity(
     query_profile: Dict,
     similar_profile: Dict,
     min_matched_pairs: int,
+    trait_embeddings: Optional[Dict[int, np.ndarray]] = None,
+    fuzzy_threshold: float = 0.95,
 ) -> Optional[Dict]:
     """Compute similarity between two evidence profiles.
 
@@ -503,14 +639,24 @@ def compute_pairwise_similarity(
         query_profile: Query evidence profile
         similar_profile: Similar evidence profile
         min_matched_pairs: Minimum matched pairs required
+        trait_embeddings: Dictionary of trait embeddings for fuzzy matching
+        fuzzy_threshold: Similarity threshold for fuzzy matching
 
     Returns:
         Similarity dictionary or None if insufficient matches or
         insufficient non-null metrics for composite scores
     """
-    matched_pairs = match_exposure_outcome_pairs(
-        query_profile["results"], similar_profile["results"]
-    )
+    if trait_embeddings is not None:
+        matched_pairs = match_exposure_outcome_pairs_fuzzy(
+            query_profile["results"],
+            similar_profile["results"],
+            trait_embeddings,
+            fuzzy_threshold,
+        )
+    else:
+        matched_pairs = match_exposure_outcome_pairs(
+            query_profile["results"], similar_profile["results"]
+        )
 
     if len(matched_pairs) < min_matched_pairs:
         return None
@@ -574,12 +720,20 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
     Only compares with results from the same model as the query.
 
     Args:
-        args_tuple: Tuple containing (query_profile, all_profiles, top_k, min_matched_pairs)
+        args_tuple: Tuple containing (query_profile, all_profiles, top_k,
+                    min_matched_pairs, trait_embeddings, fuzzy_threshold)
 
     Returns:
         Dictionary containing similarity results for the query
     """
-    query_profile, all_profiles, top_k, min_matched_pairs = args_tuple
+    (
+        query_profile,
+        all_profiles,
+        top_k,
+        min_matched_pairs,
+        trait_embeddings,
+        fuzzy_threshold,
+    ) = args_tuple
 
     similarities = []
 
@@ -595,7 +749,11 @@ def compute_similarities_for_single_query(args_tuple) -> Dict:
             continue
 
         similarity = compute_pairwise_similarity(
-            query_profile, similar_profile, min_matched_pairs
+            query_profile,
+            similar_profile,
+            min_matched_pairs,
+            trait_embeddings,
+            fuzzy_threshold,
         )
 
         if similarity is not None:
@@ -626,6 +784,8 @@ def compute_similarities_for_chunk(
     top_k: int,
     min_matched_pairs: int,
     workers: int,
+    trait_embeddings: Optional[Dict[int, np.ndarray]] = None,
+    fuzzy_threshold: float = 0.95,
 ) -> List[Dict]:
     """Compute similarities for a chunk of profiles using multiprocessing.
 
@@ -635,12 +795,21 @@ def compute_similarities_for_chunk(
         top_k: Number of top similar results to keep
         min_matched_pairs: Minimum matched pairs required
         workers: Number of worker processes
+        trait_embeddings: Optional trait embeddings for fuzzy matching
+        fuzzy_threshold: Similarity threshold for fuzzy matching
 
     Returns:
         List of similarity records for the chunk
     """
     worker_args = [
-        (query_profile, all_profiles, top_k, min_matched_pairs)
+        (
+            query_profile,
+            all_profiles,
+            top_k,
+            min_matched_pairs,
+            trait_embeddings,
+            fuzzy_threshold,
+        )
         for query_profile in profiles_chunk
     ]
 
@@ -713,6 +882,19 @@ def main():
     logger.info(f"Using {args.workers} worker processes for multiprocessing")
     logger.info(f"Minimum matched pairs required: {args.min_matched_pairs}")
 
+    trait_embeddings = None
+    if args.use_fuzzy_matching:
+        logger.info("Fuzzy matching enabled")
+        logger.info(f"Fuzzy matching threshold: {args.fuzzy_threshold}")
+        db_path = Path(args.database_path)
+        if not db_path.exists():
+            logger.error(f"Database not found: {db_path}")
+            logger.error("Fuzzy matching requires vector_store.db")
+            return 1
+        trait_embeddings = load_trait_embeddings(db_path)
+    else:
+        logger.info("Using exact trait index matching")
+
     start_time = time.time()
     similarity_records = compute_similarities_for_chunk(
         profiles_chunk,
@@ -720,6 +902,8 @@ def main():
         args.top_k,
         args.min_matched_pairs,
         args.workers,
+        trait_embeddings,
+        args.fuzzy_threshold,
     )
 
     processing_time = time.time() - start_time

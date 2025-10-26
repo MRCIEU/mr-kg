@@ -169,8 +169,8 @@ def parse_args():
     parser.add_argument(
         "--max-missing-rate",
         type=float,
-        default=0.75,
-        help="Maximum allowed proportion of missing data (default: 0.75)",
+        default=0.85,
+        help="Maximum allowed proportion of missing data (default: 0.85)",
     )
 
     # ---- --limit ----
