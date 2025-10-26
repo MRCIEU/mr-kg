@@ -128,7 +128,7 @@ compute-evidence-similarities:
 aggregate-evidence-similarities:
     #!/bin/bash
     # NOTE: Update EXPERIMENT_ID after job completion
-    EXPERIMENT_ID="bc4-XXXXXXX"
+    EXPERIMENT_ID="bc4-12799599"
     uv run scripts/evidence-profile/aggregate-evidence-similarities.py \
         --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
@@ -140,10 +140,7 @@ build-evidence-profile-db:
         --memory-limit 8GB \
         --force-write
 
-# Analyze evidence similarity patterns
-[group('evidence-profile')]
-analyze-evidence-similarity:
-    uv run scripts/evidence-profile/analyze-evidence-similarity.py
+# ==== analysis ===
 
 # Generate summary statistics and distributions for evidence similarities
 [group('evidence-profile'), group('analysis')]
@@ -176,7 +173,7 @@ analyze-evidence-validation:
         --top-n 100
 
 # Run all evidence profile analysis scripts
-[group('evidence-profile'), group('analysis')]
+[group('analysis')]
 analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation
 
 # ==== postprocessing ====

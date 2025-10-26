@@ -185,7 +185,7 @@ def validate_metric_agreement(conn: duckdb.DuckDBPyConnection) -> Dict:
     results = {}
 
     for model in df["model"].unique():
-        model_df = df[df["model"] == model]
+        model_df = df[df["model"] == model].copy()
 
         # Pearson correlation
         corr, p_value = pearsonr(
