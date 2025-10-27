@@ -24,6 +24,7 @@ class ColumnType(Enum):
     VARCHAR = "VARCHAR"
     JSON = "JSON"
     DOUBLE = "DOUBLE"
+    BOOLEAN = "BOOLEAN"
     FLOAT_ARRAY_200 = "FLOAT[200]"
 
 

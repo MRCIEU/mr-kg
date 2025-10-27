@@ -582,6 +582,10 @@ def compute_effect_size_similarity(
 ) -> Optional[float]:
     """Compute Pearson correlation of harmonized effect sizes (all types).
 
+    WARNING: Low data availability (~3.82% of comparisons). This metric
+    requires harmonized effect sizes from abstract extraction, which is
+    limited by abstract-only access and extraction success rates.
+
     Args:
         matched_pairs: List of matched (query, similar) result pairs
 
@@ -693,6 +697,10 @@ def compute_statistical_consistency(
 ) -> Optional[float]:
     """Compute Cohen's kappa for significance pattern agreement.
 
+    WARNING: This metric has ~0.27% data availability due to matching sparsity.
+    82% of comparisons have only 1 matched trait pair, but this metric requires
+    >= 3 matched pairs. Expected to return None in >99% of cases.
+
     Args:
         matched_pairs: List of matched (query, similar) result pairs
 
@@ -792,6 +800,12 @@ def compute_precision_concordance(
     matched_pairs: List[Tuple[Dict, Dict]],
 ) -> Optional[float]:
     """Compute similarity of effect estimate precision using CI widths.
+
+    WARNING: Very low data availability (~3.33% of comparisons). This metric
+    requires confidence intervals from abstract extraction AND at least 3
+    matched trait pairs for correlation. The combination of matching sparsity
+    (82% of comparisons have only 1 matched pair) and CI extraction limitations
+    results in extremely limited applicability.
 
     Measures how similar two studies are in terms of the precision
     of their effect estimates by comparing confidence interval widths.

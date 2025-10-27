@@ -49,6 +49,7 @@ Live statistics from the actual database files.
 | `evidence_similarities` | 6,388 |
 | `evidence_similarity_analysis` | 6,388 |
 | `high_concordance_pairs` | 4,438 |
+| `metric_availability` | 1 |
 | `model_evidence_stats` | 6 |
 | `query_combinations` | 6,132 |
 
@@ -581,25 +582,16 @@ erDiagram
         VARCHAR similar_model
         VARCHAR similar_title
         INTEGER matched_pairs
-        INTEGER match_type_exact
-        INTEGER match_type_fuzzy
-        INTEGER match_type_efo
-        DOUBLE effect_size_similarity
+        BOOLEAN match_type_exact
+        BOOLEAN match_type_fuzzy
+        BOOLEAN match_type_efo
         DOUBLE direction_concordance
-        DOUBLE statistical_consistency
-        DOUBLE evidence_overlap
-        DOUBLE null_concordance
-        DOUBLE effect_size_within_type
-        DOUBLE effect_size_cross_type
-        INTEGER n_within_type_pairs
-        INTEGER n_cross_type_pairs
-        INTEGER similar_publication_year
-        DOUBLE query_completeness
-        DOUBLE similar_completeness
         DOUBLE composite_similarity_equal
         DOUBLE composite_similarity_direction
-        INTEGER query_result_count
-        INTEGER similar_result_count
+        DOUBLE effect_size_similarity
+        DOUBLE statistical_consistency
+        DOUBLE precision_concordance
+        INTEGER similar_publication_year
     }
     evidence_similarity_analysis {
         VARCHAR query_pmid "from_qc.pmid"
@@ -607,18 +599,17 @@ erDiagram
         VARCHAR query_title "from_qc.title"
         VARCHAR query_result_count "from_qc.result_count"
         VARCHAR query_completeness "from_qc.data_completeness"
+        VARCHAR query_publication_year "from_qc.publication_year"
         VARCHAR similar_pmid "from_es.similar_pmid"
         VARCHAR similar_model "from_es.similar_model"
         VARCHAR similar_title "from_es.similar_title"
-        VARCHAR similar_result_count "from_es.similar_result_count"
+        VARCHAR similar_publication_year "from_es.similar_publication_year"
         VARCHAR matched_pairs "from_es.matched_pairs"
         VARCHAR match_type_exact "from_es.match_type_exact"
         VARCHAR match_type_fuzzy "from_es.match_type_fuzzy"
         VARCHAR match_type_efo "from_es.match_type_efo"
-        VARCHAR effect_size_similarity "from_es.effect_size_similarity"
         VARCHAR direction_concordance "from_es.direction_concordance"
-        VARCHAR statistical_consistency "from_es.statistical_consistency"
-        VARCHAR evidence_overlap "from_es.evidence_overlap"
+        VARCHAR effect_size_similarity "from_es.effect_size_similarity"
         VARCHAR composite_similarity_equal "from_es.composite_similarity_equal"
         VARCHAR composite_similarity_direction "from_es.composite_similarity_direction"
         VARCHAR similarity_rank "from_qc.id"
@@ -638,15 +629,16 @@ erDiagram
         VARCHAR similar_pmid "from_es.similar_pmid"
         VARCHAR query_title "from_qc.title"
         VARCHAR similar_title "from_es.similar_title"
+        VARCHAR query_publication_year "from_qc.publication_year"
+        VARCHAR similar_publication_year "from_es.similar_publication_year"
         VARCHAR direction_concordance "from_es.direction_concordance"
         VARCHAR effect_size_similarity "from_es.effect_size_similarity"
-        VARCHAR evidence_overlap "from_es.evidence_overlap"
         VARCHAR matched_pairs "from_es.matched_pairs"
         VARCHAR match_type_exact "from_es.match_type_exact"
         VARCHAR match_type_fuzzy "from_es.match_type_fuzzy"
         VARCHAR match_type_efo "from_es.match_type_efo"
         VARCHAR query_result_count "from_qc.result_count"
-        VARCHAR similar_result_count "from_es.similar_result_count"
+        VARCHAR query_completeness "from_qc.data_completeness"
     }
     discordant_evidence_pairs {
         VARCHAR model "from_es.similar_model"
@@ -654,29 +646,30 @@ erDiagram
         VARCHAR similar_pmid "from_es.similar_pmid"
         VARCHAR query_title "from_qc.title"
         VARCHAR similar_title "from_es.similar_title"
+        VARCHAR query_publication_year "from_qc.publication_year"
+        VARCHAR similar_publication_year "from_es.similar_publication_year"
         VARCHAR direction_concordance "from_es.direction_concordance"
         VARCHAR matched_pairs "from_es.matched_pairs"
         VARCHAR match_type_exact "from_es.match_type_exact"
         VARCHAR match_type_fuzzy "from_es.match_type_fuzzy"
         VARCHAR match_type_efo "from_es.match_type_efo"
-        VARCHAR evidence_overlap "from_es.evidence_overlap"
         VARCHAR query_result_count "from_qc.result_count"
-        VARCHAR similar_result_count "from_es.similar_result_count"
+        VARCHAR query_completeness "from_qc.data_completeness"
     }
-    match_type_distribution {
-        VARCHAR model "from_es.similar_model"
+    metric_availability {
         VARCHAR total_comparisons "from_computed"
-        VARCHAR total_exact_matches "from_es.match_type_exact"
-        VARCHAR total_fuzzy_matches "from_es.match_type_fuzzy"
-        VARCHAR total_efo_matches "from_es.match_type_efo"
-        VARCHAR total_matched_pairs "from_es.matched_pairs"
-        VARCHAR avg_exact_per_comparison "from_es.match_type_exact"
-        VARCHAR avg_fuzzy_per_comparison "from_es.match_type_fuzzy"
-        VARCHAR avg_efo_per_comparison "from_es.match_type_efo"
-        VARCHAR avg_total_pairs_per_comparison "from_es.matched_pairs"
-        VARCHAR pct_exact "from_100.0"
-        VARCHAR pct_fuzzy "from_100.0"
-        VARCHAR pct_efo "from_100.0"
+        VARCHAR direction_concordance_available "from_computed"
+        FLOAT effect_size_similarity_available "from_computed"
+        VARCHAR composite_equal_available "from_computed"
+        VARCHAR composite_direction_available "from_computed"
+        VARCHAR statistical_consistency_available "from_computed"
+        VARCHAR precision_concordance_available "from_computed"
+        VARCHAR direction_concordance_pct "from_computed"
+        FLOAT effect_size_similarity_pct "from_computed"
+        VARCHAR composite_equal_pct "from_computed"
+        VARCHAR composite_direction_pct "from_computed"
+        VARCHAR statistical_consistency_pct "from_computed"
+        VARCHAR precision_concordance_pct "from_computed"
     }
     evidence_similarities }o--|| query_combinations : "query_combination_id references id"
     evidence_similarity_analysis }o..o{ evidence_similarities : "uses"
@@ -686,14 +679,14 @@ erDiagram
     high_concordance_pairs }o..o{ query_combinations : "uses"
     discordant_evidence_pairs }o..o{ evidence_similarities : "uses"
     discordant_evidence_pairs }o..o{ query_combinations : "uses"
-    match_type_distribution }o..o{ evidence_similarities : "uses"
+    metric_availability }o..o{ evidence_similarities : "uses"
 
     %% Styling
     style evidence_similarity_analysis fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
     style model_evidence_stats fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
     style high_concordance_pairs fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
     style discordant_evidence_pairs fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
-    style match_type_distribution fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style metric_availability fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
 ```
 
 ### Quick reference
@@ -746,43 +739,25 @@ Similarity relationships between PMID-model combinations within same model based
 
 - **`matched_pairs`** (INTEGER, NOT NULL)
 
-- **`match_type_exact`** (INTEGER, NOT NULL)
+- **`match_type_exact`** (BOOLEAN, NOT NULL)
 
-- **`match_type_fuzzy`** (INTEGER, NOT NULL)
+- **`match_type_fuzzy`** (BOOLEAN, NOT NULL)
 
-- **`match_type_efo`** (INTEGER, NOT NULL)
-
-- **`effect_size_similarity`** (DOUBLE, nullable)
+- **`match_type_efo`** (BOOLEAN, NOT NULL)
 
 - **`direction_concordance`** (DOUBLE, NOT NULL)
-
-- **`statistical_consistency`** (DOUBLE, nullable)
-
-- **`evidence_overlap`** (DOUBLE, NOT NULL)
-
-- **`null_concordance`** (DOUBLE, NOT NULL)
-
-- **`effect_size_within_type`** (DOUBLE, nullable)
-
-- **`effect_size_cross_type`** (DOUBLE, nullable)
-
-- **`n_within_type_pairs`** (INTEGER, NOT NULL)
-
-- **`n_cross_type_pairs`** (INTEGER, NOT NULL)
-
-- **`similar_publication_year`** (INTEGER, nullable)
-
-- **`query_completeness`** (DOUBLE, NOT NULL)
-
-- **`similar_completeness`** (DOUBLE, NOT NULL)
 
 - **`composite_similarity_equal`** (DOUBLE, nullable)
 
 - **`composite_similarity_direction`** (DOUBLE, nullable)
 
-- **`query_result_count`** (INTEGER, NOT NULL)
+- **`effect_size_similarity`** (DOUBLE, nullable)
 
-- **`similar_result_count`** (INTEGER, NOT NULL)
+- **`statistical_consistency`** (DOUBLE, nullable)
+
+- **`precision_concordance`** (DOUBLE, nullable)
+
+- **`similar_publication_year`** (INTEGER, nullable)
 
 **Foreign Keys:**
 
@@ -800,23 +775,11 @@ Performance optimization indexes:
 
 - **`idx_evidence_similarities_similar_model`** on (similar_model)
 
-- **`idx_evidence_similarities_composite_equal`** on (composite_similarity_equal)
-
-- **`idx_evidence_similarities_composite_direction`** on (composite_similarity_direction)
-
 - **`idx_evidence_similarities_direction_concordance`** on (direction_concordance)
 
-- **`idx_evidence_similarities_match_type_exact`** on (match_type_exact)
-
-- **`idx_evidence_similarities_match_type_fuzzy`** on (match_type_fuzzy)
-
-- **`idx_evidence_similarities_match_type_efo`** on (match_type_efo)
+- **`idx_evidence_similarities_matched_pairs`** on (matched_pairs)
 
 #### query_combinations
-
-- **`idx_query_combinations_pmid`** on (pmid)
-
-- **`idx_query_combinations_model`** on (model)
 
 - **`idx_query_combinations_pmid_model`** on (pmid, model)
 
@@ -835,27 +798,26 @@ SELECT
             qc.title as query_title,
             qc.result_count as query_result_count,
             qc.data_completeness as query_completeness,
+            qc.publication_year as query_publication_year,
             es.similar_pmid,
             es.similar_model,
             es.similar_title,
-            es.similar_result_count,
+            es.similar_publication_year,
             es.matched_pairs,
             es.match_type_exact,
             es.match_type_fuzzy,
             es.match_type_efo,
-            es.effect_size_similarity,
             es.direction_concordance,
-            es.statistical_consistency,
-            es.evidence_overlap,
+            es.effect_size_similarity,
             es.composite_similarity_equal,
             es.composite_similarity_direction,
             RANK() OVER (
                 PARTITION BY qc.id 
-                ORDER BY es.composite_similarity_direction DESC
+                ORDER BY es.direction_concordance DESC
             ) as similarity_rank
         FROM query_combinations qc
         JOIN evidence_similarities es ON qc.id = es.query_combination_id
-        ORDER BY qc.pmid, qc.model, es.composite_similarity_direction DESC
+        ORDER BY qc.pmid, qc.model, es.direction_concordance DESC
 ```
 
 #### model_evidence_stats
@@ -887,15 +849,16 @@ SELECT
             es.similar_pmid,
             qc.title as query_title,
             es.similar_title,
+            qc.publication_year as query_publication_year,
+            es.similar_publication_year,
             es.direction_concordance,
             es.effect_size_similarity,
-            es.evidence_overlap,
             es.matched_pairs,
             es.match_type_exact,
             es.match_type_fuzzy,
             es.match_type_efo,
             qc.result_count as query_result_count,
-            es.similar_result_count
+            qc.data_completeness as query_completeness
         FROM evidence_similarities es
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance >= 0.8
@@ -913,40 +876,45 @@ SELECT
             es.similar_pmid,
             qc.title as query_title,
             es.similar_title,
+            qc.publication_year as query_publication_year,
+            es.similar_publication_year,
             es.direction_concordance,
             es.matched_pairs,
             es.match_type_exact,
             es.match_type_fuzzy,
             es.match_type_efo,
-            es.evidence_overlap,
             qc.result_count as query_result_count,
-            es.similar_result_count
+            qc.data_completeness as query_completeness
         FROM evidence_similarities es
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance < 0
         ORDER BY es.similar_model, es.direction_concordance ASC
 ```
 
-#### match_type_distribution
+#### metric_availability
 
 **SQL Definition:**
 
 ```sql
 SELECT
-            es.similar_model as model,
             COUNT(*) as total_comparisons,
-            SUM(es.match_type_exact) as total_exact_matches,
-            SUM(es.match_type_fuzzy) as total_fuzzy_matches,
-            SUM(es.match_type_efo) as total_efo_matches,
-            SUM(es.matched_pairs) as total_matched_pairs,
-            AVG(es.match_type_exact) as avg_exact_per_comparison,
-            AVG(es.match_type_fuzzy) as avg_fuzzy_per_comparison,
-            AVG(es.match_type_efo) as avg_efo_per_comparison,
-            AVG(es.matched_pairs) as avg_total_pairs_per_comparison,
-            ROUND(100.0 * SUM(es.match_type_exact) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_exact,
-            ROUND(100.0 * SUM(es.match_type_fuzzy) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_fuzzy,
-            ROUND(100.0 * SUM(es.match_type_efo) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_efo
-        FROM evidence_similarities es
-        GROUP BY es.similar_model
-        ORDER BY es.similar_model
+            COUNT(direction_concordance) as direction_concordance_available,
+            COUNT(effect_size_similarity) as effect_size_similarity_available,
+            COUNT(composite_similarity_equal) as composite_equal_available,
+            COUNT(composite_similarity_direction) as composite_direction_available,
+            COUNT(statistical_consistency) as statistical_consistency_available,
+            COUNT(precision_concordance) as precision_concordance_available,
+            ROUND(COUNT(direction_concordance)::DOUBLE / COUNT(*) * 100, 2) 
+                as direction_concordance_pct,
+            ROUND(COUNT(effect_size_similarity)::DOUBLE / COUNT(*) * 100, 2) 
+                as effect_size_similarity_pct,
+            ROUND(COUNT(composite_similarity_equal)::DOUBLE / COUNT(*) * 100, 2) 
+                as composite_equal_pct,
+            ROUND(COUNT(composite_similarity_direction)::DOUBLE / COUNT(*) * 100, 2) 
+                as composite_direction_pct,
+            ROUND(COUNT(statistical_consistency)::DOUBLE / COUNT(*) * 100, 2) 
+                as statistical_consistency_pct,
+            ROUND(COUNT(precision_concordance)::DOUBLE / COUNT(*) * 100, 2) 
+                as precision_concordance_pct
+        FROM evidence_similarities
 ```

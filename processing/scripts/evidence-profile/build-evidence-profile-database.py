@@ -178,25 +178,15 @@ def create_evidence_similarities_table(
             similar_model VARCHAR NOT NULL,
             similar_title VARCHAR NOT NULL,
             matched_pairs INTEGER NOT NULL,
-            match_type_exact INTEGER NOT NULL,
-            match_type_fuzzy INTEGER NOT NULL,
-            match_type_efo INTEGER NOT NULL,
-            effect_size_similarity DOUBLE,
-            effect_size_within_type DOUBLE,
-            effect_size_cross_type DOUBLE,
-            n_within_type_pairs INTEGER NOT NULL,
-            n_cross_type_pairs INTEGER NOT NULL,
+            match_type_exact BOOLEAN NOT NULL DEFAULT FALSE,
+            match_type_fuzzy BOOLEAN NOT NULL DEFAULT FALSE,
+            match_type_efo BOOLEAN NOT NULL DEFAULT FALSE,
             direction_concordance DOUBLE NOT NULL,
-            statistical_consistency DOUBLE,
-            evidence_overlap DOUBLE NOT NULL,
-            null_concordance DOUBLE NOT NULL,
-            precision_concordance DOUBLE,
             composite_similarity_equal DOUBLE,
             composite_similarity_direction DOUBLE,
-            query_result_count INTEGER NOT NULL,
-            similar_result_count INTEGER NOT NULL,
-            query_completeness DOUBLE NOT NULL,
-            similar_completeness DOUBLE NOT NULL,
+            effect_size_similarity DOUBLE,
+            statistical_consistency DOUBLE,
+            precision_concordance DOUBLE,
             similar_publication_year INTEGER,
             FOREIGN KEY (query_combination_id) REFERENCES query_combinations(id)
         )
@@ -215,25 +205,15 @@ def create_evidence_similarities_table(
                     similarity["similar_model"],
                     similarity["similar_title"],
                     similarity["matched_pairs"],
-                    similarity.get("match_type_exact", 0),
-                    similarity.get("match_type_fuzzy", 0),
-                    similarity.get("match_type_efo", 0),
-                    similarity.get("effect_size_similarity"),
-                    similarity.get("effect_size_within_type"),
-                    similarity.get("effect_size_cross_type"),
-                    similarity.get("n_within_type_pairs", 0),
-                    similarity.get("n_cross_type_pairs", 0),
+                    similarity.get("match_type_exact", 0) > 0,
+                    similarity.get("match_type_fuzzy", 0) > 0,
+                    similarity.get("match_type_efo", 0) > 0,
                     similarity["direction_concordance"],
-                    similarity.get("statistical_consistency"),
-                    similarity["evidence_overlap"],
-                    similarity.get("null_concordance", 0.0),
-                    similarity.get("precision_concordance"),
                     similarity.get("composite_similarity_equal"),
                     similarity.get("composite_similarity_direction"),
-                    similarity["query_result_count"],
-                    similarity["similar_result_count"],
-                    similarity.get("query_completeness", 1.0),
-                    similarity.get("similar_completeness", 1.0),
+                    similarity.get("effect_size_similarity"),
+                    similarity.get("statistical_consistency"),
+                    similarity.get("precision_concordance"),
                     similarity.get("similar_publication_year"),
                 )
             )
@@ -248,13 +228,10 @@ def create_evidence_similarities_table(
             """INSERT INTO evidence_similarities
                (id, query_combination_id, similar_pmid, similar_model, similar_title,
                 matched_pairs, match_type_exact, match_type_fuzzy, match_type_efo,
-                effect_size_similarity, effect_size_within_type, 
-                effect_size_cross_type, n_within_type_pairs, n_cross_type_pairs,
-                direction_concordance, statistical_consistency, evidence_overlap,
-                null_concordance, precision_concordance, composite_similarity_equal,
-                composite_similarity_direction, query_result_count, similar_result_count,
-                query_completeness, similar_completeness, similar_publication_year)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                direction_concordance, composite_similarity_equal, composite_similarity_direction,
+                effect_size_similarity, statistical_consistency, precision_concordance,
+                similar_publication_year)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             similarities_data,
         )
         logger.info(
@@ -274,13 +251,21 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
     """
     logger.info("Creating indexes...")
 
+    # Keep only 6 essential indexes for high-value query patterns
+    # Removed: indexes on NULL-heavy columns (composite_equal, composite_direction)
+    # and redundant single-column indexes (pmid, model) now that we have compound index
     indexes = [
-        ("idx_query_combinations_pmid", "query_combinations(pmid)"),
-        ("idx_query_combinations_model", "query_combinations(model)"),
+        # Compound index for primary lookup pattern
+        (
+            "idx_query_combinations_pmid_model",
+            "query_combinations(pmid, model)",
+        ),
+        # Foreign key relationship
         (
             "idx_evidence_similarities_query_id",
             "evidence_similarities(query_combination_id)",
         ),
+        # Similar paper lookups
         (
             "idx_evidence_similarities_similar_pmid",
             "evidence_similarities(similar_pmid)",
@@ -289,21 +274,15 @@ def create_indexes(conn: duckdb.DuckDBPyConnection):
             "idx_evidence_similarities_similar_model",
             "evidence_similarities(similar_model)",
         ),
-        (
-            "idx_query_combinations_pmid_model",
-            "query_combinations(pmid, model)",
-        ),
-        (
-            "idx_evidence_similarities_composite_equal",
-            "evidence_similarities(composite_similarity_equal)",
-        ),
-        (
-            "idx_evidence_similarities_composite_direction",
-            "evidence_similarities(composite_similarity_direction)",
-        ),
+        # Primary metric for sorting (100% availability)
         (
             "idx_evidence_similarities_direction_concordance",
             "evidence_similarities(direction_concordance)",
+        ),
+        # Match quality filtering
+        (
+            "idx_evidence_similarities_matched_pairs",
+            "evidence_similarities(matched_pairs)",
         ),
     ]
 
@@ -347,6 +326,7 @@ def create_views(conn: duckdb.DuckDBPyConnection):
     logger.info("Creating views...")
 
     # ---- evidence_similarity_analysis ----
+    # Focus on reliable metrics with high data availability
     conn.execute("""
         CREATE VIEW evidence_similarity_analysis AS
         SELECT
@@ -355,24 +335,26 @@ def create_views(conn: duckdb.DuckDBPyConnection):
             qc.title as query_title,
             qc.result_count as query_result_count,
             qc.data_completeness as query_completeness,
+            qc.publication_year as query_publication_year,
             es.similar_pmid,
             es.similar_model,
             es.similar_title,
-            es.similar_result_count,
+            es.similar_publication_year,
             es.matched_pairs,
-            es.effect_size_similarity,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             es.direction_concordance,
-            es.statistical_consistency,
-            es.evidence_overlap,
+            es.effect_size_similarity,
             es.composite_similarity_equal,
             es.composite_similarity_direction,
             RANK() OVER (
                 PARTITION BY qc.id 
-                ORDER BY es.composite_similarity_direction DESC
+                ORDER BY es.direction_concordance DESC
             ) as similarity_rank
         FROM query_combinations qc
         JOIN evidence_similarities es ON qc.id = es.query_combination_id
-        ORDER BY qc.pmid, qc.model, es.composite_similarity_direction DESC
+        ORDER BY qc.pmid, qc.model, es.direction_concordance DESC
     """)
 
     # ---- model_evidence_stats ----
@@ -392,6 +374,7 @@ def create_views(conn: duckdb.DuckDBPyConnection):
     """)
 
     # ---- high_concordance_pairs ----
+    # Papers with high direction concordance (reliable metric)
     conn.execute("""
         CREATE VIEW high_concordance_pairs AS
         SELECT
@@ -400,12 +383,16 @@ def create_views(conn: duckdb.DuckDBPyConnection):
             es.similar_pmid,
             qc.title as query_title,
             es.similar_title,
+            qc.publication_year as query_publication_year,
+            es.similar_publication_year,
             es.direction_concordance,
             es.effect_size_similarity,
-            es.evidence_overlap,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             qc.result_count as query_result_count,
-            es.similar_result_count
+            qc.data_completeness as query_completeness
         FROM evidence_similarities es
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance >= 0.8
@@ -413,6 +400,7 @@ def create_views(conn: duckdb.DuckDBPyConnection):
     """)
 
     # ---- discordant_evidence_pairs ----
+    # Papers with contradictory findings (negative direction concordance)
     conn.execute("""
         CREATE VIEW discordant_evidence_pairs AS
         SELECT
@@ -421,15 +409,46 @@ def create_views(conn: duckdb.DuckDBPyConnection):
             es.similar_pmid,
             qc.title as query_title,
             es.similar_title,
+            qc.publication_year as query_publication_year,
+            es.similar_publication_year,
             es.direction_concordance,
             es.matched_pairs,
-            es.evidence_overlap,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             qc.result_count as query_result_count,
-            es.similar_result_count
+            qc.data_completeness as query_completeness
         FROM evidence_similarities es
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance < 0
         ORDER BY es.similar_model, es.direction_concordance ASC
+    """)
+
+    # ---- metric_availability ----
+    # Summary of data availability for each metric
+    conn.execute("""
+        CREATE VIEW metric_availability AS
+        SELECT
+            COUNT(*) as total_comparisons,
+            COUNT(direction_concordance) as direction_concordance_available,
+            COUNT(effect_size_similarity) as effect_size_similarity_available,
+            COUNT(composite_similarity_equal) as composite_equal_available,
+            COUNT(composite_similarity_direction) as composite_direction_available,
+            COUNT(statistical_consistency) as statistical_consistency_available,
+            COUNT(precision_concordance) as precision_concordance_available,
+            ROUND(COUNT(direction_concordance)::DOUBLE / COUNT(*) * 100, 2) 
+                as direction_concordance_pct,
+            ROUND(COUNT(effect_size_similarity)::DOUBLE / COUNT(*) * 100, 2) 
+                as effect_size_similarity_pct,
+            ROUND(COUNT(composite_similarity_equal)::DOUBLE / COUNT(*) * 100, 2) 
+                as composite_equal_pct,
+            ROUND(COUNT(composite_similarity_direction)::DOUBLE / COUNT(*) * 100, 2) 
+                as composite_direction_pct,
+            ROUND(COUNT(statistical_consistency)::DOUBLE / COUNT(*) * 100, 2) 
+                as statistical_consistency_pct,
+            ROUND(COUNT(precision_concordance)::DOUBLE / COUNT(*) * 100, 2) 
+                as precision_concordance_pct
+        FROM evidence_similarities
     """)
 
     logger.info("Views created")
@@ -496,6 +515,21 @@ def validate_database(conn: duckdb.DuckDBPyConnection):
         logger.info(
             f"discordant_evidence_pairs view working ({discordant_pairs} pairs)"
         )
+
+        availability_result = conn.execute(
+            "SELECT * FROM metric_availability"
+        ).fetchone()
+        if availability_result:
+            logger.info("metric_availability view working")
+            logger.info(
+                f"  Direction concordance: {availability_result[7]}% available"
+            )
+            logger.info(
+                f"  Effect size similarity: {availability_result[8]}% available"
+            )
+            logger.info(
+                f"  Statistical consistency: {availability_result[11]}% available"
+            )
 
     except Exception as e:
         logger.error(f"View validation failed: {e}")

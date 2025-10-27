@@ -86,6 +86,7 @@ def format_column_type(col_type: ColumnType) -> str:
         ColumnType.JSON: "JSON",
         ColumnType.FLOAT_ARRAY_200: "FLOAT[200]",
         ColumnType.DOUBLE: "DOUBLE",
+        ColumnType.BOOLEAN: "BOOLEAN",
     }
     res = type_map.get(col_type, str(col_type))
     return res

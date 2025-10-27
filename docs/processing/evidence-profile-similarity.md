@@ -66,13 +66,32 @@ similarity measures.
 
 ## Similarity metrics
 
-We use six complementary metrics to measure evidence profile similarity, each
-capturing different aspects of statistical evidence alignment:
+We compute several complementary metrics to measure evidence profile similarity,
+focusing on those with reliable data availability.
+
+**Primary metrics** (stored in evidence_similarities table):
+
+1. **Direction concordance** (100% availability) - Gold standard metric
+2. **Effect size similarity** (~3.82% availability) - Supplementary when available
+3. **Statistical consistency** (~0.27% availability) - Exploratory metric
+4. **Precision concordance** (~3.33% availability) - Exploratory metric
+5. **Composite similarity scores** - Weighted combinations (subject to same
+   availability constraints as component metrics)
+
+**Removed metrics** (as of Phase 1-2 cleanup):
+
+- **Evidence overlap** - Removed due to low utility
+- **Null concordance** - Removed due to experimental nature
+
+See the "Metric data availability" section under "Limitations and assumptions"
+for detailed guidance on metric reliability.
 
 ### 1. Effect size similarity
 
 Definition: Pearson correlation of harmonized effect sizes for matched
 exposure-outcome pairs.
+
+**Data availability: ~3.82%** due to abstract-only extraction limitations.
 
 Rationale: Quantifies agreement in effect magnitude and direction.
 High correlation indicates studies observe similar effect size patterns across
@@ -107,6 +126,9 @@ insufficient data.
 Definition: Agreement in classified effect directions (positive, negative,
 null) for matched pairs.
 
+**Data availability: 100%** - always computable for any matched trait pairs.
+This is the gold standard metric for evidence profile similarity.
+
 Rationale: Provides categorical assessment of effect direction consistency
 without sensitivity to exact effect size magnitudes.
 
@@ -135,6 +157,10 @@ Range: -1 to 1
 Definition: Cohen's kappa coefficient for agreement in statistical
 significance classifications.
 
+**Data availability: ~0.27%** - extremely limited due to matching sparsity.
+Requires minimum 3 matched pairs, but 82% of comparisons have only 1 matched
+pair. Consider this an exploratory metric that rarely succeeds.
+
 Rationale: Measures consistency in which trait relationships reach statistical
 significance, accounting for chance agreement.
 
@@ -159,61 +185,77 @@ Interpretation (Landis & Koch scale):
 - 0.61 to 0.80: Substantial
 - 0.81 to 1.00: Almost perfect
 
-### 4. Evidence overlap
+### 4. Precision concordance
 
-Definition: Jaccard similarity of sets of statistically significant
+Definition: Spearman correlation of confidence interval widths for matched
 exposure-outcome pairs.
 
-Rationale: Set-based measure of which specific trait relationships show
-significant evidence in each study.
+**Data availability: ~3.33%** - very limited due to the combination of CI
+extraction limitations and matching sparsity. Requires both confidence intervals
+from abstract extraction AND at least 3 matched pairs for correlation.
+
+Rationale: Measures how similar two studies are in terms of the precision of
+their effect estimates.
 
 Computation:
 
-1. For each study, identify set of exposure-outcome pairs with p < 0.05
-2. Compute Jaccard similarity: |A ∩ B| / |A ∪ B|
+1. For each matched pair, compute CI width as |upper - lower|
+2. Log-transform widths to handle skewed distributions
+3. Compute Spearman correlation of log widths across matched pairs
 
-Range: 0 to 1
+Range: -1 to 1
 
-- 1: Identical sets of significant findings
-- 0: No overlap in significant findings
+- 1: Perfect positive correlation (precision patterns align)
+- 0: No correlation (precision patterns independent)
+- -1: Perfect negative correlation (inverse precision patterns)
 
-Edge case handling:
+Note: Requires minimum 3 matched pairs with valid CIs for computation.
+Returns None if insufficient data.
 
-- If both studies have zero significant findings, returns 0.0 (not 1.0) to
-  avoid inflating similarity for underpowered studies
+### 5. Evidence overlap (REMOVED)
 
-Advantages:
+**Status: Removed in Phase 1-2 cleanup**
 
-- Simple and interpretable
-- Not sensitive to effect size magnitudes
-- Focuses on reproducibility of specific findings
+This metric (Jaccard similarity of significant finding sets) was removed due
+to low utility and correlation with other metrics.
 
-### 5. Null concordance
+Previous definition: Jaccard similarity of sets of statistically significant
+exposure-outcome pairs.
 
-Definition: Proportion of matched pairs where both results are non-significant.
+Removal rationale:
 
-Rationale: Measures concordance in null findings, which may indicate shared
-power limitations or truly null relationships.
+- Redundant with direction concordance and statistical consistency
+- Added complexity without additional insight
+- Set-based approach less informative than pairwise concordance
 
-Computation:
+### 6. Null concordance (REMOVED)
 
-1. For each matched pair, check if both results have p >= 0.05
-2. Compute proportion of pairs with both non-significant
+**Status: Removed in Phase 1-2 cleanup**
 
-Range: 0 to 1
+This metric (proportion of matched pairs with mutual non-significance) was
+removed due to its experimental nature and unclear interpretation.
 
-- 1: All matched pairs have null findings in both studies
-- 0: No matched pairs have null findings in both studies
+Previous definition: Proportion of matched pairs where both results are
+non-significant (p >= 0.05).
 
-Interpretation:
+Removal rationale:
 
-- High null concordance + high direction concordance = strong evidence consistency
-- High null concordance + low direction concordance = potential shared power limitations
-- Low null concordance = studies differ in which relationships reach significance
+- Ambiguous interpretation (power limitations vs. true nulls)
+- Better addressed through sample size and CI width analysis
+- Limited actionable insights for similarity assessment
 
-### 6. Composite similarity scores
+### 7. Composite similarity scores
 
 Definition: Weighted combinations of individual metrics into summary scores.
+
+**Data availability: Limited** - composite scores inherit the availability
+constraints of their component metrics. Due to the low availability of
+effect_size_similarity, statistical_consistency, and precision_concordance,
+composite scores will frequently be incomplete or NULL.
+
+**Recommendation**: Given the data availability issues, prioritize
+direction_concordance (100% availability) as the primary similarity metric
+rather than relying on composite scores.
 
 Rationale: Provide single interpretable values balancing multiple evidence
 dimensions for ranking and filtering.
@@ -225,12 +267,16 @@ Implementation: Two composite scores with different weighting schemes:
 - Average of all available normalized metrics
 - Each metric contributes equally to final score
 - Balances all aspects of evidence similarity
+- Frequently NULL due to missing component metrics
 
 **Direction-prioritized composite:**
 
-- Weights: 0.50 × direction + 0.20 × effect_size + 0.15 × consistency + 0.15 × overlap
+- Weights: 0.50 × direction + 0.20 × effect_size + 0.15 × consistency + 0.15
+  × precision
 - Emphasizes directional concordance as primary indicator
-- Recommended for main analyses
+- More likely to be computable due to 50% weight on always-available
+  direction_concordance
+- Recommended over equal-weighted when both are available
 
 Normalization procedure:
 
@@ -239,15 +285,18 @@ All metrics are normalized to [0, 1] scale before combination:
 - Effect similarity: (r + 1) / 2 transforms [-1, 1] → [0, 1]
 - Direction concordance: (concordance + 1) / 2 transforms [-1, 1] → [0, 1]
 - Statistical consistency: (kappa + 1) / 2 transforms [-1, 1] → [0, 1]
-- Evidence overlap: Already in [0, 1], no transformation needed
+- Precision concordance: (rho + 1) / 2 transforms [-1, 1] → [0, 1]
 
 Missing data handling:
 
-- If effect_size_similarity or statistical_consistency is None, they are
-  excluded from the composite calculation
+- If component metrics are None, they are excluded from the composite calculation
 - Weights are renormalized across available metrics
-- Requires minimum 2 non-null metrics (including direction, which is always available)
+- Requires minimum 2 non-null metrics (direction_concordance is always available)
 - Returns None if insufficient metrics
+
+**Note**: The removal of evidence_overlap and null_concordance metrics in Phase
+1-2 cleanup means composite scores now rely on fewer component metrics than
+originally designed.
 
 Quality weighting:
 
@@ -709,6 +758,48 @@ ORDER BY query_model;
 
 ## Limitations and assumptions
 
+### Metric data availability
+
+**Critical constraint:** Due to matching sparsity and abstract-only
+extraction limitations, several metrics have very low data availability and
+should be interpreted accordingly.
+
+**Data availability by metric:**
+
+| Metric | Availability | Reliability |
+|--------|-------------|-------------|
+| Direction concordance | 100% | Gold standard - always computable |
+| Effect size similarity | ~3.82% | Limited - requires abstract effect extraction |
+| Precision concordance | ~3.33% | Very limited - requires CIs + 3+ pairs |
+| Statistical consistency | ~0.27% | Extremely limited - requires 3+ pairs |
+
+**Root causes:**
+
+1. **Matching sparsity:** 82% of study pairs share only 1 matched trait pair.
+   Correlation-based metrics (statistical consistency, precision concordance)
+   require minimum 3 pairs, making them inapplicable in most cases.
+
+2. **Abstract extraction limits:** Effect sizes and confidence intervals are
+   extracted from abstracts only, not full text. Abstract reporting is
+   incomplete, especially for negative/null results.
+
+**Recommendations:**
+
+- **Prioritize direction concordance** (100% availability) as the primary
+  metric for evidence profile similarity
+- Use effect size similarity (3.82%) as supplementary when available
+- Treat precision concordance (3.33%) and statistical consistency (0.27%) as
+  exploratory metrics that rarely succeed
+- Consider matched_pairs count when interpreting similarity scores - pairs
+  with only 1-2 matched traits provide limited evidence overlap
+
+**Database implications:**
+
+The `evidence_profile_similarities` table includes a `metric_availability`
+view showing actual data availability percentages. Most records will have
+NULL values for low-availability metrics, which is expected behavior, not a
+data quality issue.
+
 ### Within-study correlation
 
 **Limitation:** Results within the same study are non-independent due to
@@ -739,14 +830,19 @@ coefficients due to different underlying outcome scales and measurement units.
 
 **Current approach:**
 
-- Primary metric: Overall effect_size_similarity combines all effect types
-- Sensitivity analysis: effect_size_within_type and effect_size_cross_type
-  reported separately
-- Diagnostic fields: n_within_type_pairs and n_cross_type_pairs track
-  proportion of each comparison type
+- Primary metric: effect_size_similarity combines all effect types
+- Match type tracking: match_type_exact, match_type_fuzzy, match_type_efo
+  boolean flags indicate matching method for each comparison
 
-**Recommendation:** Prioritize within-type comparisons when sufficient data
-available. Interpret cross-type correlations cautiously.
+**Note on Phase 1-2 changes:** Previously tracked stratified metrics
+(effect_size_within_type, effect_size_cross_type, n_within_type_pairs,
+n_cross_type_pairs) were removed to simplify the schema. The overall
+effect_size_similarity metric remains but no longer separates within-type vs
+cross-type correlations.
+
+**Recommendation:** Interpret effect size correlations cautiously when studies
+use different effect types. The match_type flags can help identify comparison
+quality but do not separate by effect type harmonization.
 
 ### Temporal and population heterogeneity
 

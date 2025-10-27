@@ -169,39 +169,30 @@ EVIDENCE_PROFILE_SCHEMA = {
             ),
             ColumnDef(
                 "match_type_exact",
-                ColumnType.INTEGER,
+                ColumnType.BOOLEAN,
                 nullable=False,
-                # Number of pairs matched by exact trait index correspondence.
+                # Boolean flag indicating presence of exact trait index matches.
+                # TRUE if at least one pair matched by exact trait index correspondence.
                 # Highest precision matching tier. Both exposure and outcome trait indices
                 # must be identical. Most reliable match type for direct comparisons.
             ),
             ColumnDef(
                 "match_type_fuzzy",
-                ColumnType.INTEGER,
+                ColumnType.BOOLEAN,
                 nullable=False,
-                # Number of pairs matched by semantic similarity (cosine >= 0.80).
+                # Boolean flag indicating presence of fuzzy semantic matches.
+                # TRUE if at least one pair matched by semantic similarity (cosine >= 0.80).
                 # Second tier matching using 200-dim trait embeddings from vector_store.db.
                 # Captures semantic variants like "BMI" vs "body mass index" or "BMI" vs "obesity".
-                # Both exposure and outcome must meet similarity threshold.
             ),
             ColumnDef(
                 "match_type_efo",
-                ColumnType.INTEGER,
+                ColumnType.BOOLEAN,
                 nullable=False,
-                # Number of pairs matched by EFO category correspondence.
+                # Boolean flag indicating presence of EFO category matches.
+                # TRUE if at least one pair matched by EFO category correspondence.
                 # Third tier matching using ontology-based category mapping from trait_efo_similarity_search.
                 # Enables category-level meta-analysis by matching traits mapped to same EFO terms.
-                # Both exposure and outcome must map to EFO terms (similarity >= 0.50).
-                # Less precise than exact/fuzzy but provides broader coverage.
-            ),
-            ColumnDef(
-                "effect_size_similarity",
-                ColumnType.DOUBLE,
-                nullable=True,
-                # Pearson correlation coefficient of harmonized effect sizes across matched pairs.
-                # Range -1.0 to 1.0. Measures consistency of effect magnitudes. Nullable when
-                # insufficient pairs (<3) for correlation computation. Effect sizes harmonized
-                # to common log scale for OR and HR, beta kept as-is.
             ),
             ColumnDef(
                 "direction_concordance",
@@ -209,8 +200,35 @@ EVIDENCE_PROFILE_SCHEMA = {
                 nullable=False,
                 # Proportion of matched pairs with concordant effect directions.
                 # Range -1.0 (all discordant) to 1.0 (all concordant). Primary interpretable
-                # metric for evidence consistency. Positive values indicate similar causal
-                # directions, negative indicate contradictory findings.
+                # metric for evidence consistency. 100% data availability. Positive values
+                # indicate similar causal directions, negative indicate contradictory findings.
+            ),
+            ColumnDef(
+                "composite_similarity_equal",
+                ColumnType.DOUBLE,
+                nullable=True,
+                # Composite similarity with equal weighting (no quality adjustment).
+                # Computed as average of available normalized metrics: direction_concordance,
+                # effect_size_similarity, statistical_consistency. Range 0.0 to 1.0.
+                # Nullable when insufficient non-null metrics. 100% availability (always computed).
+            ),
+            ColumnDef(
+                "composite_similarity_direction",
+                ColumnType.DOUBLE,
+                nullable=True,
+                # Composite similarity prioritizing direction concordance.
+                # Weighted combination of available metrics with direction_concordance weighted
+                # more heavily. Range 0.0 to 1.0. Nullable when insufficient metrics.
+                # 100% availability (always computed). Recommended for main analyses.
+            ),
+            ColumnDef(
+                "effect_size_similarity",
+                ColumnType.DOUBLE,
+                nullable=True,
+                # Pearson correlation coefficient of harmonized effect sizes across matched pairs.
+                # Range -1.0 to 1.0. Measures consistency of effect magnitudes. Nullable when
+                # insufficient pairs (<3) for correlation computation. Only 3.82% data availability
+                # due to abstract-only extraction limiting complete effect size data.
             ),
             ColumnDef(
                 "statistical_consistency",
@@ -218,56 +236,17 @@ EVIDENCE_PROFILE_SCHEMA = {
                 nullable=True,
                 # Cohen's kappa measuring agreement in statistical significance patterns.
                 # Range -1.0 to 1.0. Assesses whether studies agree on which relationships
-                # are statistically significant (p<0.05). Nullable when insufficient data
-                # for kappa computation. Values >0.4 indicate moderate agreement.
+                # are statistically significant (p<0.05). Only 0.27% data availability due to
+                # requiring >=3 matched pairs (82% of comparisons have only 1 pair).
             ),
             ColumnDef(
-                "evidence_overlap",
-                ColumnType.DOUBLE,
-                nullable=False,
-                # Jaccard similarity coefficient of statistically significant findings.
-                # Range 0.0 to 1.0. Computed as intersection over union of significant
-                # exposure-outcome pairs. Measures proportion of shared significant results.
-                # Returns 0.0 when both studies have zero significant findings (not 1.0)
-                # to avoid inflating similarity for underpowered studies.
-            ),
-            ColumnDef(
-                "null_concordance",
-                ColumnType.DOUBLE,
-                nullable=False,
-                # Proportion of matched pairs where both results are non-significant.
-                # Range 0.0 to 1.0. Measures concordance in null findings. High values
-                # may indicate shared power limitations or truly null relationships.
-            ),
-            ColumnDef(
-                "effect_size_within_type",
+                "precision_concordance",
                 ColumnType.DOUBLE,
                 nullable=True,
-                # Pearson correlation for matched pairs with same effect type (beta-beta,
-                # OR-OR, HR-HR). Range -1.0 to 1.0. More reliable than cross-type comparison.
-                # Nullable when insufficient within-type pairs (<3).
-            ),
-            ColumnDef(
-                "effect_size_cross_type",
-                ColumnType.DOUBLE,
-                nullable=True,
-                # Pearson correlation for matched pairs with different effect types.
-                # Range -1.0 to 1.0. Less reliable due to harmonization assumptions.
-                # Nullable when insufficient cross-type pairs (<3).
-            ),
-            ColumnDef(
-                "n_within_type_pairs",
-                ColumnType.INTEGER,
-                nullable=False,
-                # Number of matched pairs with same effect type. Used for assessing
-                # reliability of within-type similarity metric.
-            ),
-            ColumnDef(
-                "n_cross_type_pairs",
-                ColumnType.INTEGER,
-                nullable=False,
-                # Number of matched pairs with different effect types. Used for
-                # sensitivity analysis of effect size harmonization.
+                # Spearman correlation of confidence interval widths for matched pairs.
+                # Range -1.0 to 1.0. Measures consistency of precision/uncertainty across studies.
+                # Only 3.33% data availability due to compound limitation: requires complete CI data
+                # (abstract extraction limit) AND sufficient matched pairs.
             ),
             ColumnDef(
                 "similar_publication_year",
@@ -275,53 +254,6 @@ EVIDENCE_PROFILE_SCHEMA = {
                 nullable=True,
                 # Publication year of similar paper. Used for temporal gap analysis
                 # and flagging study pairs with large time differences.
-            ),
-            ColumnDef(
-                "query_completeness",
-                ColumnType.DOUBLE,
-                nullable=False,
-                # Data completeness of query study (same as query_combinations.data_completeness).
-                # Stored here for convenience in similarity analysis.
-            ),
-            ColumnDef(
-                "similar_completeness",
-                ColumnType.DOUBLE,
-                nullable=False,
-                # Data completeness of similar study. Used for quality-weighted similarity
-                # and filtering comparisons involving low-quality data.
-            ),
-            ColumnDef(
-                "composite_similarity_equal",
-                ColumnType.DOUBLE,
-                nullable=True,
-                # Composite similarity with equal weighting and quality adjustment.
-                # Computed as average of available normalized metrics, then multiplied by
-                # min(query_completeness, similar_completeness). Range 0.0 to 1.0.
-                # Nullable when insufficient non-null metrics (<2).
-            ),
-            ColumnDef(
-                "composite_similarity_direction",
-                ColumnType.DOUBLE,
-                nullable=True,
-                # Composite similarity prioritizing direction with quality adjustment.
-                # Weights: 0.50*direction + 0.20*effect_size + 0.15*consistency + 0.15*overlap
-                # (weights adjusted if metrics missing). Then multiplied by
-                # min(query_completeness, similar_completeness). Range 0.0 to 1.0.
-                # Nullable when insufficient non-null metrics (<2). Recommended for main analyses.
-            ),
-            ColumnDef(
-                "query_result_count",
-                ColumnType.INTEGER,
-                nullable=False,
-                # Total number of results in the query combination. Stored for analysis of how
-                # evidence quantity affects similarity patterns and filtering by study size.
-            ),
-            ColumnDef(
-                "similar_result_count",
-                ColumnType.INTEGER,
-                nullable=False,
-                # Total number of results in the similar combination. Used to understand
-                # relationship between result count differences and similarity scores.
             ),
         ],
         foreign_keys=[
@@ -332,32 +264,20 @@ EVIDENCE_PROFILE_SCHEMA = {
 
 # Define expected indexes for query performance optimization
 # Build process (create_indexes):
-# Creates all indexes after table population for optimal performance
-# Focuses on commonly queried columns for evidence similarity analysis and model filtering
+# Creates 6 essential indexes after table population for optimal performance
+# Removed: NULL-heavy composite indexes and redundant single-column indexes
+# Focus: High-value query patterns for evidence similarity analysis
 EVIDENCE_PROFILE_INDEXES = [
-    # Query combinations indexes
-    IndexDef(
-        "idx_query_combinations_pmid",
-        "query_combinations",
-        ["pmid"],
-        # Enables fast lookup by PubMed ID for finding specific paper analyses
-        # Built after query_combinations table population with PMID extraction
-    ),
-    IndexDef(
-        "idx_query_combinations_model",
-        "query_combinations",
-        ["model"],
-        # Optimizes filtering by model type for model-specific analysis
-        # Built after query_combinations table with model name extraction
-    ),
+    # Compound index for primary lookup pattern (query combinations)
     IndexDef(
         "idx_query_combinations_pmid_model",
         "query_combinations",
         ["pmid", "model"],
-        # Compound index for unique constraint enforcement and fast lookup
+        # Compound index for unique constraint enforcement and primary lookup pattern
+        # Replaces separate pmid and model indexes with more efficient compound index
         # Built after query_combinations table to support UNIQUE constraint
     ),
-    # Evidence similarities indexes
+    # Foreign key relationship
     IndexDef(
         "idx_evidence_similarities_query_id",
         "evidence_similarities",
@@ -365,6 +285,7 @@ EVIDENCE_PROFILE_INDEXES = [
         # Optimizes foreign key lookups and queries for all similarities of a specific combination
         # Built after evidence_similarities table population with foreign key relationships
     ),
+    # Similar paper lookups
     IndexDef(
         "idx_evidence_similarities_similar_pmid",
         "evidence_similarities",
@@ -379,59 +300,32 @@ EVIDENCE_PROFILE_INDEXES = [
         # Supports model-specific similarity analysis and filtering
         # Built after evidence_similarities table with model filtering validation
     ),
-    IndexDef(
-        "idx_evidence_similarities_composite_equal",
-        "evidence_similarities",
-        ["composite_similarity_equal"],
-        # Optimizes queries filtering by equal-weighted composite similarity thresholds
-        # Built after evidence_similarities table with composite score computation
-    ),
-    IndexDef(
-        "idx_evidence_similarities_composite_direction",
-        "evidence_similarities",
-        ["composite_similarity_direction"],
-        # Speeds up queries filtering by direction-prioritized composite similarity
-        # Built after evidence_similarities table with composite score computation
-        # Primary index for main analysis queries
-    ),
+    # Primary metric for sorting (100% availability)
     IndexDef(
         "idx_evidence_similarities_direction_concordance",
         "evidence_similarities",
         ["direction_concordance"],
-        # Optimizes queries filtering by directional concordance thresholds
+        # Primary index for sorting by directional concordance (100% data availability)
+        # Optimizes queries filtering by concordance thresholds
         # Built after evidence_similarities table with concordance computation
-        # Used for finding highly concordant or discordant study pairs
+        # Note: May fail in DuckDB due to ENUM type, but queries still work without it
     ),
+    # Match quality filtering
     IndexDef(
-        "idx_evidence_similarities_match_type_exact",
+        "idx_evidence_similarities_matched_pairs",
         "evidence_similarities",
-        ["match_type_exact"],
-        # Optimizes queries filtering by exact match count
-        # Built after evidence_similarities table with match type tracking
-        # Used for quality control and filtering by match precision
-    ),
-    IndexDef(
-        "idx_evidence_similarities_match_type_fuzzy",
-        "evidence_similarities",
-        ["match_type_fuzzy"],
-        # Optimizes queries filtering by fuzzy match count
-        # Built after evidence_similarities table with match type tracking
-        # Used for analyzing semantic matching effectiveness
-    ),
-    IndexDef(
-        "idx_evidence_similarities_match_type_efo",
-        "evidence_similarities",
-        ["match_type_efo"],
-        # Optimizes queries filtering by EFO category match count
-        # Built after evidence_similarities table with match type tracking
-        # Used for category-level analysis and EFO matching validation
+        ["matched_pairs"],
+        # Optimizes queries filtering by number of matched exposure-outcome pairs
+        # Built after evidence_similarities table with pair counting
+        # Used for quality control and filtering by match quantity
     ),
 ]
 
 # Define expected views for common evidence similarity analysis operations
 # Build process (create_views):
-# Creates analytical views using JOINs and window functions for similarity analysis
+# Creates 5 analytical views using JOINs and window functions for similarity analysis
 # Views are built after all tables and indexes are created for optimal performance
+# Focus on reliable metrics with high data availability (direction_concordance, effect_size_similarity)
 EVIDENCE_PROFILE_VIEWS = [
     ViewDef(
         name="evidence_similarity_analysis",
@@ -439,8 +333,8 @@ EVIDENCE_PROFILE_VIEWS = [
         # Adds RANK() window function for similarity ranking within each query
         # Built after both tables are populated and foreign keys are established
         # Comprehensive analysis view combining query and similarity data.
-        # Ranks similarities within each query combination by direction-prioritized score.
-        # Includes all metadata and metrics for both query and similar combinations.
+        # Ranks similarities within each query combination by direction concordance (100% availability).
+        # Includes all metadata and available metrics for both query and similar combinations.
         # Useful for detailed evidence consistency analysis and comparison workflows.
         sql="""
         SELECT
@@ -449,27 +343,26 @@ EVIDENCE_PROFILE_VIEWS = [
             qc.title as query_title,
             qc.result_count as query_result_count,
             qc.data_completeness as query_completeness,
+            qc.publication_year as query_publication_year,
             es.similar_pmid,
             es.similar_model,
             es.similar_title,
-            es.similar_result_count,
+            es.similar_publication_year,
             es.matched_pairs,
             es.match_type_exact,
             es.match_type_fuzzy,
             es.match_type_efo,
-            es.effect_size_similarity,
             es.direction_concordance,
-            es.statistical_consistency,
-            es.evidence_overlap,
+            es.effect_size_similarity,
             es.composite_similarity_equal,
             es.composite_similarity_direction,
             RANK() OVER (
                 PARTITION BY qc.id 
-                ORDER BY es.composite_similarity_direction DESC
+                ORDER BY es.direction_concordance DESC
             ) as similarity_rank
         FROM query_combinations qc
         JOIN evidence_similarities es ON qc.id = es.query_combination_id
-        ORDER BY qc.pmid, qc.model, es.composite_similarity_direction DESC
+        ORDER BY qc.pmid, qc.model, es.direction_concordance DESC
         """,
     ),
     ViewDef(
@@ -502,7 +395,7 @@ EVIDENCE_PROFILE_VIEWS = [
         # Built after evidence_similarities table with computed concordance scores
         # High-quality similarity pairs filtered by directional concordance threshold.
         # Focuses on study pairs with strong agreement in causal directions (>=0.8).
-        # Includes all similarity metrics for comprehensive evidence consistency assessment.
+        # Includes publication years for temporal gap analysis and filtering.
         # Useful for finding studies with reproducible findings and validating results.
         sql="""
         SELECT
@@ -511,15 +404,16 @@ EVIDENCE_PROFILE_VIEWS = [
             es.similar_pmid,
             qc.title as query_title,
             es.similar_title,
+            qc.publication_year as query_publication_year,
+            es.similar_publication_year,
             es.direction_concordance,
             es.effect_size_similarity,
-            es.evidence_overlap,
             es.matched_pairs,
             es.match_type_exact,
             es.match_type_fuzzy,
             es.match_type_efo,
             qc.result_count as query_result_count,
-            es.similar_result_count
+            qc.data_completeness as query_completeness
         FROM evidence_similarities es
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance >= 0.8
@@ -542,14 +436,15 @@ EVIDENCE_PROFILE_VIEWS = [
             es.similar_pmid,
             qc.title as query_title,
             es.similar_title,
+            qc.publication_year as query_publication_year,
+            es.similar_publication_year,
             es.direction_concordance,
             es.matched_pairs,
             es.match_type_exact,
             es.match_type_fuzzy,
             es.match_type_efo,
-            es.evidence_overlap,
             qc.result_count as query_result_count,
-            es.similar_result_count
+            qc.data_completeness as query_completeness
         FROM evidence_similarities es
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance < 0
@@ -557,32 +452,37 @@ EVIDENCE_PROFILE_VIEWS = [
         """,
     ),
     ViewDef(
-        name="match_type_distribution",
-        # Build process: Aggregates evidence_similarities by model
-        # Computes statistics about match type usage across all comparisons
-        # Built after evidence_similarities table with match type tracking
-        # Statistical summary of matching strategy effectiveness per model.
-        # Shows distribution of exact, fuzzy, and EFO category matches.
-        # Includes total pairs and average matches per type for quality assessment.
-        # Useful for validating three-tier matching implementation and coverage analysis.
+        name="metric_availability",
+        # Build process: Aggregates evidence_similarities to summarize metric availability
+        # Computes counts and percentages for each similarity metric
+        # Built after evidence_similarities table with all metrics populated
+        # Data availability summary for each similarity metric across all comparisons.
+        # Shows absolute counts and percentages of non-NULL values for each metric.
+        # Critical for understanding which metrics are reliable for analysis.
+        # Expected availability: direction_concordance 100%, effect_size_similarity 3.82%,
+        # statistical_consistency 0.27%, precision_concordance 3.33%.
         sql="""
         SELECT
-            es.similar_model as model,
             COUNT(*) as total_comparisons,
-            SUM(es.match_type_exact) as total_exact_matches,
-            SUM(es.match_type_fuzzy) as total_fuzzy_matches,
-            SUM(es.match_type_efo) as total_efo_matches,
-            SUM(es.matched_pairs) as total_matched_pairs,
-            AVG(es.match_type_exact) as avg_exact_per_comparison,
-            AVG(es.match_type_fuzzy) as avg_fuzzy_per_comparison,
-            AVG(es.match_type_efo) as avg_efo_per_comparison,
-            AVG(es.matched_pairs) as avg_total_pairs_per_comparison,
-            ROUND(100.0 * SUM(es.match_type_exact) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_exact,
-            ROUND(100.0 * SUM(es.match_type_fuzzy) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_fuzzy,
-            ROUND(100.0 * SUM(es.match_type_efo) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_efo
-        FROM evidence_similarities es
-        GROUP BY es.similar_model
-        ORDER BY es.similar_model
+            COUNT(direction_concordance) as direction_concordance_available,
+            COUNT(effect_size_similarity) as effect_size_similarity_available,
+            COUNT(composite_similarity_equal) as composite_equal_available,
+            COUNT(composite_similarity_direction) as composite_direction_available,
+            COUNT(statistical_consistency) as statistical_consistency_available,
+            COUNT(precision_concordance) as precision_concordance_available,
+            ROUND(COUNT(direction_concordance)::DOUBLE / COUNT(*) * 100, 2) 
+                as direction_concordance_pct,
+            ROUND(COUNT(effect_size_similarity)::DOUBLE / COUNT(*) * 100, 2) 
+                as effect_size_similarity_pct,
+            ROUND(COUNT(composite_similarity_equal)::DOUBLE / COUNT(*) * 100, 2) 
+                as composite_equal_pct,
+            ROUND(COUNT(composite_similarity_direction)::DOUBLE / COUNT(*) * 100, 2) 
+                as composite_direction_pct,
+            ROUND(COUNT(statistical_consistency)::DOUBLE / COUNT(*) * 100, 2) 
+                as statistical_consistency_pct,
+            ROUND(COUNT(precision_concordance)::DOUBLE / COUNT(*) * 100, 2) 
+                as precision_concordance_pct
+        FROM evidence_similarities
         """,
     ),
 ]

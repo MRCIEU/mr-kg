@@ -1,6 +1,7 @@
 from pathlib import Path
 from yiutils.project_utils import find_project_root
 
+
 def get_database_paths(profile: str = "local") -> tuple[Path, Path]:
     if profile == "local":
         project_root = find_project_root("docker-compose.yml")
@@ -24,5 +25,3 @@ def get_database_paths(profile: str = "local") -> tuple[Path, Path]:
         )
     res = (vector_store_db_path, trait_profile_db_path)
     return res
-
-
