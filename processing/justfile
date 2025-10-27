@@ -130,7 +130,7 @@ compute-evidence-similarities:
 aggregate-evidence-similarities:
     #!/bin/bash
     # NOTE: Update EXPERIMENT_ID after job completion
-    EXPERIMENT_ID="bc4-12799864"
+    EXPERIMENT_ID="bc4-12799903"
     uv run scripts/evidence-profile/aggregate-evidence-similarities.py \
         --input-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
@@ -142,7 +142,18 @@ build-evidence-profile-db:
         --memory-limit 8GB \
         --force-write
 
+# ==== postprocessing ====
+
+# Generate database schema documentation
+[group('postprocessing')]
+generate-schema-docs:
+    uv run python scripts/postprocessing/generate-schema-docs.py
+
 # ==== analysis ===
+
+# Run all evidence profile analysis scripts
+[group('analysis')]
+analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation analyze-match-type-quality analyze-alternative-metrics analyze-efo-matching-failure
 
 # Generate summary statistics and distributions for evidence similarities
 [group('evidence-profile'), group('analysis')]
@@ -197,9 +208,6 @@ analyze-efo-matching-failure:
     uv run scripts/evidence-profile/analyze-efo-matching-failure.py \
         --batch-output-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
-# Run all evidence profile analysis scripts
-[group('analysis')]
-analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation analyze-match-type-quality analyze-alternative-metrics analyze-efo-matching-failure
 
 # ==== diagnostic and development tools ====
 
@@ -217,10 +225,3 @@ diagnose-pvalue-parsing:
 [group('diagnostic')]
 test-fuzzy-matching:
     uv run scripts/evidence-profile/test-fuzzy-matching.py
-
-# ==== postprocessing ====
-
-# Generate database schema documentation
-[group('postprocessing')]
-generate-schema-docs:
-    uv run python scripts/postprocessing/generate-schema-docs.py

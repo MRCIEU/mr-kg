@@ -45,12 +45,12 @@ Live statistics from the actual database files.
 
 | Table/View | Row Count |
 |------------|-----------|
-| `discordant_evidence_pairs` | 5 |
-| `evidence_similarities` | 69 |
-| `evidence_similarity_analysis` | 69 |
-| `high_concordance_pairs` | 61 |
+| `discordant_evidence_pairs` | 1,670 |
+| `evidence_similarities` | 6,388 |
+| `evidence_similarity_analysis` | 6,388 |
+| `high_concordance_pairs` | 4,438 |
 | `model_evidence_stats` | 6 |
-| `query_combinations` | 3,728 |
+| `query_combinations` | 6,132 |
 
 
 ## Vector store database
@@ -581,6 +581,9 @@ erDiagram
         VARCHAR similar_model
         VARCHAR similar_title
         INTEGER matched_pairs
+        INTEGER match_type_exact
+        INTEGER match_type_fuzzy
+        INTEGER match_type_efo
         DOUBLE effect_size_similarity
         DOUBLE direction_concordance
         DOUBLE statistical_consistency
@@ -609,6 +612,9 @@ erDiagram
         VARCHAR similar_title "from_es.similar_title"
         VARCHAR similar_result_count "from_es.similar_result_count"
         VARCHAR matched_pairs "from_es.matched_pairs"
+        VARCHAR match_type_exact "from_es.match_type_exact"
+        VARCHAR match_type_fuzzy "from_es.match_type_fuzzy"
+        VARCHAR match_type_efo "from_es.match_type_efo"
         VARCHAR effect_size_similarity "from_es.effect_size_similarity"
         VARCHAR direction_concordance "from_es.direction_concordance"
         VARCHAR statistical_consistency "from_es.statistical_consistency"
@@ -636,6 +642,9 @@ erDiagram
         VARCHAR effect_size_similarity "from_es.effect_size_similarity"
         VARCHAR evidence_overlap "from_es.evidence_overlap"
         VARCHAR matched_pairs "from_es.matched_pairs"
+        VARCHAR match_type_exact "from_es.match_type_exact"
+        VARCHAR match_type_fuzzy "from_es.match_type_fuzzy"
+        VARCHAR match_type_efo "from_es.match_type_efo"
         VARCHAR query_result_count "from_qc.result_count"
         VARCHAR similar_result_count "from_es.similar_result_count"
     }
@@ -647,9 +656,27 @@ erDiagram
         VARCHAR similar_title "from_es.similar_title"
         VARCHAR direction_concordance "from_es.direction_concordance"
         VARCHAR matched_pairs "from_es.matched_pairs"
+        VARCHAR match_type_exact "from_es.match_type_exact"
+        VARCHAR match_type_fuzzy "from_es.match_type_fuzzy"
+        VARCHAR match_type_efo "from_es.match_type_efo"
         VARCHAR evidence_overlap "from_es.evidence_overlap"
         VARCHAR query_result_count "from_qc.result_count"
         VARCHAR similar_result_count "from_es.similar_result_count"
+    }
+    match_type_distribution {
+        VARCHAR model "from_es.similar_model"
+        VARCHAR total_comparisons "from_computed"
+        VARCHAR total_exact_matches "from_es.match_type_exact"
+        VARCHAR total_fuzzy_matches "from_es.match_type_fuzzy"
+        VARCHAR total_efo_matches "from_es.match_type_efo"
+        VARCHAR total_matched_pairs "from_es.matched_pairs"
+        VARCHAR avg_exact_per_comparison "from_es.match_type_exact"
+        VARCHAR avg_fuzzy_per_comparison "from_es.match_type_fuzzy"
+        VARCHAR avg_efo_per_comparison "from_es.match_type_efo"
+        VARCHAR avg_total_pairs_per_comparison "from_es.matched_pairs"
+        VARCHAR pct_exact "from_100.0"
+        VARCHAR pct_fuzzy "from_100.0"
+        VARCHAR pct_efo "from_100.0"
     }
     evidence_similarities }o--|| query_combinations : "query_combination_id references id"
     evidence_similarity_analysis }o..o{ evidence_similarities : "uses"
@@ -659,12 +686,14 @@ erDiagram
     high_concordance_pairs }o..o{ query_combinations : "uses"
     discordant_evidence_pairs }o..o{ evidence_similarities : "uses"
     discordant_evidence_pairs }o..o{ query_combinations : "uses"
+    match_type_distribution }o..o{ evidence_similarities : "uses"
 
     %% Styling
     style evidence_similarity_analysis fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
     style model_evidence_stats fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
     style high_concordance_pairs fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
     style discordant_evidence_pairs fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style match_type_distribution fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
 ```
 
 ### Quick reference
@@ -716,6 +745,12 @@ Similarity relationships between PMID-model combinations within same model based
 - **`similar_title`** (VARCHAR, NOT NULL)
 
 - **`matched_pairs`** (INTEGER, NOT NULL)
+
+- **`match_type_exact`** (INTEGER, NOT NULL)
+
+- **`match_type_fuzzy`** (INTEGER, NOT NULL)
+
+- **`match_type_efo`** (INTEGER, NOT NULL)
 
 - **`effect_size_similarity`** (DOUBLE, nullable)
 
@@ -771,6 +806,12 @@ Performance optimization indexes:
 
 - **`idx_evidence_similarities_direction_concordance`** on (direction_concordance)
 
+- **`idx_evidence_similarities_match_type_exact`** on (match_type_exact)
+
+- **`idx_evidence_similarities_match_type_fuzzy`** on (match_type_fuzzy)
+
+- **`idx_evidence_similarities_match_type_efo`** on (match_type_efo)
+
 #### query_combinations
 
 - **`idx_query_combinations_pmid`** on (pmid)
@@ -799,6 +840,9 @@ SELECT
             es.similar_title,
             es.similar_result_count,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             es.effect_size_similarity,
             es.direction_concordance,
             es.statistical_consistency,
@@ -847,6 +891,9 @@ SELECT
             es.effect_size_similarity,
             es.evidence_overlap,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             qc.result_count as query_result_count,
             es.similar_result_count
         FROM evidence_similarities es
@@ -868,6 +915,9 @@ SELECT
             es.similar_title,
             es.direction_concordance,
             es.matched_pairs,
+            es.match_type_exact,
+            es.match_type_fuzzy,
+            es.match_type_efo,
             es.evidence_overlap,
             qc.result_count as query_result_count,
             es.similar_result_count
@@ -875,4 +925,28 @@ SELECT
         JOIN query_combinations qc ON es.query_combination_id = qc.id
         WHERE es.direction_concordance < 0
         ORDER BY es.similar_model, es.direction_concordance ASC
+```
+
+#### match_type_distribution
+
+**SQL Definition:**
+
+```sql
+SELECT
+            es.similar_model as model,
+            COUNT(*) as total_comparisons,
+            SUM(es.match_type_exact) as total_exact_matches,
+            SUM(es.match_type_fuzzy) as total_fuzzy_matches,
+            SUM(es.match_type_efo) as total_efo_matches,
+            SUM(es.matched_pairs) as total_matched_pairs,
+            AVG(es.match_type_exact) as avg_exact_per_comparison,
+            AVG(es.match_type_fuzzy) as avg_fuzzy_per_comparison,
+            AVG(es.match_type_efo) as avg_efo_per_comparison,
+            AVG(es.matched_pairs) as avg_total_pairs_per_comparison,
+            ROUND(100.0 * SUM(es.match_type_exact) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_exact,
+            ROUND(100.0 * SUM(es.match_type_fuzzy) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_fuzzy,
+            ROUND(100.0 * SUM(es.match_type_efo) / NULLIF(SUM(es.matched_pairs), 0), 2) as pct_efo
+        FROM evidence_similarities es
+        GROUP BY es.similar_model
+        ORDER BY es.similar_model
 ```
