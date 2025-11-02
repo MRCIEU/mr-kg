@@ -1185,8 +1185,6 @@ def generate_report(data):
     report.append("### 6.2 Which Similarity Metrics Are Most Reliable?")
     report.append("")
 
-    metric_corr = data["metric_corr"]
-
     report.append("Validation analysis of metric agreement:")
     report.append("")
     report.append(

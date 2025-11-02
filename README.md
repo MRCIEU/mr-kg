@@ -26,6 +26,7 @@ Access the webapp at http://localhost:8501
 - Development guide: @DEV.md
 - Data structure: @docs/DATA.md
 - Processing pipeline: @docs/processing/pipeline.md
+- Case study analyses: @docs/processing/case-studies.md
 
 ## Citation
 

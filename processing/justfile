@@ -209,6 +209,67 @@ analyze-efo-matching-failure:
         --batch-output-dir {{PROJECT_ROOT}}/data/output/${EXPERIMENT_ID}/results
 
 
+# ==== case-study-cs2 ====
+
+# Prepare trait profile co-occurrence datasets for CS2
+[group('case-study-cs2')]
+case-study-cs2-prepare:
+    uv run scripts/analysis/case_study_2_prepare_profiles.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Build pleiotropy trait network and community summaries
+[group('case-study-cs2')]
+case-study-cs2-network:
+    uv run scripts/analysis/case_study_2_network_analysis.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml \
+        --cooccurrence-dir {{PROJECT_ROOT}}/data/processed/case-study-cs2/cooccurrence
+
+# Overlay trait similarity with evidence concordance metrics
+[group('case-study-cs2')]
+case-study-cs2-overlay:
+    uv run scripts/analysis/case_study_2_concordance_overlay.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml \
+        --output-dir {{PROJECT_ROOT}}/data/processed/case-study-cs2/overlays \
+        --figures-dir {{PROJECT_ROOT}}/data/processed/case-study-cs2/figures
+
+# Rank hotspot traits and generate Markdown briefs
+[group('case-study-cs2')]
+case-study-cs2-hotspots:
+    uv run scripts/analysis/case_study_2_hotspot_profiles.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml \
+        --network-dir {{PROJECT_ROOT}}/data/processed/case-study-cs2/network \
+        --overlay-path {{PROJECT_ROOT}}/data/processed/case-study-cs2/overlays/trait_similarity_concordance.csv
+
+# Run complete Case Study 2 pipeline
+[group('case-study-cs2')]
+case-study-cs2-all: case-study-cs2-prepare case-study-cs2-network case-study-cs2-overlay case-study-cs2-hotspots
+
+# ==== case study 1: reproducibility analysis ====
+
+# Extract multi-study trait pairs for reproducibility analysis
+[group('case-study-cs1')]
+case-study-cs1-extract-pairs:
+    uv run scripts/analysis/case_study_1_extract_pairs.py
+
+# Compute reproducibility metrics and stratify by tiers
+[group('case-study-cs1')]
+case-study-cs1-reproducibility-metrics:
+    uv run scripts/analysis/case_study_1_reproducibility_metrics.py
+
+# Fit temporal trend models for direction concordance
+[group('case-study-cs1')]
+case-study-cs1-temporal-model:
+    uv run scripts/analysis/case_study_1_temporal_model.py
+
+# Generate validation briefs for canonical trait pairs
+[group('case-study-cs1')]
+case-study-cs1-validation-examples:
+    uv run scripts/analysis/case_study_1_validation_examples.py
+
+# Run complete Case Study 1 pipeline
+[group('case-study-cs1')]
+case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples
+
 # ==== diagnostic and development tools ====
 
 # Debug single PMID-model combination preprocessing

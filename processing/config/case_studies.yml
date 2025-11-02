@@ -1,0 +1,185 @@
+# Case study configuration for MR-KG reproducibility analyses
+#
+# This configuration file contains shared parameters used across case study
+# 1 (reproducibility) and case study 2 (pleiotropy networks).
+# Modify thresholds and paths here rather than in individual scripts.
+
+# ==== Global settings ====
+random_seed: 42
+log_level: "INFO"
+
+# ==== Database paths ====
+databases:
+  evidence_profile: "data/db/evidence_profile_db.db"
+  trait_profile: "data/db/trait_profile_db.db"
+  vector_store: "data/db/vector_store.db"
+
+# ==== Output directories ====
+output:
+  case_study_1:
+    base: "data/processed/case-study-cs1"
+    raw_pairs: "data/processed/case-study-cs1/raw_pairs"
+    metrics: "data/processed/case-study-cs1/metrics"
+    models: "data/processed/case-study-cs1/models"
+    figures: "data/processed/case-study-cs1/figures"
+  case_study_2:
+    base: "data/processed/case-study-cs2"
+    cooccurrence: "data/processed/case-study-cs2/cooccurrence"
+    network: "data/processed/case-study-cs2/network"
+    hotspots: "data/processed/case-study-cs2/hotspots"
+    overlays: "data/processed/case-study-cs2/overlays"
+    figures: "data/processed/case-study-cs2/figures"
+
+# ==== Validation notes directories ====
+notes:
+  case_study_1: ".notes/analysis-notes/case-study-analysis/cs1-validation"
+  case_study_2: ".notes/analysis-notes/case-study-analysis/cs2-hotspots"
+
+# ==== Case Study 1: Reproducibility thresholds ====
+case_study_1:
+  # Minimum number of studies required for a trait pair to be included
+  min_study_count: 2
+
+  # Reproducibility tier cutoffs (direction concordance scale: -1 to 1)
+  reproducibility_tiers:
+    high: 0.7          # >= 0.7: High reproducibility
+    moderate: 0.3      # >= 0.3: Moderate reproducibility
+    low: 0.0           # >= 0.0: Low reproducibility
+    # < 0.0: Discordant
+
+  # Study count stratification buckets
+  study_count_bands:
+    - [2, 3]           # Small sample (2-3 studies)
+    - [4, 6]           # Medium sample (4-6 studies)
+    - [7, 10]          # Large sample (7-10 studies)
+    - [11, 999]        # Very large sample (11+ studies)
+
+  # Temporal era definitions (publication year ranges)
+  temporal_eras:
+    early: [2000, 2015]
+    recent: [2016, 2025]
+
+  # Validation examples selection
+  validation:
+    n_top_concordant: 20
+    n_top_discordant: 20
+    canonical_pairs:
+      # Known trait pairs with strong MR evidence
+      - ["LDL cholesterol", "coronary artery disease"]
+      - ["body mass index", "type 2 diabetes"]
+      - ["smoking", "lung cancer"]
+      - ["alcohol consumption", "cardiovascular disease"]
+      - ["systolic blood pressure", "stroke"]
+
+# ==== Case Study 2: Network and pleiotropy thresholds ====
+case_study_2:
+  # Trait co-occurrence thresholds
+  cooccurrence:
+    min_shared_studies: 2
+    min_jaccard_similarity: 0.1
+    min_semantic_similarity: 0.3
+    min_trait_count: 2
+    max_trait_count: 40
+    max_traits_per_study: 25
+    include_models: []
+    exclude_models: []
+    sample_fraction: 1.0
+
+  # Trait profile preparation
+  preparation:
+    cache_profiles: true
+    export_sparse_matrix: true
+    npz_filename: "trait_cooccurrence_matrix.npz"
+
+  # Network construction parameters
+  network:
+    edge_weight_threshold: 0.3  # Min trait similarity for edge
+    semantic_similarity_threshold: 0.35
+    jaccard_threshold: 0.1
+    min_degree: 1               # Min connections to include node
+    max_neighbors: 150
+    clustering_algorithms:
+      - "louvain"
+      - "label_propagation"
+    louvain:
+      resolution: 1.0
+      random_state: 42
+      minimum_community_size: 4
+    label_propagation:
+      max_iterations: 100
+    centrality_metrics:
+      - "degree"
+      - "betweenness"
+      - "eigenvector"
+
+  # Hub trait identification
+  hubs:
+    min_degree_percentile: 90   # Top 10% degree for hub status
+    min_domain_diversity: 3     # Min EFO domains in ego network
+    min_cross_domain_fraction: 0.35
+    min_strength: 5
+    top_k: 75
+
+  # Pleiotropy hotspot criteria
+  hotspots:
+    min_cluster_size: 5
+    min_density: 0.3
+    min_domain_count: 2
+    high_concordance_variance_threshold: 0.2
+    min_cross_domain_fraction: 0.4
+    min_hub_count: 3
+    report_top_n: 25
+
+  # Concordance overlay quadrants
+  concordance_overlay:
+    high_similarity_threshold: 0.5
+    low_similarity_threshold: 0.2
+    high_concordance_threshold: 0.6
+    low_concordance_threshold: 0.0
+    min_shared_pairs: 3
+    correlation_method: "spearman"
+    significance_level: 0.05
+    scatter:
+      figure_name: "trait_similarity_vs_concordance"
+      include_regression: true
+      point_alpha: 0.65
+      max_points: 2000
+
+# ==== Match type stratification ====
+match_types:
+  exact: "exact"
+  fuzzy: "fuzzy"
+  efo: "efo"
+
+# ==== Statistical modeling parameters ====
+modeling:
+  # Temporal trend analysis
+  temporal:
+    model_type: "linear"          # linear, logistic, mixed_effects
+    predictors:
+      - "publication_year"
+      - "study_count"
+      - "match_type_exact"
+    min_observations: 30
+    confidence_level: 0.95
+
+  # Diagnostics thresholds
+  diagnostics:
+    max_vif: 10                   # Variance inflation factor
+    min_observations_per_group: 5
+
+# ==== Figure settings ====
+figures:
+  dpi: 300
+  format: ["png", "svg"]
+  style: "seaborn-v0_8-whitegrid"
+  figsize:
+    single: [8, 6]
+    double: [12, 6]
+    large: [14, 10]
+
+# ==== Analysis subsampling (for development/testing) ====
+subsampling:
+  enabled: false
+  max_combinations: 1000
+  max_pairs_per_combination: 100
