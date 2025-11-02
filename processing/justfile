@@ -270,6 +270,54 @@ case-study-cs1-validation-examples:
 [group('case-study-cs1')]
 case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples
 
+# ==== case study 5: temporal evolution of MR evidence ====
+
+# Prepare temporal metadata for all studies
+[group('case-study-cs5')]
+case-study-cs5-temporal-prep:
+    uv run scripts/analysis/case_study_5_temporal_preparation.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Analyze trait diversity over time and across methodological eras
+[group('case-study-cs5')]
+case-study-cs5-trait-diversity:
+    uv run scripts/analysis/case_study_5_trait_diversity.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Analyze evidence consistency patterns across eras
+[group('case-study-cs5')]
+case-study-cs5-evidence-consistency:
+    uv run scripts/analysis/case_study_5_evidence_consistency.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Analyze reporting completeness and STROBE-MR impact
+[group('case-study-cs5')]
+case-study-cs5-reporting-completeness:
+    uv run scripts/analysis/case_study_5_reporting_completeness.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Analyze fashionable trait trends and hype cycles
+[group('case-study-cs5')]
+case-study-cs5-fashionable-traits:
+    uv run scripts/analysis/case_study_5_fashionable_traits.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Analyze pleiotropy awareness and MR-PRESSO adoption
+[group('case-study-cs5')]
+case-study-cs5-pleiotropy-awareness:
+    uv run scripts/analysis/case_study_5_pleiotropy_awareness.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Analyze winner's curse effect size decline patterns
+[group('case-study-cs5')]
+case-study-cs5-winners-curse:
+    uv run scripts/analysis/case_study_5_winners_curse.py \
+        --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
+
+# Run complete Case Study 5 pipeline
+[group('case-study-cs5')]
+case-study-cs5-all: case-study-cs5-temporal-prep case-study-cs5-trait-diversity case-study-cs5-evidence-consistency case-study-cs5-reporting-completeness case-study-cs5-fashionable-traits case-study-cs5-pleiotropy-awareness case-study-cs5-winners-curse
+
 # ==== diagnostic and development tools ====
 
 # Debug single PMID-model combination preprocessing

@@ -29,11 +29,22 @@ output:
     hotspots: "data/processed/case-study-cs2/hotspots"
     overlays: "data/processed/case-study-cs2/overlays"
     figures: "data/processed/case-study-cs2/figures"
+  case_study_5:
+    base: "data/processed/case-study-cs5"
+    temporal: "data/processed/case-study-cs5/temporal"
+    diversity: "data/processed/case-study-cs5/diversity"
+    consistency: "data/processed/case-study-cs5/consistency"
+    completeness: "data/processed/case-study-cs5/completeness"
+    fashionable: "data/processed/case-study-cs5/fashionable"
+    pleiotropy: "data/processed/case-study-cs5/pleiotropy"
+    winners_curse: "data/processed/case-study-cs5/winners_curse"
+    figures: "data/processed/case-study-cs5/figures"
 
 # ==== Validation notes directories ====
 notes:
   case_study_1: ".notes/analysis-notes/case-study-analysis/cs1-validation"
   case_study_2: ".notes/analysis-notes/case-study-analysis/cs2-hotspots"
+  case_study_5: ".notes/analysis-notes/case-study-analysis/cs5-temporal"
 
 # ==== Case Study 1: Reproducibility thresholds ====
 case_study_1:
@@ -177,6 +188,94 @@ figures:
     single: [8, 6]
     double: [12, 6]
     large: [14, 10]
+
+# ==== Case Study 5: Temporal evolution of MR evidence ====
+case_study_5:
+  # Model filtering (CRITICAL)
+  models_included:
+    - "gpt-5"
+  models_excluded: []
+
+  # Temporal era definitions
+  temporal_eras:
+    early_mr: [2010, 2014]
+    mr_egger: [2015, 2017]
+    mr_presso: [2018, 2019]
+    within_family: [2020, 2020]
+    strobe_mr: [2021, 2024]
+
+  # COVID era flag
+  covid_era_years: [2020, 2021]
+
+  # Trait diversity thresholds
+  trait_diversity:
+    min_studies_per_year: 10
+    min_traits_per_study: 1
+
+  # Evidence consistency thresholds
+  evidence_consistency:
+    min_pairs_per_era: 10
+    concordance_improvement_threshold: 0.05
+
+  # Reporting completeness fields
+  reporting_completeness:
+    required_fields:
+      - "beta"
+      - "odds_ratio"
+      - "hazard_ratio"
+      - "ci_lower"
+      - "ci_upper"
+      - "ci_95"
+      - "p_value"
+      - "direction"
+      - "f_statistic"
+    composite_completeness_definition:
+      - "any_effect_size"
+      - "ci"
+      - "p_value"
+    strobe_breakpoint: 2021
+
+  # Fashionable traits
+  fashionable_traits:
+    top_k_per_year: 10
+    hype_cycle_growth_threshold: 1.0
+    hype_cycle_decline_threshold: 0.5
+    min_occurrences_for_trend: 3
+
+  # Pleiotropy awareness
+  pleiotropy:
+    canonical_pairs:
+      - ["body mass index", "waist circumference"]
+      - ["body mass index", "educational attainment"]
+      - ["alcohol intake", "HDL cholesterol"]
+      - ["smoking", "educational attainment"]
+      - ["systolic blood pressure", "body mass index"]
+    cs2_hotspots:
+      - "systolic blood pressure"
+      - "phenotypic traits including disease susceptibility"
+      - "non-alcohol psychoactive substance misuse"
+    mr_presso_breakpoint: 2018
+
+  # Winner's curse
+  winners_curse:
+    min_studies_per_pair: 5
+    min_effect_size_availability: 0.1
+    subgroup_categories:
+      - "trait_category"
+      - "study_type"
+      - "journal_tier"
+      - "era"
+    effect_size_fields:
+      - "beta"
+      - "odds_ratio"
+      - "hazard_ratio"
+    expected_decline_range: [0.15, 0.25]
+
+  # Statistical settings
+  statistical:
+    confidence_level: 0.95
+    significance_threshold: 0.05
+    min_observations_for_regression: 10
 
 # ==== Analysis subsampling (for development/testing) ====
 subsampling:

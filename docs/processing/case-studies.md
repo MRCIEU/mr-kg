@@ -526,6 +526,676 @@ Outputs (stored in `data/processed/case-study-cs2/hotspots/` and `.notes/analysi
 Command: `just case-study-cs2-all` to execute the four scripts sequentially and refresh the network, overlay, and hotspot artefacts.
 Document deviations (e.g. sampling fractions, override thresholds) in `.notes/analysis-notes/case-study-analysis/` for reproducibility.
 
+## Case study 5: Temporal trends in MR research
+
+Examines how Mendelian Randomization research has evolved over time across
+multiple dimensions: trait diversity, evidence consistency, and reporting
+quality.
+
+### Research questions
+
+1. Has trait diversity increased over time as MR expands to new phenotypes?
+2. Are methodological eras (MR-Egger, MR-PRESSO, within-family MR) associated
+   with trait selection patterns?
+3. Has evidence consistency improved in later methodological eras?
+4. Has reporting completeness improved over time, particularly after STROBE-MR
+   guidelines?
+
+### Pipeline structure
+
+Case Study 5 follows a modular, four-phase approach:
+
+1. **Phase 0 (Temporal preparation)**: Assigns methodological eras to all studies
+2. **Phase 1 (Trait diversity)**: Analyzes temporal trends in trait selection
+3. **Phase 3 (Evidence consistency)**: Examines concordance patterns across eras
+4. **Phase 4 (Reporting completeness)**: Evaluates reporting quality improvements
+
+All scripts use consistent configuration from `processing/config/case_studies.yml`
+and share the temporal metadata created in Phase 0.
+
+### Phase 0: Temporal preparation
+
+Creates shared temporal metadata by assigning methodological eras and computing
+era-level statistics.
+
+Command:
+
+```bash
+just case-study-cs5-temporal-prep
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_temporal_preparation.py
+```
+
+Input:
+
+- `data/db/vector_store.db` (model_results table)
+- Configuration: `temporal_eras` from case_studies.yml
+
+Era definitions:
+
+- **early_mr** (2010-2014): Foundation era before sensitivity analyses
+- **mr_egger** (2015-2017): Introduction of MR-Egger for pleiotropy
+- **mr_presso** (2018-2019): MR-PRESSO for outlier detection
+- **within_family** (2020): Within-family designs to address confounding
+- **strobe_mr** (2021-2024): STROBE-MR reporting guidelines published
+
+Output (in `data/processed/case-study-cs5/temporal/`):
+
+- `temporal_metadata.csv`: PMID, pub_year, era assignments for all studies
+- `era_statistics.csv`: Study counts and year ranges per era
+- `temporal_metadata.json`: Summary metadata with era definitions
+
+Key features:
+
+- Studies without valid publication years assigned to "unknown" era
+- Era boundaries aligned with major methodological developments
+- Metadata shared across all subsequent case study 5 phases
+
+### Phase 1: Trait diversity analysis
+
+Examines temporal trends in trait selection patterns.
+
+Research Question 1: Has trait diversity increased over time as MR expands to
+new phenotypes?
+
+Command:
+
+```bash
+just case-study-cs5-trait-diversity
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_trait_diversity.py
+```
+
+Input:
+
+- `data/db/vector_store.db` (model_results table)
+- `data/processed/case-study-cs5/temporal/temporal_metadata.csv`
+- Configuration: temporal_eras, trait_type_categories
+
+Output (in `data/processed/case-study-cs5/diversity/`):
+
+- `trait_counts_by_year.csv`: Unique exposures and outcomes per year
+- `trait_counts_by_era.csv`: Aggregated trait statistics per era
+- `temporal_trend_model.csv`: Linear regression coefficients testing temporal
+  trends
+- `era_comparison_tests.csv`: ANOVA results comparing diversity across eras
+- `diversity_metadata.json`: Summary statistics and model diagnostics
+
+Figures (in `data/processed/case-study-cs5/figures/`):
+
+- `trait_diversity_over_time.png/svg`: Time series of exposure and outcome counts
+- `trait_diversity_by_era.png/svg`: Box plots comparing diversity across eras
+
+Analysis approach:
+
+- Counts unique exposure and outcome traits per study
+- Aggregates at yearly and era levels
+- Tests temporal trends using linear regression
+- Compares eras using ANOVA
+
+Key findings:
+
+- 14,634 studies analyzed (gpt-5 model)
+- Mean exposures per study range: 1.86 to 3.36 across eras
+- Mean outcomes per study range: 3.13 to 8.18 across eras
+- Significant differences between eras (ANOVA p < 0.001)
+
+### Phase 3: Evidence consistency analysis
+
+Examines whether methodological advances have improved the internal consistency
+of MR evidence.
+
+Research Question 3: Has evidence consistency improved in later methodological
+eras?
+
+Command:
+
+```bash
+just case-study-cs5-evidence-consistency
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_evidence_consistency.py
+```
+
+Input:
+
+- `data/db/evidence_profile_db.db` (query_combinations table)
+- `data/db/vector_store.db` (model_results table for PMIDs)
+- `data/processed/case-study-cs5/temporal/temporal_metadata.csv`
+- Configuration: temporal_eras, consistency thresholds
+
+Concordance metric:
+
+Direction concordance is computed from the `query_combinations` table, which
+stores matched trait pairs between studies. For each pair:
+
+- Extract `positive_count`, `negative_count`, `null_count` from JSON
+- Compute agreement: (max_count - other_counts) / total_count
+- Range: -1 (complete disagreement) to +1 (perfect agreement)
+
+Output (in `data/processed/case-study-cs5/consistency/`):
+
+- `concordance_by_year.csv`: Mean concordance and pair counts per year
+- `concordance_by_era.csv`: Era-level concordance statistics
+- `concordance_by_match_type_era.csv`: Stratified by exact/fuzzy/EFO matches
+- `era_comparison_tests.csv`: Statistical tests comparing eras
+- `strobe_impact_analysis.csv`: Pre/post 2021 comparisons
+- `consistency_metadata.json`: Summary metadata
+
+Figures (in `data/processed/case-study-cs5/figures/`):
+
+- `concordance_over_time.png/svg`: Temporal trends in direction agreement
+- `concordance_by_era.png/svg`: Era comparison box plots
+- `strobe_impact.png/svg`: Before/after 2021 comparison
+
+Analysis approach:
+
+- Aggregates direction concordance at yearly and era levels
+- Tests for significant differences between eras (Kruskal-Wallis test)
+- Evaluates STROBE-MR impact using 2021 breakpoint
+- Stratifies by match quality (exact/fuzzy/EFO)
+
+Key findings:
+
+- 21,133 trait pairs analyzed across 14,634 studies
+- Pre-STROBE-MR concordance: 0.538
+- Post-STROBE-MR concordance: 0.531 (no significant change, p=0.069)
+- Match type matters: exact matches show higher concordance (0.62) than fuzzy
+  (0.51)
+- Era differences significant (p < 0.001), but no consistent improvement trend
+
+### Phase 4: Reporting completeness analysis
+
+Evaluates how reporting quality has evolved over time, testing whether
+STROBE-MR guidelines improved completeness.
+
+Research Question 4: Has reporting completeness improved over time,
+particularly after STROBE-MR?
+
+Command:
+
+```bash
+just case-study-cs5-reporting-completeness
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_reporting_completeness.py
+```
+
+Input:
+
+- `data/db/vector_store.db` (model_results table)
+- `data/processed/case-study-cs5/temporal/temporal_metadata.csv`
+- Configuration: temporal_eras, STROBE-MR breakpoint (2021)
+
+Completeness metrics:
+
+Tracks presence of 7 key fields in extracted results JSON:
+
+- Effect size measures: beta, odds ratio, hazard ratio
+- Uncertainty measures: 95% CI, standard error
+- Statistical measures: P-value
+- Interpretation: direction
+
+For each study, checks if at least one result reports each field (non-null,
+non-empty, non-"N/A" values).
+
+Output (in `data/processed/case-study-cs5/completeness/`):
+
+- `field_completeness_by_year.csv`: Field-specific completeness rates per year
+- `field_completeness_by_era.csv`: Era-level completeness statistics
+- `field_type_by_era.csv`: Completeness by field categories (effect_size,
+  statistical, confidence_interval, direction)
+- `strobe_impact_on_reporting.csv`: Field-specific chi-square tests for 2021
+  breakpoint
+- `completeness_metadata.json`: Summary with all statistical tests
+
+Figures (in `data/processed/case-study-cs5/figures/`):
+
+- `completeness_over_time.png/svg`: Temporal trends with STROBE-MR marker
+- `strobe_reporting_impact.png/svg`: Before/after comparison bars
+- `completeness_by_field_type.png/svg`: Category trends by era
+
+Analysis approach:
+
+- Parses results JSON to check field presence
+- Aggregates at yearly and era levels
+- Tests STROBE-MR impact using 2021 breakpoint (t-tests and chi-square tests)
+- Groups fields into categories for interpretability
+
+Key findings:
+
+- 14,634 studies analyzed (gpt-5 model)
+- Overall completeness improved from 40.3% (2015-2020) to 44.2% (2021-2024)
+- Change significant: +3.9 percentage points (t=-9.707, p<0.0001)
+- Field-specific improvements:
+  - Confidence intervals: 89.1% to 96.1% (+6.9 pp, p<0.0001)
+  - Odds ratios: 38.4% to 53.7% (+15.3 pp, p<0.0001)
+  - P-values: 37.6% to 50.5% (+12.9 pp, p<0.0001)
+  - Direction: 81.6% to 89.2% (+7.6 pp, p<0.0001)
+- Beta coefficients decreased: 24.1% to 14.4% (-9.7 pp, p<0.0001)
+  - Reflects shift toward epidemiological measures (OR/HR) over continuous beta
+- All field changes statistically significant (all p < 0.001)
+
+Interpretation:
+
+STROBE-MR guidelines published in 2021 appear to have had a measurable positive
+impact on reporting completeness. The most substantial improvements occurred
+in confidence intervals, odds ratios, and P-values, suggesting better adoption
+of uncertainty reporting and standardized effect measures. The decrease in
+beta coefficients reflects a shift in study design toward binary/time-to-event
+outcomes rather than incomplete reporting.
+
+### Phase 5: Fashionable traits analysis
+
+Examines temporal trends in trait popularity to identify hype cycles and
+sustained research focus.
+
+Research Question 5: Do certain traits experience periods of intense research
+activity followed by decline, suggesting fashionability effects in topic
+selection?
+
+Command:
+
+```bash
+just case-study-cs5-fashionable-traits
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_fashionable_traits.py
+```
+
+Input:
+
+- `data/db/vector_store.db` (model_results table)
+- `data/processed/case-study-cs5/temporal/temporal_metadata.csv`
+- Configuration: temporal_eras, popularity thresholds
+
+Methodology:
+
+Identifies traits that show:
+- Rapid increase in study frequency
+- Peak research activity
+- Subsequent decline or plateau
+- Deviation from overall MR research growth
+
+For each trait (exposure and outcome), computes:
+- Study counts per year
+- Growth rates and acceleration
+- Peak year and magnitude
+- Hype cycle indicators (rapid rise and fall)
+
+Output (in `data/processed/case-study-cs5/fashionable/`):
+
+- `trait_popularity_by_year.csv`: Study counts per trait per year
+- `top_traits_by_era.csv`: Most frequently studied traits in each era
+- `hype_cycle_candidates.csv`: Traits showing fashionability patterns
+- `popularity_trends_model.csv`: Statistical tests for trend patterns
+- `fashionable_metadata.json`: Summary with trend classifications
+
+Figures (in `data/processed/case-study-cs5/figures/`):
+
+- `trait_popularity_trends.png/svg`: Time series for top traits
+- `hype_cycle_examples.png/svg`: Example traits with rise-and-fall patterns
+- `era_trait_heatmap.png/svg`: Trait frequency heatmap across eras
+
+Analysis approach:
+
+- Tracks yearly study counts for each unique trait
+- Identifies top N traits per era (default: top 20)
+- Classifies trend patterns: sustained growth, hype cycle, emerging, declining
+- Uses change point detection to identify peak years
+- Normalizes for overall research volume growth
+
+Key metrics:
+
+- Peak magnitude: Maximum studies per year for a trait
+- Growth rate: Year-over-year percentage change
+- Hype score: Composite metric of rise velocity and subsequent decline
+- Persistence: Number of consecutive years above threshold
+
+### Phase 6: Pleiotropy awareness analysis
+
+Examines how awareness of pleiotropy and horizontal pleiotropy has evolved,
+using canonical pleiotropic pairs and MR-PRESSO adoption as indicators.
+
+Research Question 6: Has awareness of pleiotropy increased over time, as
+evidenced by study of canonical pleiotropic pairs and adoption of methods like
+MR-PRESSO?
+
+Command:
+
+```bash
+just case-study-cs5-pleiotropy-awareness
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_pleiotropy_awareness.py
+```
+
+Input:
+
+- `data/db/vector_store.db` (model_results table)
+- `data/db/trait_profile_db.db` (trait_profile_similarity table)
+- `data/processed/case-study-cs5/temporal/temporal_metadata.csv`
+- Configuration: canonical pleiotropic pairs, MR-PRESSO adoption
+
+Canonical pleiotropic pairs (example):
+
+- Body mass index: Type 2 diabetes, cardiovascular disease, osteoarthritis
+- Education: Income, cognitive function, mental health
+- C-reactive protein: Cardiovascular disease, diabetes, depression
+
+Methodology:
+
+Tracks three indicators of pleiotropy awareness:
+
+1. Study of canonical pleiotropic exposure-outcome pairs
+2. Number of distinct outcomes per study (outcome diversity)
+3. MR-PRESSO adoption trends (extracted from methods sections or result types)
+
+For canonical pairs:
+- Match exposure-outcome combinations against known pleiotropic relationships
+- Track study frequency over time
+- Compare awareness across eras
+
+For outcome diversity:
+- Count unique outcomes per exposure trait
+- Aggregate at yearly and era levels
+- Test for increasing diversity trends
+
+Output (in `data/processed/case-study-cs5/pleiotropy/`):
+
+- `canonical_pair_trends.csv`: Study counts for known pleiotropic pairs over time
+- `outcomes_per_study_by_era.csv`: Mean outcome count distributions
+- `mr_presso_adoption.csv`: Studies using MR-PRESSO methods by year
+- `pleiotropy_awareness_tests.csv`: Statistical tests for temporal trends
+- `pleiotropy_metadata.json`: Summary with adoption breakpoints
+
+Figures (in `data/processed/case-study-cs5/figures/`):
+
+- `canonical_pairs_over_time.png/svg`: Frequency of pleiotropic pair studies
+- `outcomes_per_exposure.png/svg`: Distribution of outcome counts by era
+- `mr_presso_adoption_curve.png/svg`: Cumulative adoption with 2018 marker
+
+Analysis approach:
+
+- Identifies canonical pairs using trait matching (exact/fuzzy/EFO)
+- Computes outcomes per study as pleiotropy breadth indicator
+- Extracts MR-PRESSO usage from methods or result metadata
+- Tests for significant changes after 2018 (MR-PRESSO publication)
+- Stratifies by methodological era
+
+Key findings indicators:
+
+- Increase in canonical pair studies suggests greater awareness
+- Rising outcome diversity indicates broader phenome scanning
+- MR-PRESSO adoption marks explicit pleiotropy testing
+- Post-2018 breakpoint tests direct methodological impact
+
+### Phase 7: Winner's curse analysis
+
+Investigates whether effect sizes tend to decline in replication studies,
+a signature pattern of winner's curse bias.
+
+Research Question 7: Do effect sizes show systematic decline from discovery
+to replication, consistent with winner's curse?
+
+Command:
+
+```bash
+just case-study-cs5-winners-curse
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_5_winners_curse.py
+```
+
+Input:
+
+- `data/db/evidence_profile_db.db` (query_combinations, mr_results tables)
+- `data/processed/case-study-cs5/temporal/temporal_metadata.csv`
+- Configuration: temporal_eras, effect size thresholds
+
+Winner's curse background:
+
+Winner's curse occurs when initial discovery studies overestimate effect sizes
+due to selection for statistical significance. Replication studies typically
+show smaller effects. Expected decline: 15-25% in meta-analyses.
+
+Methodology:
+
+Two-stage analysis comparing discovery and replication:
+
+Stage 1: Identify multi-study trait pairs
+- Extract pairs studied by 2+ independent studies
+- Classify earliest study as "discovery", later as "replication"
+- Restrict to pairs with consistent effect directions
+
+Stage 2: Compare effect magnitudes
+- Extract effect sizes (beta, OR, HR) from results JSON
+- Standardize to common scale where possible
+- Compute percentage decline from discovery to mean replication
+- Test for systematic decline using paired tests
+
+For each pair:
+- Discovery effect: Effect from earliest publication year
+- Replication effect: Mean effect from subsequent studies
+- Decline percentage: (Discovery - Replication) / Discovery * 100
+- Significance: Test if decline > 0
+
+Output (in `data/processed/case-study-cs5/winners_curse/`):
+
+- `stage1_multi_study_pairs.csv`: Pairs eligible for analysis with study counts
+- `stage2_effect_size_comparison.csv`: Discovery vs replication effects
+- `decline_distribution.csv`: Summary statistics of effect size declines
+- `temporal_decline_model.csv`: Regression testing era effects on decline
+- `winners_curse_metadata.json`: Analysis parameters and findings
+
+Figures (in `data/processed/case-study-cs5/figures/`):
+
+- `discovery_vs_replication.png/svg`: Scatter plot with identity line
+- `decline_distribution.png/svg`: Histogram of percentage declines
+- `decline_by_era.png/svg`: Box plots showing era differences
+- `winners_curse_examples.png/svg`: Top pairs showing strongest decline
+
+Analysis approach:
+
+- Matches trait pairs across studies using evidence profile database
+- Orders studies chronologically by publication year
+- Standardizes effect sizes to absolute scale for comparisons
+- Uses Wilcoxon signed-rank test (non-parametric paired test)
+- Stratifies by study count, temporal era, and match quality
+
+Statistical tests:
+
+- Paired t-test: Test if mean decline differs from zero
+- Wilcoxon signed-rank: Non-parametric alternative for skewed distributions
+- Linear regression: Test if decline varies by publication year, study count
+- Subgroup analyses: Stratify by effect size type (beta vs OR vs HR)
+
+Expected patterns:
+
+- Positive decline: Discovery effects larger than replication (winner's curse)
+- Decline magnitude: 10-30% typical in epidemiological studies
+- Era differences: Earlier eras may show stronger decline
+- Study count effect: More replications show stronger evidence
+
+Interpretation:
+
+Systematic positive decline confirms winner's curse presence. The magnitude
+indicates severity of initial overestimation. Temporal trends can reveal
+whether awareness (e.g., preregistration, reporting standards) has mitigated
+the issue in recent publications.
+
+### Running complete pipeline
+
+Execute all phases sequentially:
+
+```bash
+just case-study-cs5-all
+```
+
+This runs:
+
+1. `case-study-cs5-temporal-prep` (Phase 0)
+2. `case-study-cs5-trait-diversity` (Phase 1)
+3. `case-study-cs5-evidence-consistency` (Phase 3)
+4. `case-study-cs5-reporting-completeness` (Phase 4)
+5. `case-study-cs5-fashionable-traits` (Phase 5)
+6. `case-study-cs5-pleiotropy-awareness` (Phase 6)
+7. `case-study-cs5-winners-curse` (Phase 7)
+
+Estimated runtime: ~10-15 minutes for full pipeline
+
+### Configuration reference
+
+File: `processing/config/case_studies.yml`
+
+Key parameters:
+
+```yaml
+case_study_5:
+  models_included:
+    - "gpt-5"  # Analysis restricted to single model for consistency
+  
+  temporal_eras:
+    early_mr: [2010, 2014]      # Foundation era
+    mr_egger: [2015, 2017]      # Pleiotropy methods
+    mr_presso: [2018, 2019]     # Outlier detection
+    within_family: [2020, 2020] # Family-based designs
+    strobe_mr: [2021, 2024]     # Reporting guidelines
+  
+  strobe_breakpoint: 2021       # STROBE-MR publication year
+  
+  trait_type_categories:        # For diversity analysis
+    anthropometric: ["height", "weight", "BMI", "waist"]
+    cardiovascular: ["blood pressure", "heart rate", "cholesterol"]
+    metabolic: ["glucose", "insulin", "diabetes"]
+    psychiatric: ["depression", "anxiety", "schizophrenia"]
+    lifestyle: ["smoking", "alcohol", "physical activity"]
+
+output:
+  case_study_5:
+    base: "data/processed/case-study-cs5"
+    temporal: "data/processed/case-study-cs5/temporal"
+    diversity: "data/processed/case-study-cs5/diversity"
+    consistency: "data/processed/case-study-cs5/consistency"
+    completeness: "data/processed/case-study-cs5/completeness"
+    fashionable: "data/processed/case-study-cs5/fashionable"
+    pleiotropy: "data/processed/case-study-cs5/pleiotropy"
+    winners_curse: "data/processed/case-study-cs5/winners_curse"
+    figures: "data/processed/case-study-cs5/figures"
+```
+
+### Output directory structure
+
+```text
+data/processed/case-study-cs5/
+├── temporal/
+│   ├── temporal_metadata.csv          # Shared era assignments
+│   ├── era_statistics.csv
+│   └── temporal_metadata.json
+├── diversity/
+│   ├── trait_counts_by_year.csv
+│   ├── trait_counts_by_era.csv
+│   ├── temporal_trend_model.csv
+│   ├── era_comparison_tests.csv
+│   └── diversity_metadata.json
+├── consistency/
+│   ├── concordance_by_year.csv
+│   ├── concordance_by_era.csv
+│   ├── concordance_by_match_type_era.csv
+│   ├── era_comparison_tests.csv
+│   ├── strobe_impact_analysis.csv
+│   └── consistency_metadata.json
+├── completeness/
+│   ├── field_completeness_by_year.csv
+│   ├── field_completeness_by_era.csv
+│   ├── field_type_by_era.csv
+│   ├── strobe_impact_on_reporting.csv
+│   └── completeness_metadata.json
+└── figures/
+    ├── trait_diversity_over_time.png/svg
+    ├── trait_diversity_by_era.png/svg
+    ├── concordance_over_time.png/svg
+    ├── concordance_by_era.png/svg
+    ├── strobe_impact.png/svg
+    ├── completeness_over_time.png/svg
+    ├── strobe_reporting_impact.png/svg
+    └── completeness_by_field_type.png/svg
+```
+
+### Dependencies
+
+Python packages (managed via `uv`):
+
+- pandas: Data manipulation and aggregation
+- duckdb: Database queries
+- pyyaml: Configuration loading
+- scipy: Statistical tests (ANOVA, Kruskal-Wallis, t-tests, chi-square)
+- statsmodels: Linear regression modeling
+- matplotlib: Visualization
+- seaborn: Statistical plotting
+- numpy: Numerical operations
+- loguru: Logging
+
+All dependencies are managed in `processing/pyproject.toml`.
+
+### Methodological notes
+
+#### Era boundary selection
+
+Era boundaries were chosen to align with publication of major methodological
+papers:
+
+- 2015: Bowden et al. MR-Egger regression
+- 2018: Verbanck et al. MR-PRESSO
+- 2020: Brumpton et al. within-family MR
+- 2021: Skrivankova et al. STROBE-MR guidelines
+
+#### Model selection
+
+Analysis restricted to gpt-5 model only to ensure consistency across temporal
+comparisons. Multi-model analyses would require additional considerations for
+model performance differences.
+
+#### Statistical power
+
+Some eras have unbalanced sample sizes:
+
+- within_family (2020): 821 studies (single year)
+- strobe_mr (2021-2024): 11,905 studies (73% of dataset)
+
+This imbalance provides high power for STROBE-MR comparisons but lower power
+for within_family era analyses.
+
+#### Completeness metric limitations
+
+The completeness analysis tracks field presence, not quality. A reported
+P-value may be present but improperly calculated. Future work could examine
+statistical coherence (e.g., do reported P-values match computed values from
+effect sizes and SEs?).
+
 ## Future case studies
 
 ### Case study 3: Statistical patterns
