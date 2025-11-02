@@ -266,9 +266,43 @@ case-study-cs1-temporal-model:
 case-study-cs1-validation-examples:
     uv run scripts/analysis/case_study_1_validation_examples.py
 
+# Generate tier distribution figure
+[group('case-study-cs1')]
+case-study-cs1-fig-tier:
+    uv run python scripts/analysis/case_study_1_fig_tier_distribution.py
+
+# Generate study count scatter plot with LOWESS curve
+[group('case-study-cs1')]
+case-study-cs1-fig-scatter:
+    uv run python scripts/analysis/case_study_1_fig_study_count_scatter.py
+
+# Generate match type stacked bar chart
+[group('case-study-cs1')]
+case-study-cs1-fig-match-type:
+    uv run python scripts/analysis/case_study_1_fig_match_type_stacked.py
+
+# Generate temporal era comparison figure
+[group('case-study-cs1')]
+case-study-cs1-fig-temporal:
+    uv run python scripts/analysis/case_study_1_fig_temporal_era.py
+
+# Generate regression diagnostics figure
+[group('case-study-cs1')]
+case-study-cs1-fig-diagnostics:
+    uv run python scripts/analysis/case_study_1_fig_regression_diagnostics.py
+
+# Generate concordance variance heatmap
+[group('case-study-cs1')]
+case-study-cs1-fig-heatmap:
+    uv run python scripts/analysis/case_study_1_fig_concordance_heatmap.py
+
+# Generate all Case Study 1 figures
+[group('case-study-cs1')]
+case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-study-cs1-fig-match-type case-study-cs1-fig-temporal case-study-cs1-fig-diagnostics case-study-cs1-fig-heatmap
+
 # Run complete Case Study 1 pipeline
 [group('case-study-cs1')]
-case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples
+case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples case-study-cs1-fig-all
 
 # ==== case study 5: temporal evolution of MR evidence ====
 

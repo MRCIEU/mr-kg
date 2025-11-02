@@ -263,9 +263,121 @@ Publication year range: [YYYY-YYYY]
 [Discordant]: Inconsistent findings warrant further investigation
 ```
 
+#### Stage 5: Generate figures
+
+Creates publication-ready figures from Case Study 1 analysis outputs.
+
+All figure scripts support the following CLI flags:
+
+- `--config`: Path to case_studies.yml (default: auto-detected)
+- `--input-csv`: Override input CSV path
+- `--output-dir`: Override output directory
+- `--dry-run`: Validate paths without generating figures
+
+Commands:
+
+1. Tier distribution (100% stacked bar chart):
+   ```bash
+   just case-study-cs1-fig-tier
+   ```
+   
+   Script: `case_study_1_fig_tier_distribution.py`
+   
+   Input: `tier_distribution.csv`
+   
+   Output:
+   - `tier_distribution.png/svg`: Stacked bar chart showing proportion
+     of high/moderate/low/discordant tiers with annotated counts
+
+2. Study count scatter (LOWESS curve):
+   ```bash
+   just case-study-cs1-fig-scatter
+   ```
+   
+   Script: `case_study_1_fig_study_count_scatter.py`
+   
+   Input: `pair_reproducibility_metrics.csv`
+   
+   Output:
+   - `study_count_vs_concordance.png/svg`: Scatter plot with LOWESS
+     smoothing curve
+   - `study_count_correlation.csv`: Spearman correlation statistics
+   - Highlights negative association between study count and concordance
+
+3. Match type comparison (stacked bar chart):
+   ```bash
+   just case-study-cs1-fig-match-type
+   ```
+   
+   Script: `case_study_1_fig_match_type_stacked.py`
+   
+   Input: `stratified_by_match_type.csv`
+   
+   Output:
+   - `match_type_distribution.png/svg`: Stacked bar chart by match type
+   - `match_type_distribution.csv`: Summary statistics per match type
+   - Illustrates reproducibility penalty for fuzzy vs exact matches
+
+4. Temporal era comparison (grouped bar chart):
+   ```bash
+   just case-study-cs1-fig-temporal
+   ```
+   
+   Script: `case_study_1_fig_temporal_era.py`
+   
+   Input: `stratified_by_temporal_era.csv`
+   
+   Output:
+   - `temporal_era_comparison.png/svg`: Grouped bar chart
+   - `temporal_era_comparison.csv`: Era-level statistics
+   - Compares tier percentages between early and recent eras
+
+5. Regression diagnostics (multi-panel):
+   ```bash
+   just case-study-cs1-fig-diagnostics
+   ```
+   
+   Script: `case_study_1_fig_regression_diagnostics.py`
+   
+   Input:
+   - `temporal_predictions.csv`: Fitted values and residuals
+   - `temporal_model_diagnostics.json`: Model diagnostics
+   
+   Output:
+   - `regression_diagnostics.png/svg`: Three-panel figure
+     - Panel 1: Residuals vs fitted values
+     - Panel 2: QQ plot for normality
+     - Panel 3: Autocorrelation function (lag 1-20)
+
+6. Concordance variance heatmap:
+   ```bash
+   just case-study-cs1-fig-heatmap
+   ```
+   
+   Script: `case_study_1_fig_concordance_heatmap.py`
+   
+   Input: `pair_reproducibility_metrics.csv`
+   
+   Output:
+   - `concordance_variance_heatmap.png/svg`: Heatmap showing variance
+     across study count bands and reproducibility tiers
+   - `concordance_variance_pivot.csv`: Pivoted data for heatmap
+
+Generate all figures:
+```bash
+just case-study-cs1-fig-all
+```
+
+All figures:
+- Export in both PNG (300 DPI) and SVG formats
+- Include companion CSV/JSON metadata files
+- Use consistent color schemes (high=green, moderate=yellow,
+  low=orange, discordant=red)
+- Saved to `data/processed/case-study-cs1/figures/`
+
 #### Running complete pipeline
 
-Execute all stages sequentially:
+Execute all stages and figures sequentially:
 
 ```bash
 just case-study-cs1-all
@@ -277,6 +389,7 @@ This runs:
 2. `case-study-cs1-reproducibility-metrics`
 3. `case-study-cs1-temporal-model`
 4. `case-study-cs1-validation-examples`
+5. `case-study-cs1-fig-all` (all 6 figures)
 
 ### Key findings
 
@@ -445,7 +558,16 @@ data/processed/case-study-cs1/
 │   ├── temporal_model_summary.txt
 │   └── temporal_predictions.csv
 └── figures/
-    └── (placeholder for visualizations)
+    ├── tier_distribution.png/svg
+    ├── study_count_vs_concordance.png/svg
+    ├── study_count_correlation.csv
+    ├── match_type_distribution.png/svg
+    ├── match_type_distribution.csv
+    ├── temporal_era_comparison.png/svg
+    ├── temporal_era_comparison.csv
+    ├── regression_diagnostics.png/svg
+    ├── concordance_variance_heatmap.png/svg
+    └── concordance_variance_pivot.csv
 
 .notes/analysis-notes/case-study-analysis/cs1-validation/
 ├── canonical_*.md

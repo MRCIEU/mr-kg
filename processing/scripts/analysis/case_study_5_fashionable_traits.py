@@ -174,7 +174,7 @@ def load_temporal_metadata(metadata_path: Path) -> pd.DataFrame:
     logger.info(f"Loading temporal metadata from {metadata_path}...")
 
     df = pd.read_csv(metadata_path)
-    
+
     # ---- Ensure PMID is string type to match trait data ----
     df["pmid"] = df["pmid"].astype(str)
 
@@ -927,7 +927,9 @@ def main() -> None:
         temporal_path = args.temporal_metadata
     else:
         temporal_path = (
-            PROJECT_ROOT / Path(output_config["temporal"]) / "temporal_metadata.csv"
+            PROJECT_ROOT
+            / Path(output_config["temporal"])
+            / "temporal_metadata.csv"
         )
 
     if not temporal_path.exists():
