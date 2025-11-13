@@ -97,6 +97,19 @@ Rationale: Quantifies agreement in effect magnitude and direction.
 High correlation indicates studies observe similar effect size patterns across
 shared trait relationships.
 
+Formula:
+
+Given two studies $A$ and $B$ with $n$ matched exposure-outcome pairs, where $\beta_A^{(i)}$ and $\beta_B^{(i)}$ are the harmonized effect sizes for pair $i$, the effect size similarity is the Pearson correlation coefficient:
+
+$$
+r_{\text{effect}}(A, B) = \frac{\sum_{i=1}^{n} (\beta_A^{(i)} - \bar{\beta}_A)(\beta_B^{(i)} - \bar{\beta}_B)}{\sqrt{\sum_{i=1}^{n} (\beta_A^{(i)} - \bar{\beta}_A)^2} \sqrt{\sum_{i=1}^{n} (\beta_B^{(i)} - \bar{\beta}_B)^2}}
+$$
+
+where:
+- $\bar{\beta}_A$ and $\bar{\beta}_B$ are the mean harmonized effect sizes across matched pairs
+- Harmonization transforms OR and HR to log scale: $\beta = \log(\text{OR})$ or $\beta = \log(\text{HR})$
+- Beta coefficients are kept unchanged
+
 Computation:
 
 1. Identify exposure-outcome pairs present in both studies
@@ -111,15 +124,18 @@ Range: -1 to 1
 - 0: No correlation (effect sizes are independent)
 - -1: Perfect negative correlation (effect sizes systematically opposite)
 
+Edge cases:
+
+- Requires minimum 3 matched pairs for computation
+- Requires at least 2 unique values in each study's effect sizes
+- Returns None if insufficient data or variance
+
 Stratified analysis:
 
 - Within-type similarity: Correlation for pairs with same effect type
   (beta-beta, OR-OR, HR-HR) - more reliable
 - Cross-type similarity: Correlation for pairs with different effect types
   - less reliable due to harmonization assumptions
-
-Note: Requires minimum 3 matched pairs for computation. Returns None if
-insufficient data.
 
 ### 2. Direction concordance
 
@@ -132,25 +148,44 @@ This is the gold standard metric for evidence profile similarity.
 Rationale: Provides categorical assessment of effect direction consistency
 without sensitivity to exact effect size magnitudes.
 
+Formula:
+
+Given two studies $A$ and $B$ with $n$ matched exposure-outcome pairs, where $d_A^{(i)}, d_B^{(i)} \in \{-1, 0, +1\}$ represent the classified directions (negative, null, positive), the direction concordance is:
+
+$$
+C_{\text{direction}}(A, B) = \frac{n_{\text{concordant}} - n_{\text{discordant}}}{n_{\text{concordant}} + n_{\text{discordant}}}
+$$
+
+where:
+- $n_{\text{concordant}}$ = number of pairs where both have same non-zero direction
+- $n_{\text{discordant}}$ = number of pairs where directions are opposite (one positive, one negative)
+- Pairs involving null directions (where either $d_A^{(i)} = 0$ or $d_B^{(i)} = 0$) are excluded from the calculation
+
+Direction classification:
+- Positive: harmonized beta > 0 (direction = +1)
+- Negative: harmonized beta < 0 (direction = -1)
+- Null: beta = 0 or missing (direction = 0)
+
 Computation:
 
 1. Classify each effect as positive, negative, or null based on harmonized
    beta values
-   - Positive: beta > 0
-   - Negative: beta < 0
-   - Null: beta = 0 or missing
 2. For each matched pair, score agreement:
-   - Both same direction (positive-positive or negative-negative): +1
-   - Both null: 0
-   - Opposite directions: -1
-   - One null, one directional: 0
-3. Average agreement scores across all matched pairs
+   - Both same direction (positive-positive or negative-negative): concordant
+   - Opposite directions (positive-negative or negative-positive): discordant
+   - One or both null: excluded from calculation
+3. Compute concordance score as (concordant - discordant) / (concordant + discordant)
 
 Range: -1 to 1
 
 - 1: Perfect concordance (all effects agree in direction)
-- 0: Random agreement or mixed null/directional
+- 0: Equal concordant and discordant pairs
 - -1: Perfect discordance (all effects opposite)
+
+Edge cases:
+
+- If no matched pairs: returns 0.0
+- If all pairs involve null directions: returns 0.0 (no directional comparisons possible)
 
 ### 3. Statistical consistency
 
@@ -164,11 +199,27 @@ pair. Consider this an exploratory metric that rarely succeeds.
 Rationale: Measures consistency in which trait relationships reach statistical
 significance, accounting for chance agreement.
 
+Formula:
+
+Given two studies $A$ and $B$ with $n$ matched exposure-outcome pairs, where each pair is classified as significant ($s=1$) or non-significant ($s=0$) based on $p < 0.05$ threshold, Cohen's kappa is:
+
+$$
+\kappa = \frac{p_o - p_e}{1 - p_e}
+$$
+
+where:
+- $p_o$ = observed agreement proportion = $\frac{1}{n} \sum_{i=1}^{n} \mathbb{1}[s_A^{(i)} = s_B^{(i)}]$
+- $p_e$ = expected agreement by chance = $p_{\text{sig},A} \cdot p_{\text{sig},B} + p_{\text{nonsig},A} \cdot p_{\text{nonsig},B}$
+- $p_{\text{sig},A}$ = proportion of significant pairs in study A
+- $p_{\text{nonsig},A}$ = proportion of non-significant pairs in study A (and similarly for study B)
+- $\mathbb{1}[\cdot]$ = indicator function (1 if true, 0 if false)
+
 Computation:
 
 1. Classify each effect as significant or non-significant (p < 0.05 threshold)
-2. Compute Cohen's kappa across matched pairs
-3. Kappa adjusts observed agreement for expected agreement by chance
+2. Compute observed agreement proportion across matched pairs
+3. Compute expected agreement proportion by chance
+4. Calculate kappa = (observed - expected) / (1 - expected)
 
 Range: -1 to 1
 
@@ -185,6 +236,12 @@ Interpretation (Landis & Koch scale):
 - 0.61 to 0.80: Substantial
 - 0.81 to 1.00: Almost perfect
 
+Edge cases:
+
+- Requires minimum 3 matched pairs for computation
+- Returns None if insufficient data or no variance in classifications
+- Returns 0.0 if expected agreement = 1.0 (all pairs have same classification)
+
 ### 4. Precision concordance
 
 Definition: Spearman correlation of confidence interval widths for matched
@@ -197,11 +254,25 @@ from abstract extraction AND at least 3 matched pairs for correlation.
 Rationale: Measures how similar two studies are in terms of the precision of
 their effect estimates.
 
+Formula:
+
+Given two studies $A$ and $B$ with $n$ matched exposure-outcome pairs, where $w_A^{(i)} = \text{CI}_{\text{upper}}^{(i)} - \text{CI}_{\text{lower}}^{(i)}$ represents the confidence interval width for pair $i$, the precision concordance is the Spearman rank correlation coefficient of log-transformed widths:
+
+$$
+\rho = 1 - \frac{6 \sum_{i=1}^{n} d_i^2}{n(n^2 - 1)}
+$$
+
+where:
+- $d_i$ = difference in ranks between $\log(w_A^{(i)})$ and $\log(w_B^{(i)})$
+- Log transformation applied to handle skewed distribution of CI widths
+- Spearman correlation used instead of Pearson to capture monotonic (not just linear) relationships
+
 Computation:
 
 1. For each matched pair, compute CI width as |upper - lower|
-2. Log-transform widths to handle skewed distributions
-3. Compute Spearman correlation of log widths across matched pairs
+2. Log-transform widths to handle skewed distributions: $w' = \log(w)$
+3. Rank the log-transformed widths separately for each study
+4. Compute Spearman correlation of ranks across matched pairs
 
 Range: -1 to 1
 
@@ -209,8 +280,11 @@ Range: -1 to 1
 - 0: No correlation (precision patterns independent)
 - -1: Perfect negative correlation (inverse precision patterns)
 
-Note: Requires minimum 3 matched pairs with valid CIs for computation.
-Returns None if insufficient data.
+Edge cases:
+
+- Requires minimum 3 matched pairs with valid CIs for computation
+- Returns None if insufficient data
+- Requires at least 2 unique CI width values in each study
 
 ### 5. Evidence overlap (REMOVED)
 
@@ -264,6 +338,19 @@ Implementation: Two composite scores with different weighting schemes:
 
 **Equal-weighted composite:**
 
+Formula:
+
+$$
+S_{\text{equal}} = Q \cdot \frac{1}{k} \sum_{m \in M} N(m)
+$$
+
+where:
+- $M$ = set of available metrics (non-NULL values)
+- $k$ = number of available metrics = $|M|$
+- $N(m)$ = normalized metric value for metric $m$ (transformed to [0, 1] scale)
+- $Q$ = quality weight = $\min(C_A, C_B)$ where $C_A$, $C_B$ are data completeness scores for studies A and B
+
+Properties:
 - Average of all available normalized metrics
 - Each metric contributes equally to final score
 - Balances all aspects of evidence similarity
@@ -271,6 +358,22 @@ Implementation: Two composite scores with different weighting schemes:
 
 **Direction-prioritized composite:**
 
+Formula:
+
+$$
+S_{\text{direction}} = Q \cdot \frac{\sum_{m \in M} w_m \cdot N(m)}{\sum_{m \in M} w_m}
+$$
+
+where:
+- $w_m$ = predefined weight for metric $m$:
+  - Direction concordance: $w = 0.50$
+  - Effect size similarity: $w = 0.20$
+  - Statistical consistency: $w = 0.15$
+  - Precision concordance: $w = 0.15$
+- Weights renormalized across available metrics: $\sum_{m \in M} w_m$ in denominator
+- $Q$ = quality weight (same as equal-weighted composite)
+
+Properties:
 - Weights: 0.50 × direction + 0.20 × effect_size + 0.15 × consistency + 0.15
   × precision
 - Emphasizes directional concordance as primary indicator
@@ -282,15 +385,15 @@ Normalization procedure:
 
 All metrics are normalized to [0, 1] scale before combination:
 
-- Effect similarity: (r + 1) / 2 transforms [-1, 1] → [0, 1]
-- Direction concordance: (concordance + 1) / 2 transforms [-1, 1] → [0, 1]
-- Statistical consistency: (kappa + 1) / 2 transforms [-1, 1] → [0, 1]
-- Precision concordance: (rho + 1) / 2 transforms [-1, 1] → [0, 1]
+- Effect similarity: $(r + 1) / 2$ transforms $[-1, 1] \to [0, 1]$
+- Direction concordance: $(c + 1) / 2$ transforms $[-1, 1] \to [0, 1]$
+- Statistical consistency: $(\kappa + 1) / 2$ transforms $[-1, 1] \to [0, 1]$
+- Precision concordance: $(\rho + 1) / 2$ transforms $[-1, 1] \to [0, 1]$
 
 Missing data handling:
 
 - If component metrics are None, they are excluded from the composite calculation
-- Weights are renormalized across available metrics
+- Weights are renormalized across available metrics (denominator in formula)
 - Requires minimum 2 non-null metrics (direction_concordance is always available)
 - Returns None if insufficient metrics
 
@@ -300,7 +403,7 @@ originally designed.
 
 Quality weighting:
 
-- Composite scores are multiplied by min(query_completeness, similar_completeness)
+- Composite scores are multiplied by $Q = \min(C_A, C_B)$ where $C_A$ and $C_B$ are data completeness scores
 - Down-weights comparisons involving studies with incomplete data
 - Accounts for data quality differences across studies
 
