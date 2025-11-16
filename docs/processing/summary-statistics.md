@@ -250,7 +250,7 @@ Example LaTeX structure (per-model table):
 \hline
 Papers processed (PMIDs) & 15,626 \\
 Total extraction results & 70,930 \\
-Unique traits extracted & 80,761 \\
+Total trait mentions & 80,761 \\
 Average results per paper & 4.54 \\
 \hline
 \multicolumn{2}{l}{\textbf{Trait Profile Similarity}} \\
@@ -349,6 +349,22 @@ df = pd.DataFrame({
 | temporal_range_start    | Earliest publication year                 | mr_pubmed_data      |
 | temporal_range_end      | Latest publication year                   | mr_pubmed_data      |
 | avg_results_per_pmid    | Average model results per paper           | Computed aggregation|
+
+### Per-model metrics
+
+Per-model table metrics measure model-specific extraction characteristics:
+
+| Metric                   | Description                                | Source                 |
+| ------------------------ | ------------------------------------------ | ---------------------- |
+| Papers processed (PMIDs) | Number of papers processed by this model   | model_results          |
+| Total extraction results | Individual MR findings (exposure-outcome pairs) | model_results     |
+| Total trait mentions     | Count of all trait occurrences with duplicates | model_result_traits |
+| Average results per paper| Mean number of MR results per paper        | Computed aggregation   |
+
+Important distinction:
+
+- **Total unique traits (75,121)** in the aggregated table: Size of the globally unique trait vocabulary across all models (from `trait_embeddings` table)
+- **Total trait mentions** in per-model tables: Total trait occurrences including duplicates. If "BMI" appears in 100 papers processed by a model, it counts as 100 mentions. This is why per-model trait mentions can exceed the global unique trait count.
 
 ### Trait profile metrics
 

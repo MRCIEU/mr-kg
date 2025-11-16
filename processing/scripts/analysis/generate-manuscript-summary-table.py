@@ -87,6 +87,14 @@ def make_args():
         help=f"Output directory for tables (default: {DEFAULT_OUTPUT_DIR})",
     )
 
+    # ---- --vector-db ----
+    parser.add_argument(
+        "--vector-db",
+        type=Path,
+        default=DATA_DIR / "db" / "vector_store.db",
+        help=f"Path to vector store database (default: {DATA_DIR / 'db' / 'vector_store.db'})",
+    )
+
     res = parser.parse_args()
     return res
 
@@ -108,7 +116,27 @@ def load_overall_statistics(overall_dir: Path) -> Dict[str, Any]:
         raise FileNotFoundError(f"Overall statistics not found: {json_file}")
 
     with open(json_file, "r") as f:
-        res = json.load(f)
+        stats = json.load(f)
+
+    # Load model statistics to get total extraction results and trait mentions
+    model_stats_file = overall_dir / "model-statistics.csv"
+    if model_stats_file.exists():
+        model_stats = pd.read_csv(model_stats_file)
+        stats["total_extraction_results"] = int(
+            model_stats["total_results_extracted"].sum()
+        )
+        stats["total_trait_mentions"] = int(
+            model_stats["total_traits_extracted"].sum()
+        )
+    else:
+        stats["total_extraction_results"] = 0
+        stats["total_trait_mentions"] = 0
+        logger.warning(
+            "model-statistics.csv not found, "
+            "total_extraction_results and total_trait_mentions set to 0"
+        )
+
+    res = stats
     return res
 
 
@@ -196,6 +224,37 @@ def load_model_specific_stats(overall_dir: Path) -> pd.DataFrame:
     return None
 
 
+def compute_model_unique_traits(vector_db_path: Path, model: str) -> int:
+    """Compute unique trait count for a specific model.
+
+    Args:
+        vector_db_path: Path to vector_store.db
+        model: Model name
+
+    Returns:
+        Count of unique traits for this model
+    """
+    import duckdb
+
+    if not vector_db_path.exists():
+        logger.warning(f"Vector DB not found: {vector_db_path}")
+        return 0
+
+    try:
+        with duckdb.connect(str(vector_db_path), read_only=True) as conn:
+            query = """
+            SELECT COUNT(DISTINCT mrt.trait_index) as unique_traits
+            FROM model_results mr
+            JOIN model_result_traits mrt ON mr.id = mrt.model_result_id
+            WHERE mr.model = ?
+            """
+            result = conn.execute(query, (model,)).fetchone()
+            return int(result[0]) if result else 0
+    except Exception as e:
+        logger.error(f"Error computing unique traits for {model}: {e}")
+        return 0
+
+
 # ==== Table generation functions ====
 
 
@@ -213,7 +272,9 @@ def generate_overall_section(stats: Dict[str, Any]) -> List[str]:
         "\\hline",
         f"Total unique papers (PMIDs) & {stats['total_unique_pmids']:,} \\\\",
         f"Total unique traits & {stats['total_unique_traits']:,} \\\\",
+        f"Total trait mentions & {stats['total_trait_mentions']:,} \\\\",
         f"Total model extraction records & {stats['total_model_results']:,} \\\\",
+        f"Total extraction results & {stats['total_extraction_results']:,} \\\\",
         f"Number of extraction models & {stats['total_unique_models']} \\\\",
         f"Temporal coverage & "
         f"{stats['temporal_range_start']}--{stats['temporal_range_end']} \\\\",
@@ -378,6 +439,7 @@ def filter_model_statistics(
     trait_stats: Dict[str, pd.DataFrame],
     evidence_stats: Dict[str, pd.DataFrame],
     model_specific_stats: pd.DataFrame = None,
+    vector_db_path: Path = None,
 ) -> Dict[str, Any]:
     """Filter statistics for a specific model.
 
@@ -387,6 +449,7 @@ def filter_model_statistics(
         trait_stats: Trait profile statistics
         evidence_stats: Evidence profile statistics
         model_specific_stats: Per-model statistics from model-statistics.csv
+        vector_db_path: Path to vector_store.db for unique trait computation
 
     Returns:
         Dictionary with filtered statistics for the model
@@ -418,6 +481,17 @@ def filter_model_statistics(
                     model_row["total_traits_extracted"].iloc[0]
                 ),
             }
+
+    # ---- Compute unique traits for this model ----
+
+    if vector_db_path is not None:
+        unique_traits = compute_model_unique_traits(vector_db_path, model)
+        res["overall"]["unique_traits"] = unique_traits
+    else:
+        res["overall"]["unique_traits"] = 0
+        logger.warning(
+            f"Vector DB path not provided, unique_traits set to 0 for {model}"
+        )
 
     # ---- Filter trait statistics ----
 
@@ -518,7 +592,8 @@ def generate_model_overall_section(
             [
                 f"Papers processed (PMIDs) & {overall['unique_pmids']:,} \\\\",
                 f"Total extraction results & {overall['total_results']:,} \\\\",
-                f"Unique traits extracted & {overall['total_traits']:,} \\\\",
+                f"Total unique traits & {overall['unique_traits']:,} \\\\",
+                f"Total trait mentions & {overall['total_traits']:,} \\\\",
                 f"Average results per paper & "
                 f"{overall['avg_results_per_extraction']:.2f} \\\\",
             ]
@@ -528,7 +603,8 @@ def generate_model_overall_section(
             [
                 "Papers processed (PMIDs) & N/A \\\\",
                 "Total extraction results & N/A \\\\",
-                "Unique traits extracted & N/A \\\\",
+                "Total unique traits & N/A \\\\",
+                "Total trait mentions & N/A \\\\",
                 "Average results per paper & N/A \\\\",
             ]
         )
@@ -887,6 +963,7 @@ def main():
                 trait_stats,
                 evidence_stats,
                 model_specific_stats,
+                args.vector_db,
             )
 
             # Generate LaTeX table
