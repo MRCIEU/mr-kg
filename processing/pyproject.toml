@@ -20,6 +20,7 @@ dependencies = [
     "tqdm>=4.67.1",
     "yiutils",
     "altair>=6.0.0",
+    "vl-convert-python>=1.8.0",
 ]
 
 [dependency-groups]
