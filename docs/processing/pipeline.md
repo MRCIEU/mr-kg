@@ -1387,6 +1387,240 @@ just analyze-evidence-profile
 This meta-recipe runs all analysis scripts in order, generating a complete
 analytical report.
 
+## Stage 8: Summary statistics generation
+
+Generate manuscript-ready summary statistics and LaTeX tables from all three
+MR-KG databases.
+
+This stage consolidates statistics across the complete MR-KG ecosystem,
+providing comprehensive metrics for publications and reports.
+
+### Overall database statistics
+
+Extract comprehensive statistics from the vector store database.
+
+Command reference
+
+Just recipe:
+
+```bash
+just generate-overall-stats
+```
+
+Python script:
+
+```bash
+uv run scripts/analysis/generate-overall-database-stats.py [FLAGS]
+```
+
+Flags
+
+`--dry-run`, `-n`
+
+Perform dry run without executing analysis.
+
+`--vector-db <PATH>`
+
+Path to vector store database.
+Default: data/db/vector_store.db.
+
+`--output-dir <PATH>`
+
+Output directory for statistics.
+Default: data/processed/overall-stats.
+
+Input files
+
+`data/db/vector_store.db`
+
+Main vector store database from Stage 4.
+
+Output files
+
+`data/processed/overall-stats/database-summary.csv`
+
+Overall database statistics including total PMIDs, traits, temporal coverage.
+
+`data/processed/overall-stats/database-summary.json`
+
+Same data in JSON format for programmatic access.
+
+`data/processed/overall-stats/model-statistics.csv`
+
+Per-model extraction counts and trait usage statistics.
+
+`data/processed/overall-stats/temporal-statistics.csv`
+
+Publication year distributions and cumulative growth.
+
+`data/processed/overall-stats/trait-usage-statistics.csv`
+
+Top 50 traits by usage patterns (exposure vs outcome).
+
+`data/processed/overall-stats/journal-statistics.csv`
+
+Top 20 journals by publication count.
+
+Processing details
+
+Queries vector store database for comprehensive statistics including unique
+paper counts, trait distributions, temporal coverage, model performance
+metrics, and trait usage patterns.
+
+### Trait profile summary statistics
+
+Generate summary statistics for trait similarity profiles.
+
+Command reference
+
+Just recipe:
+
+```bash
+just analyze-trait-summary-stats
+```
+
+Python script:
+
+```bash
+uv run scripts/analysis/analyze-trait-summary-stats.py [FLAGS]
+```
+
+Flags
+
+`--dry-run`, `-n`
+
+Perform dry run without executing analysis.
+
+`--trait-db <PATH>`
+
+Path to trait profile database.
+Default: data/db/trait_profile_db.db.
+
+`--output-dir <PATH>`
+
+Output directory for analysis results.
+Default: data/processed/trait-profiles/analysis.
+
+Input files
+
+`data/db/trait_profile_db.db`
+
+Trait profile database from Stage 5.
+
+Output files
+
+`data/processed/trait-profiles/analysis/summary-stats-by-model.csv`
+
+Model-level statistics including total combinations, average trait counts,
+and similarity pair counts.
+
+`data/processed/trait-profiles/analysis/similarity-distributions.csv`
+
+Percentile distributions for semantic and Jaccard similarities.
+
+`data/processed/trait-profiles/analysis/metric-correlations.csv`
+
+Correlations between semantic and Jaccard similarity metrics.
+
+`data/processed/trait-profiles/analysis/trait-count-distributions.csv`
+
+Distribution statistics for trait counts per study.
+
+Processing details
+
+Computes comprehensive statistics on trait profile similarities including
+distribution metrics (mean, median, percentiles), correlations between
+semantic and set-based similarity measures, and trait count patterns.
+
+### Manuscript table generation
+
+Consolidate all statistics into LaTeX-formatted tables.
+
+Command reference
+
+Just recipe:
+
+```bash
+just generate-manuscript-tables
+```
+
+Python script:
+
+```bash
+uv run scripts/analysis/generate-manuscript-summary-table.py [FLAGS]
+```
+
+Flags
+
+`--dry-run`, `-n`
+
+Perform dry run without generating tables.
+
+`--overall-dir <PATH>`
+
+Directory with overall statistics.
+Default: data/processed/overall-stats.
+
+`--trait-dir <PATH>`
+
+Directory with trait statistics.
+Default: data/processed/trait-profiles/analysis.
+
+`--evidence-dir <PATH>`
+
+Directory with evidence statistics.
+Default: data/processed/evidence-profiles/analysis.
+
+`--output-dir <PATH>`
+
+Output directory for tables.
+Default: data/processed/manuscript-tables.
+
+Input files
+
+Requires outputs from:
+
+- generate-overall-database-stats.py
+- analyze-trait-summary-stats.py
+- analyze-evidence-summary-stats.py
+
+Output files
+
+`data/processed/manuscript-tables/summary-table-full.tex`
+
+Complete LaTeX table with all statistics from three databases.
+
+`data/processed/manuscript-tables/summary-table-compact.tex`
+
+Condensed table for main manuscript text.
+
+`data/processed/manuscript-tables/summary-table-data.json`
+
+Raw consolidated data for custom table generation.
+
+Processing details
+
+Reads statistics from all three analysis outputs, formats data into
+LaTeX table code with proper formatting, generates both full and compact
+versions suitable for different manuscript sections.
+
+### Complete pipeline
+
+Run all summary statistics generation steps:
+
+```bash
+just generate-all-summary-stats
+```
+
+This meta-recipe executes:
+
+1. generate-overall-stats: Overall database statistics
+2. analyze-trait-summary-stats: Trait profile statistics
+3. generate-manuscript-tables: LaTeX table generation
+
+The complete workflow generates all statistics and publication-ready tables
+in a single command.
+
 ## Key processing scripts
 
 ### Script locations
@@ -1410,7 +1644,10 @@ processing/scripts/
 │   ├── compute-evidence-similarity.py
 │   ├── aggregate-evidence-similarities.py
 │   └── build-evidence-profile-database.py
-├── analysis/           Analysis scripts for evidence profiles
+├── analysis/           Analysis and summary statistics scripts
+│   ├── generate-overall-database-stats.py
+│   ├── analyze-trait-summary-stats.py
+│   ├── generate-manuscript-summary-table.py
 │   ├── analyze-evidence-summary-stats.py
 │   ├── analyze-evidence-trait-comparison.py
 │   ├── analyze-evidence-data-quality.py
@@ -1439,6 +1676,12 @@ processing/scripts/
 - `compute-evidence-similarity.py`: Computes pairwise evidence similarities
 - `build-evidence-profile-database.py`: Creates evidence_profile_db.db for
   evidence-based similarity analysis
+- `generate-overall-database-stats.py`: Generates comprehensive statistics
+  from vector store database
+- `analyze-trait-summary-stats.py`: Computes trait profile similarity
+  statistics and distributions
+- `generate-manuscript-summary-table.py`: Consolidates statistics into
+  LaTeX-formatted manuscript tables
 - `analyze-evidence-*.py`: Analysis scripts for evidence profile exploration
 
 ## HPC integration

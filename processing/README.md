@@ -79,8 +79,28 @@ just generate-schema-docs
 ```
 
 Generates comprehensive schema docs with ERD diagrams at
-docs/processing/db-schema.md (both vector_store & trait_profile).
+docs/processing/db-schema.md (vector_store, trait_profile, evidence_profile).
 Includes: table schemas, relationships, statistics, DuckDB versions, indexes.
+
+### Summary statistics
+
+Generate manuscript-ready summary statistics and LaTeX tables:
+
+```bash
+just generate-all-summary-stats
+```
+
+Consolidates statistics from all three databases (vector_store,
+trait_profile, evidence_profile) into CSV files and LaTeX-formatted tables.
+See @docs/processing/summary-statistics.md for complete documentation.
+
+Individual steps:
+
+```bash
+just generate-overall-stats           # Overall database statistics
+just analyze-trait-summary-stats      # Trait profile metrics
+just generate-manuscript-tables       # LaTeX table generation
+```
 
 For manual step-by-step execution and detailed documentation, see
 @docs/processing/pipeline.md.

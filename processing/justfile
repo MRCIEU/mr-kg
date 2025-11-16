@@ -151,6 +151,37 @@ generate-schema-docs:
 
 # ==== analysis ===
 
+# ==== summary statistics ====
+
+# Generate overall database statistics from vector store
+[group('summary-statistics')]
+generate-overall-stats:
+    uv run scripts/analysis/generate-overall-database-stats.py \
+        --vector-db {{PROJECT_ROOT}}/data/db/vector_store.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/overall-stats
+
+# Generate trait profile similarity summary statistics
+[group('summary-statistics')]
+analyze-trait-summary-stats:
+    uv run scripts/analysis/analyze-trait-summary-stats.py \
+        --trait-db {{PROJECT_ROOT}}/data/db/trait_profile_db.db \
+        --output-dir {{PROJECT_ROOT}}/data/processed/trait-profiles/analysis
+
+# Generate manuscript-ready summary tables from all databases
+[group('summary-statistics')]
+generate-manuscript-tables:
+    uv run scripts/analysis/generate-manuscript-summary-table.py \
+        --overall-dir {{PROJECT_ROOT}}/data/processed/overall-stats \
+        --trait-dir {{PROJECT_ROOT}}/data/processed/trait-profiles/analysis \
+        --evidence-dir {{PROJECT_ROOT}}/data/processed/evidence-profiles/analysis \
+        --output-dir {{PROJECT_ROOT}}/data/processed/manuscript-tables
+
+# Run complete summary statistics pipeline
+[group('summary-statistics')]
+generate-all-summary-stats: generate-overall-stats analyze-trait-summary-stats generate-manuscript-tables
+
+# ==== evidence profile analysis ====
+
 # Run all evidence profile analysis scripts
 [group('analysis')]
 analyze-evidence-profile: analyze-evidence-summary-stats analyze-evidence-trait-comparison analyze-evidence-data-quality analyze-evidence-validation analyze-match-type-quality analyze-alternative-metrics analyze-efo-matching-failure
