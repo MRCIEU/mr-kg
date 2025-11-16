@@ -19,6 +19,7 @@ dependencies = [
     "scispacy>=0.5.5",
     "tqdm>=4.67.1",
     "yiutils",
+    "altair>=6.0.0",
 ]
 
 [dependency-groups]
