@@ -1789,3 +1789,44 @@ Directories:
 - `data/db/`: Final database files
 
 See @docs/DATA.md for complete data structure.
+
+## Stage 9: Visualization and exploratory analysis
+
+Generate publication-ready visualizations of summary statistics using Jupyter
+notebooks.
+
+### Visualization notebooks
+
+Location: `processing/notebooks/`
+
+**Prerequisites:**
+
+```bash
+# Generate all summary statistics first
+just generate-all-summary-stats
+```
+
+**Available notebooks:**
+
+1. **`1-mr-literature.ipynb`**: MR literature corpus characteristics
+   - Temporal distribution of publications
+   - Growth trajectory analysis
+   - Basic corpus statistics
+
+2. **`2-mr-kg.ipynb`**: Comprehensive MR-KG visualizations
+   - Database entity counts and model statistics
+   - Trait profile similarity distributions
+   - Evidence profile similarity metrics
+   - Cross-database comparisons
+
+**Running notebooks:**
+
+```bash
+cd processing
+jupyter notebook notebooks/
+```
+
+All visualizations use Altair for publication-quality interactive plots. Plots
+can be exported as JSON, PNG, or SVG for manuscript inclusion.
+
+See @docs/processing/visualization.md for detailed visualization guide.

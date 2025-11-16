@@ -104,3 +104,26 @@ just generate-manuscript-tables       # LaTeX table generation
 
 For manual step-by-step execution and detailed documentation, see
 @docs/processing/pipeline.md.
+
+## Notebooks
+
+Interactive Jupyter notebooks for exploring and visualizing MR-KG data:
+
+- **`notebooks/1-mr-literature.ipynb`**: Visualize temporal distribution and
+  characteristics of the MR literature corpus
+- **`notebooks/2-mr-kg.ipynb`**: Comprehensive visualizations of database
+  statistics, trait/evidence similarities, and model comparisons
+
+**Prerequisites:**
+
+```bash
+just generate-all-summary-stats
+```
+
+**Running:**
+
+```bash
+jupyter notebook notebooks/
+```
+
+All visualizations use Altair for publication-quality interactive plots.

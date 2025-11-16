@@ -28,6 +28,37 @@ This executes three scripts in sequence:
 2. `analyze-trait-summary-stats.py`: Compute trait profile metrics
 3. `generate-manuscript-summary-table.py`: Create LaTeX tables
 
+## Visualization notebooks
+
+After generating summary statistics, explore the data interactively using
+Jupyter notebooks:
+
+```bash
+cd processing
+jupyter notebook notebooks/
+```
+
+### Available notebooks
+
+**1-mr-literature.ipynb**
+
+- Temporal distribution of MR literature
+- Publication trends and growth analysis
+- Basic corpus statistics
+
+**2-mr-kg.ipynb**
+
+- Comprehensive database visualizations
+- Similarity metric distributions
+- Model comparison dashboards
+- Data quality assessments
+
+All plots are created using Altair and can be exported for manuscript
+inclusion.
+
+See @docs/processing/visualization.md for detailed visualization
+documentation.
+
 ## Three-step workflow
 
 ### Step 1: Overall database statistics
@@ -140,10 +171,21 @@ Outputs:
 
 ```text
 data/processed/manuscript-tables/
-├── summary-table-full.tex
-├── summary-table-compact.tex
+├── summary-table-full.tex                        # Aggregated across all models
+├── summary-table-full-deepseek-r1-distilled.tex
+├── summary-table-full-gpt-4-1.tex
+├── summary-table-full-gpt-5.tex
+├── summary-table-full-llama3.tex
+├── summary-table-full-llama3-2.tex
+├── summary-table-full-o4-mini.tex
 └── summary-table-data.json
 ```
+
+The script generates:
+
+- **1 aggregated table** with statistics across all models
+- **6 per-model tables** with model-specific statistics
+- **1 JSON file** with all data for custom processing
 
 ## Output formats
 
@@ -178,35 +220,57 @@ Example structure (database-summary.json):
 
 ### LaTeX tables
 
-Two table variants are generated:
+Two types of LaTeX tables are generated:
 
-Full version (summary-table-full.tex):
+Aggregated version (summary-table-full.tex):
 
 - Complete statistics from all three databases
+- Aggregated across all models
 - Three sections: Overall, Trait Profile, Evidence Profile
 - Suitable for supplementary materials or appendices
 
-Compact version (summary-table-compact.tex):
+Per-model versions (summary-table-full-{model}.tex):
 
-- Condensed key metrics only
-- Suitable for main manuscript text
-- Focuses on most important statistics
+- Model-specific statistics from all three databases
+- One table per model (6 tables total)
+- Same three-section structure as aggregated table
+- Shows model-specific extraction counts, trait similarities, and evidence concordance
+- Suitable for detailed model comparisons in appendices
 
-Example LaTeX structure:
+Example LaTeX structure (per-model table):
 
 ```latex
 \begin{table}[htbp]
 \centering
-\caption{MR-KG Database Characteristics}
-\label{tab:mrkg-summary-compact}
+\caption{MR-KG Summary Statistics - GPT-4-1 Model}
+\label{tab:mrkg-summary-gpt-4-1}
 \begin{tabular}{lr}
 \hline
-Papers (PMIDs) & 15,635 \\
-Unique traits & 75,121 \\
-Temporal span & 1990--2024 \\
+\multicolumn{2}{l}{\textbf{Model: GPT-4-1}} \\
 \hline
-Trait comparisons & 504,020 \\
-Evidence comparisons & 6,388 \\
+Papers processed (PMIDs) & 15,626 \\
+Total extraction results & 70,930 \\
+Unique traits extracted & 80,761 \\
+Average results per paper & 4.54 \\
+\hline
+\multicolumn{2}{l}{\textbf{Trait Profile Similarity}} \\
+\hline
+Total PMID-model combinations & 15,626 \\
+Total pairwise comparisons & 156,260 \\
+Semantic similarity (mean) & 0.734 \\
+Semantic similarity (median) & 0.749 \\
+Jaccard similarity (mean) & 0.088 \\
+Jaccard similarity (median) & 0.042 \\
+\hline
+\multicolumn{2}{l}{\textbf{Evidence Profile Similarity}} \\
+\hline
+Total PMID-model combinations & 1,579 \\
+Total pairwise comparisons & 2,066 \\
+Direction concordance (mean) & 0.521 \\
+Direction concordance (median) & 1.000 \\
+Composite similarity (mean) & 0.419 \\
+Composite similarity (median) & 0.385 \\
+Data completeness (mean) & 0.649 \\
 \hline
 \end{tabular}
 \end{table}
@@ -415,7 +479,7 @@ Expected file counts:
 
 - overall-stats/: 6 files
 - trait-profiles/analysis/: 4 files
-- manuscript-tables/: 3 files
+- manuscript-tables/: 8 files (1 aggregated + 6 per-model + 1 JSON)
 
 ## Integration with manuscript
 
@@ -430,21 +494,35 @@ just generate-manuscript-tables
 2. Copy table files to manuscript directory:
 
 ```bash
-cp data/processed/manuscript-tables/summary-table-compact.tex \
+# Copy aggregated table
+cp data/processed/manuscript-tables/summary-table-full.tex \
+   /path/to/manuscript/tables/
+
+# Copy specific model tables
+cp data/processed/manuscript-tables/summary-table-full-gpt-4-1.tex \
    /path/to/manuscript/tables/
 ```
 
 3. Include in manuscript:
 
 ```latex
-\input{tables/summary-table-compact.tex}
+% Aggregated statistics
+\input{tables/summary-table-full.tex}
+
+% Model-specific statistics
+\input{tables/summary-table-full-gpt-4-1.tex}
 ```
 
 4. Reference in text:
 
 ```latex
-As shown in Table \ref{tab:mrkg-summary-compact}, the MR-KG database
+% Reference aggregated table
+As shown in Table \ref{tab:mrkg-summary-full}, the MR-KG database
 contains 15,635 papers...
+
+% Reference model-specific table
+Model-specific performance (Table \ref{tab:mrkg-summary-gpt-4-1})
+shows that GPT-4-1 extracted...
 ```
 
 ### Word/Google Docs workflow

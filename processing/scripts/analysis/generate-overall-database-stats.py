@@ -96,24 +96,42 @@ def compute_overall_statistics(
         - avg_results_per_pmid: Average model results per paper
     """
     query = """
+    WITH overall_counts AS (
+        SELECT
+            COUNT(DISTINCT mr.pmid) as total_unique_pmids,
+            COUNT(DISTINCT mr.id) as total_model_results,
+            COUNT(DISTINCT mr.model) as total_unique_models
+        FROM model_results mr
+    ),
+    trait_counts AS (
+        SELECT COUNT(DISTINCT trait_index) as total_unique_traits
+        FROM trait_embeddings
+    ),
+    temporal_range AS (
+        SELECT
+            MIN(CAST(SUBSTR(pub_date, 1, 4) AS INTEGER)) 
+                as temporal_range_start,
+            MAX(CAST(SUBSTR(pub_date, 1, 4) AS INTEGER)) 
+                as temporal_range_end
+        FROM mr_pubmed_data
+    ),
+    pmid_avg AS (
+        SELECT AVG(results_per_pmid) as avg_results_per_pmid
+        FROM (
+            SELECT pmid, COUNT(*) as results_per_pmid
+            FROM model_results
+            GROUP BY pmid
+        )
+    )
     SELECT
-        COUNT(DISTINCT mr.pmid) as total_unique_pmids,
-        COUNT(DISTINCT te.trait_index) as total_unique_traits,
-        COUNT(DISTINCT mr.id) as total_model_results,
-        COUNT(DISTINCT mr.model) as total_unique_models,
-        MIN(CAST(SUBSTR(mpd.pub_date, 1, 4) AS INTEGER)) 
-            as temporal_range_start,
-        MAX(CAST(SUBSTR(mpd.pub_date, 1, 4) AS INTEGER)) 
-            as temporal_range_end,
-        AVG(results_per_pmid) as avg_results_per_pmid
-    FROM model_results mr
-    LEFT JOIN trait_embeddings te ON 1=1
-    LEFT JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
-    LEFT JOIN (
-        SELECT pmid, COUNT(*) as results_per_pmid
-        FROM model_results
-        GROUP BY pmid
-    ) pmid_counts ON mr.pmid = pmid_counts.pmid
+        oc.total_unique_pmids,
+        tc.total_unique_traits,
+        oc.total_model_results,
+        oc.total_unique_models,
+        tr.temporal_range_start,
+        tr.temporal_range_end,
+        pa.avg_results_per_pmid
+    FROM overall_counts oc, trait_counts tc, temporal_range tr, pmid_avg pa
     """
     result = conn.execute(query).fetchone()
 
@@ -223,48 +241,67 @@ def compute_trait_usage_statistics(
         - unique_models: Models that extracted this trait
     """
     query = f"""
-    WITH trait_roles AS (
-        SELECT
-            mrt.trait_label,
-            mrt.model_result_id,
-            mr.pmid,
-            mr.model,
-            UNNEST(mr.results) as result
-        FROM model_result_traits mrt
-        JOIN model_results mr ON mrt.model_result_id = mr.id
-    ),
-    trait_role_counts AS (
+    WITH trait_basic_stats AS (
         SELECT
             trait_label,
             COUNT(*) as total_mentions,
+            COUNT(DISTINCT mr.pmid) as unique_pmids,
+            COUNT(DISTINCT mr.model) as unique_models
+        FROM model_result_traits mrt
+        JOIN model_results mr ON mrt.model_result_id = mr.id
+        GROUP BY trait_label
+    ),
+    result_elements AS (
+        SELECT
+            mr.id as model_result_id,
+            json_extract_string(
+                json_array_element, '$.exposure'
+            ) as exposure_trait,
+            json_extract_string(
+                json_array_element, '$.outcome'
+            ) as outcome_trait
+        FROM model_results mr,
+        LATERAL (
+            SELECT unnest(
+                json_transform(mr.results, '["JSON"]')
+            ) as json_array_element
+        ) AS exploded_results
+    ),
+    trait_role_counts AS (
+        SELECT
+            mrt.trait_label,
             SUM(CASE 
-                WHEN LOWER(CAST(result.exposure AS VARCHAR)) LIKE '%' 
-                    || LOWER(trait_label) || '%'
+                WHEN LOWER(re.exposure_trait) LIKE '%' 
+                    || LOWER(mrt.trait_label) || '%'
                 THEN 1 ELSE 0 
             END) as exposure_count,
             SUM(CASE 
-                WHEN LOWER(CAST(result.outcome AS VARCHAR)) LIKE '%' 
-                    || LOWER(trait_label) || '%'
+                WHEN LOWER(re.outcome_trait) LIKE '%' 
+                    || LOWER(mrt.trait_label) || '%'
                 THEN 1 ELSE 0 
-            END) as outcome_count,
-            COUNT(DISTINCT pmid) as unique_pmids,
-            COUNT(DISTINCT model) as unique_models
-        FROM trait_roles
-        GROUP BY trait_label
+            END) as outcome_count
+        FROM model_result_traits mrt
+        JOIN result_elements re ON mrt.model_result_id = re.model_result_id
+        GROUP BY mrt.trait_label
     )
     SELECT
-        trait_label,
-        total_mentions,
-        exposure_count,
-        outcome_count,
-        unique_pmids,
-        unique_models,
-        ROUND(exposure_count::DOUBLE / total_mentions * 100, 2) 
-            as exposure_percentage,
-        ROUND(outcome_count::DOUBLE / total_mentions * 100, 2) 
-            as outcome_percentage
-    FROM trait_role_counts
-    ORDER BY total_mentions DESC
+        tbs.trait_label,
+        tbs.total_mentions,
+        COALESCE(trc.exposure_count, 0) as exposure_count,
+        COALESCE(trc.outcome_count, 0) as outcome_count,
+        tbs.unique_pmids,
+        tbs.unique_models,
+        ROUND(
+            COALESCE(trc.exposure_count, 0)::DOUBLE / tbs.total_mentions * 100,
+            2
+        ) as exposure_percentage,
+        ROUND(
+            COALESCE(trc.outcome_count, 0)::DOUBLE / tbs.total_mentions * 100,
+            2
+        ) as outcome_percentage
+    FROM trait_basic_stats tbs
+    LEFT JOIN trait_role_counts trc ON tbs.trait_label = trc.trait_label
+    ORDER BY tbs.total_mentions DESC
     LIMIT {top_n}
     """
     res = conn.execute(query).df()
