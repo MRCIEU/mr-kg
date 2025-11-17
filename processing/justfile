@@ -335,6 +335,11 @@ case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-
 [group('case-study-cs1')]
 case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples case-study-cs1-fig-all
 
+# Consolidate CS1 tables for manuscript
+[group('case-study-cs1')]
+case-study-cs1-manuscript-tables:
+    uv run python scripts/analysis/consolidate_cs1_manuscript_tables.py
+
 # ==== case study 5: temporal evolution of MR evidence ====
 
 # Prepare temporal metadata for all studies
@@ -382,6 +387,11 @@ case-study-cs5-winners-curse:
 # Run complete Case Study 5 pipeline
 [group('case-study-cs5')]
 case-study-cs5-all: case-study-cs5-temporal-prep case-study-cs5-trait-diversity case-study-cs5-evidence-consistency case-study-cs5-reporting-completeness case-study-cs5-fashionable-traits case-study-cs5-pleiotropy-awareness case-study-cs5-winners-curse
+
+# Consolidate CS5 tables for manuscript
+[group('case-study-cs5')]
+case-study-cs5-manuscript-tables:
+    uv run python scripts/analysis/consolidate_cs5_manuscript_tables.py
 
 # ==== diagnostic and development tools ====
 
