@@ -3,17 +3,20 @@
 This script processes multi-study trait pairs to compute pair-level
 reproducibility metrics including direction concordance statistics
 and reproducibility tier assignments. Results are stratified by
-study frequency, temporal era, and match type.
+study frequency, temporal era, match type, and outcome category.
 
 Outputs:
-- pair_reproducibility_metrics.csv: Pair-level metrics
+- pair_reproducibility_metrics.csv: Pair-level metrics with categories
 - tier_distribution.csv: Distribution across reproducibility tiers
 - stratified_by_study_count.csv: Metrics by study count bands
 - stratified_by_temporal_era.csv: Metrics by time period
 - stratified_by_match_type.csv: Metrics by match type
+- stratified_by_category.csv: Metrics by outcome category
+- stratified_by_category_era.csv: Category x era interaction
 """
 
 import argparse
+import json
 from pathlib import Path
 from typing import Dict, List
 
@@ -174,6 +177,52 @@ def assign_temporal_era(
     return "other"
 
 
+def assign_outcome_category(
+    trait_pairs_json: str,
+    category_mapping: Dict[str, List[str]],
+) -> str:
+    """Assign outcome category based on trait pairs in study.
+
+    Uses outcome-only categorization: extracts all outcome traits
+    from trait pairs and assigns category based on keyword matching.
+
+    Args:
+        trait_pairs_json: JSON string of trait pairs
+        category_mapping: Dictionary mapping categories to keywords
+
+    Returns:
+        Category label or "uncategorized"
+    """
+    try:
+        import json as json_module
+
+        if isinstance(trait_pairs_json, str):
+            pairs = json_module.loads(trait_pairs_json)
+        else:
+            pairs = trait_pairs_json
+
+        outcomes = [
+            pair.get("outcome", "").lower()
+            for pair in pairs
+            if "outcome" in pair
+        ]
+
+        if not outcomes:
+            return "uncategorized"
+
+        for category, keywords in category_mapping.items():
+            for outcome in outcomes:
+                for keyword in keywords:
+                    if keyword.lower() in outcome:
+                        return category
+
+        return "uncategorized"
+
+    except Exception as e:
+        logger.warning(f"Error parsing trait pairs: {e}")
+        return "uncategorized"
+
+
 def compute_pair_metrics(
     pairs_df: pd.DataFrame,
     config: Dict,
@@ -190,6 +239,7 @@ def compute_pair_metrics(
         - study_count_band
         - temporal_era
         - concordance_variance
+        - outcome_category (if category analysis enabled)
     """
     tiers = config["case_study_1"]["reproducibility_tiers"]
     bands = config["case_study_1"]["study_count_bands"]
@@ -214,6 +264,30 @@ def compute_pair_metrics(
     result_df["concordance_variance"] = (
         result_df["std_direction_concordance"] ** 2
     )
+
+    category_config = config["case_study_1"].get("category_analysis", {})
+    if category_config.get("enabled", False):
+        logger.info("Computing outcome categories...")
+        category_mapping = category_config["category_mapping"]
+        result_df["outcome_category"] = result_df["trait_pairs_json"].apply(
+            lambda x: assign_outcome_category(x, category_mapping)
+        )
+
+        n_categorized = (
+            result_df["outcome_category"] != "uncategorized"
+        ).sum()
+        coverage = n_categorized / len(result_df)
+        logger.info(
+            f"Category coverage: {n_categorized}/{len(result_df)} "
+            f"({coverage:.1%})"
+        )
+
+        min_threshold = category_config.get("min_coverage_threshold", 0.40)
+        if coverage < min_threshold:
+            logger.warning(
+                f"Category coverage ({coverage:.1%}) below minimum "
+                f"threshold ({min_threshold:.0%})"
+            )
 
     logger.info(f"Computed metrics for {len(result_df)} pairs")
 
@@ -445,6 +519,57 @@ def main():
     output_file = output_dir / "stratified_by_match_type.csv"
     match_type_strat.to_csv(output_file, index=False)
     logger.info(f"Saved match type stratification: {output_file}")
+
+    # ---- Stratify by outcome category ----
+
+    category_config = config["case_study_1"].get("category_analysis", {})
+    if (
+        category_config.get("enabled", False)
+        and "outcome_category" in metrics_df.columns
+    ):
+        logger.info("Computing category stratifications...")
+
+        category_strat = compute_stratified_metrics(
+            metrics_df[metrics_df["outcome_category"] != "uncategorized"],
+            "outcome_category",
+        )
+
+        output_file = output_dir / "stratified_by_category.csv"
+        category_strat.to_csv(output_file, index=False)
+        logger.info(f"Saved category stratification: {output_file}")
+
+        category_era_df = metrics_df[
+            (metrics_df["outcome_category"] != "uncategorized")
+            & (metrics_df["temporal_era"].isin(["early", "recent"]))
+        ]
+
+        if len(category_era_df) > 0:
+            category_era_strat = (
+                category_era_df.groupby(["outcome_category", "temporal_era"])
+                .agg(
+                    n_pairs=("study1_pmid", "count"),
+                    mean_concordance=("mean_direction_concordance", "mean"),
+                    median_concordance=(
+                        "median_direction_concordance",
+                        "median",
+                    ),
+                    n_high=(
+                        "reproducibility_tier",
+                        lambda x: (x == "high").sum(),
+                    ),
+                )
+                .reset_index()
+            )
+
+            category_era_strat["pct_high"] = (
+                100
+                * category_era_strat["n_high"]
+                / category_era_strat["n_pairs"]
+            )
+
+            output_file = output_dir / "stratified_by_category_era.csv"
+            category_era_strat.to_csv(output_file, index=False)
+            logger.info(f"Saved category×era stratification: {output_file}")
 
     # ---- Print summary ----
 

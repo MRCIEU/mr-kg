@@ -82,6 +82,56 @@ case_study_1:
       - ["alcohol consumption", "cardiovascular disease"]
       - ["systolic blood pressure", "stroke"]
 
+  # Category analysis (outcome-only stratification)
+  category_analysis:
+    enabled: true
+    categorization_method: "outcome_only"
+    category_mapping:
+      cardiovascular:
+        - "cardiovascular"
+        - "heart disease"
+        - "coronary artery disease"
+        - "coronary heart disease"
+        - "myocardial infarction"
+        - "stroke"
+        - "ischemic stroke"
+        - "atrial fibrillation"
+        - "heart failure"
+      metabolic:
+        - "metabolic"
+        - "diabetes"
+        - "type 2 diabetes"
+        - "obesity"
+        - "body mass index"
+        - "waist circumference"
+        - "insulin"
+        - "glucose"
+        - "cholesterol"
+        - "triglycerides"
+      psychiatric:
+        - "psychiatric"
+        - "mental health"
+        - "depression"
+        - "anxiety"
+        - "schizophrenia"
+        - "bipolar"
+      cancer:
+        - "cancer"
+        - "oncology"
+        - "carcinoma"
+        - "tumor"
+        - "malignancy"
+      autoimmune:
+        - "autoimmune"
+        - "rheumatoid arthritis"
+        - "lupus"
+        - "inflammatory"
+      other:
+        - "other"
+        - "mixed"
+    min_pairs_per_category: 10
+    min_coverage_threshold: 0.40
+
 # ==== Case Study 2: Network and pleiotropy thresholds ====
 case_study_2:
   # Trait co-occurrence thresholds

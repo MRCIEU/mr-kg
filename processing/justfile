@@ -327,9 +327,34 @@ case-study-cs1-fig-diagnostics:
 case-study-cs1-fig-heatmap:
     uv run python scripts/analysis/case_study_1_fig_concordance_heatmap.py
 
+# Generate study count violin plot
+[group('case-study-cs1')]
+case-study-cs1-fig-violin:
+    uv run python scripts/analysis/case_study_1_fig_study_count_violin.py
+
+# Generate study count box plot
+[group('case-study-cs1')]
+case-study-cs1-fig-box:
+    uv run python scripts/analysis/case_study_1_fig_study_count_box_plot.py
+
+# Generate study count stacked histograms
+[group('case-study-cs1')]
+case-study-cs1-fig-histograms:
+    uv run python scripts/analysis/case_study_1_fig_study_count_stacked_histograms.py
+
+# Generate category tier distribution figure
+[group('case-study-cs1')]
+case-study-cs1-fig-category-tier:
+    uv run python scripts/analysis/case_study_1_fig_category_tier_distribution.py
+
+# Generate category concordance violin plot
+[group('case-study-cs1')]
+case-study-cs1-fig-category-concordance:
+    uv run python scripts/analysis/case_study_1_fig_category_concordance_violin.py
+
 # Generate all Case Study 1 figures
 [group('case-study-cs1')]
-case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-study-cs1-fig-match-type case-study-cs1-fig-temporal case-study-cs1-fig-diagnostics case-study-cs1-fig-heatmap
+case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-study-cs1-fig-match-type case-study-cs1-fig-temporal case-study-cs1-fig-diagnostics case-study-cs1-fig-heatmap case-study-cs1-fig-violin case-study-cs1-fig-box case-study-cs1-fig-histograms case-study-cs1-fig-category-tier case-study-cs1-fig-category-concordance
 
 # Run complete Case Study 1 pipeline
 [group('case-study-cs1')]
