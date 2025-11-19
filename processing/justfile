@@ -366,71 +366,80 @@ case-study-cs1-fig-category-tier:
 case-study-cs1-fig-category-concordance:
     uv run python scripts/analysis/case_study_1_fig_category_concordance_violin.py
 
+# Evaluate temporal era definitions and sample size adequacy
+[group('case-study-cs1')]
+case-study-cs1-evaluate-eras:
+    uv run python scripts/analysis/case_study_1_evaluate_eras.py
+
 # Generate all Case Study 1 figures
 [group('case-study-cs1')]
 case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-study-cs1-fig-match-type case-study-cs1-fig-temporal case-study-cs1-fig-diagnostics case-study-cs1-fig-heatmap case-study-cs1-fig-study-count case-study-cs1-fig-category-tier case-study-cs1-fig-category-concordance
 
 # Run complete Case Study 1 pipeline
 [group('case-study-cs1')]
-case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples case-study-cs1-fig-all
+case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples case-study-cs1-fig-all case-study-cs1-interactions case-study-cs1-evaluate-eras case-study-cs1-manuscript-tables
 
 # Consolidate CS1 tables for manuscript
 [group('case-study-cs1')]
 case-study-cs1-manuscript-tables:
-    uv run python scripts/analysis/consolidate_cs1_manuscript_tables.py
+    uv run python scripts/analysis/consolidate_cs1_manuscript_tables.py \
+        --input-dir {{PROJECT_ROOT}}/data/processed/case-study-cs1 \
+        --output-dir {{PROJECT_ROOT}}/data/processed/manuscript-tables
 
 # ==== case study 5: temporal evolution of MR evidence ====
 
 # Prepare temporal metadata for all studies
 [group('case-study-cs5')]
 case-study-cs5-temporal-prep:
-    uv run scripts/analysis/case_study_5_temporal_preparation.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_temporal_preparation.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Analyze trait diversity over time and across methodological eras
 [group('case-study-cs5')]
 case-study-cs5-trait-diversity:
-    uv run scripts/analysis/case_study_5_trait_diversity.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_trait_diversity.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Analyze evidence consistency patterns across eras
 [group('case-study-cs5')]
 case-study-cs5-evidence-consistency:
-    uv run scripts/analysis/case_study_5_evidence_consistency.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_evidence_consistency.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Analyze reporting completeness and STROBE-MR impact
 [group('case-study-cs5')]
 case-study-cs5-reporting-completeness:
-    uv run scripts/analysis/case_study_5_reporting_completeness.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_reporting_completeness.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Analyze fashionable trait trends and hype cycles
 [group('case-study-cs5')]
 case-study-cs5-fashionable-traits:
-    uv run scripts/analysis/case_study_5_fashionable_traits.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_fashionable_traits.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Analyze pleiotropy awareness and MR-PRESSO adoption
 [group('case-study-cs5')]
 case-study-cs5-pleiotropy-awareness:
-    uv run scripts/analysis/case_study_5_pleiotropy_awareness.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_pleiotropy_awareness.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Analyze winner's curse effect size decline patterns
 [group('case-study-cs5')]
 case-study-cs5-winners-curse:
-    uv run scripts/analysis/case_study_5_winners_curse.py \
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/case_study_5_winners_curse.py \
         --config {{PROJECT_ROOT}}/processing/config/case_studies.yml
 
 # Run complete Case Study 5 pipeline
 [group('case-study-cs5')]
-case-study-cs5-all: case-study-cs5-temporal-prep case-study-cs5-trait-diversity case-study-cs5-evidence-consistency case-study-cs5-reporting-completeness case-study-cs5-fashionable-traits case-study-cs5-pleiotropy-awareness case-study-cs5-winners-curse
+case-study-cs5-all: case-study-cs5-temporal-prep case-study-cs5-trait-diversity case-study-cs5-evidence-consistency case-study-cs5-reporting-completeness case-study-cs5-fashionable-traits case-study-cs5-pleiotropy-awareness case-study-cs5-winners-curse case-study-cs5-manuscript-tables
 
 # Consolidate CS5 tables for manuscript
 [group('case-study-cs5')]
 case-study-cs5-manuscript-tables:
-    uv run python scripts/analysis/consolidate_cs5_manuscript_tables.py
+    cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/consolidate_cs5_manuscript_tables.py \
+        --input-dir {{PROJECT_ROOT}}/data/processed/case-study-cs5 \
+        --output-dir {{PROJECT_ROOT}}/data/processed/manuscript-tables
 
 # ==== diagnostic and development tools ====
 
