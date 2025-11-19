@@ -163,7 +163,7 @@ def assign_temporal_era(
         eras: Dictionary of era definitions from config
 
     Returns:
-        Era label: early, recent, or unknown
+        Era label (early_mr, mr_egger, mr_presso, within_family, strobe_mr, or other)
     """
     if pd.isna(year):
         return "unknown"

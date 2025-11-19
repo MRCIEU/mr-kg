@@ -65,10 +65,13 @@ case_study_1:
     - [7, 10]          # Large sample (7-10 studies)
     - [11, 999]        # Very large sample (11+ studies)
 
-  # Temporal era definitions (publication year ranges)
+  # Temporal era definitions (aligned with methodological milestones)
   temporal_eras:
-    early: [2000, 2015]
-    recent: [2016, 2025]
+    early_mr: [2003, 2014]       # Foundation era (expanded to cover full sample)
+    mr_egger: [2015, 2017]       # MR-Egger for pleiotropy
+    mr_presso: [2018, 2019]      # MR-PRESSO for outlier detection
+    within_family: [2020, 2020]  # Within-family designs
+    strobe_mr: [2021, 2025]      # STROBE-MR reporting guidelines (expanded to cover full sample)
 
   # Validation examples selection
   validation:
@@ -81,6 +84,15 @@ case_study_1:
       - ["smoking", "lung cancer"]
       - ["alcohol consumption", "cardiovascular disease"]
       - ["systolic blood pressure", "stroke"]
+
+  # Similarity expansion configuration
+  similarity_expansion:
+    enabled: true
+    similarity_threshold: 0.9
+    adaptive_thresholds: true
+    min_similarity_for_match: 0.9
+    cache_size_limit: 10000
+    batch_size: 100
 
   # Category analysis (outcome-only stratification)
   category_analysis:
@@ -248,11 +260,11 @@ case_study_5:
 
   # Temporal era definitions
   temporal_eras:
-    early_mr: [2010, 2014]
-    mr_egger: [2015, 2017]
-    mr_presso: [2018, 2019]
-    within_family: [2020, 2020]
-    strobe_mr: [2021, 2024]
+    early_mr: [2003, 2014]       # Foundation era (expanded to cover full sample)
+    mr_egger: [2015, 2017]       # MR-Egger for pleiotropy
+    mr_presso: [2018, 2019]      # MR-PRESSO for outlier detection
+    within_family: [2020, 2020]  # Within-family designs
+    strobe_mr: [2021, 2025]      # STROBE-MR reporting guidelines (expanded to cover full sample)
 
   # COVID era flag
   covid_era_years: [2020, 2021]

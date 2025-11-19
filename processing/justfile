@@ -282,6 +282,11 @@ case-study-cs2-all: case-study-cs2-prepare case-study-cs2-network case-study-cs2
 case-study-cs1-extract-pairs:
     uv run scripts/analysis/case_study_1_extract_pairs.py
 
+# Extract trait pairs using similarity expansion (Phase 3)
+[group('case-study-cs1')]
+case-study-cs1-extract-pairs-expanded:
+    uv run scripts/analysis/case_study_1_extract_pairs_similarity_expanded.py
+
 # Compute reproducibility metrics and stratify by tiers
 [group('case-study-cs1')]
 case-study-cs1-reproducibility-metrics:
@@ -327,20 +332,29 @@ case-study-cs1-fig-diagnostics:
 case-study-cs1-fig-heatmap:
     uv run python scripts/analysis/case_study_1_fig_concordance_heatmap.py
 
-# Generate study count violin plot
+# Generate all study count visualizations
 [group('case-study-cs1')]
-case-study-cs1-fig-violin:
-    uv run python scripts/analysis/case_study_1_fig_study_count_violin.py
+case-study-cs1-fig-study-count:
+    uv run python scripts/analysis/case_study_1_fig_study_count_visualizations.py
 
-# Generate study count box plot
+# Run era × category interaction analysis
 [group('case-study-cs1')]
-case-study-cs1-fig-box:
-    uv run python scripts/analysis/case_study_1_fig_study_count_box_plot.py
+case-study-cs1-interaction-era-category:
+    uv run python scripts/analysis/case_study_1_interaction_era_category.py
 
-# Generate study count stacked histograms
+# Run temporal regression with era dummies
 [group('case-study-cs1')]
-case-study-cs1-fig-histograms:
-    uv run python scripts/analysis/case_study_1_fig_study_count_stacked_histograms.py
+case-study-cs1-interaction-era-dummies:
+    uv run python scripts/analysis/case_study_1_interaction_era_dummies.py
+
+# Run category × match type interaction analysis
+[group('case-study-cs1')]
+case-study-cs1-interaction-category-match:
+    uv run python scripts/analysis/case_study_1_interaction_category_match.py
+
+# Run all interaction analyses
+[group('case-study-cs1')]
+case-study-cs1-interactions: case-study-cs1-interaction-era-category case-study-cs1-interaction-era-dummies case-study-cs1-interaction-category-match
 
 # Generate category tier distribution figure
 [group('case-study-cs1')]
@@ -354,7 +368,7 @@ case-study-cs1-fig-category-concordance:
 
 # Generate all Case Study 1 figures
 [group('case-study-cs1')]
-case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-study-cs1-fig-match-type case-study-cs1-fig-temporal case-study-cs1-fig-diagnostics case-study-cs1-fig-heatmap case-study-cs1-fig-violin case-study-cs1-fig-box case-study-cs1-fig-histograms case-study-cs1-fig-category-tier case-study-cs1-fig-category-concordance
+case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-study-cs1-fig-match-type case-study-cs1-fig-temporal case-study-cs1-fig-diagnostics case-study-cs1-fig-heatmap case-study-cs1-fig-study-count case-study-cs1-fig-category-tier case-study-cs1-fig-category-concordance
 
 # Run complete Case Study 1 pipeline
 [group('case-study-cs1')]

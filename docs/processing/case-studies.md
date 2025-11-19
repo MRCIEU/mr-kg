@@ -141,8 +141,13 @@ Configuration:
   - 7-10 studies: Well-replicated pairs, heterogeneity often maximized
   - 11+ studies: Extensively studied relationships, may represent settled
     causal questions with methodological consensus
-- `temporal_eras`: Year ranges for early/recent studies
-  (default: 2000-2015, 2016-2025)
+- `temporal_eras`: Year ranges defining distinct methodological periods
+  - **early_mr** (2003-2014): Foundation era covering early MR applications
+  - **mr_egger** (2015-2017): Introduction of MR-Egger for pleiotropy testing
+  - **mr_presso** (2018-2019): MR-PRESSO for outlier detection
+  - **within_family** (2020): Within-family designs to address confounding
+  - **strobe_mr** (2021-2025): STROBE-MR reporting guidelines published
+  - Studies outside these ranges assigned to "other" or "unknown" eras
 
 Output files (in `data/processed/case-study-cs1/metrics/`):
 
@@ -410,6 +415,216 @@ All figures:
   low=orange, discordant=red)
 - Saved to `data/processed/case-study-cs1/figures/`
 
+#### Stage 6: Interaction analyses
+
+Tests whether temporal era effects interact with other study characteristics.
+
+##### 6a. Era × Category interaction
+
+Command:
+```bash
+just case-study-cs1-interaction-era-category
+```
+
+Script: `case_study_1_interaction_era_category.py`
+
+Input:
+- `pair_reproducibility_metrics.csv`
+- Excludes "other"/"unknown" eras and "uncategorized" outcomes
+
+Model specification:
+```text
+direction_concordance ~ temporal_era * outcome_category + study_count
+```
+
+Output (in `data/processed/case-study-cs1/interactions/`):
+- `era_category_interaction.csv`: Model coefficients and interaction terms
+- `era_category_anova.json`: Two-way ANOVA results testing interaction
+- `figures/era_category_interaction.png/svg`: Interaction plot
+
+Tests whether temporal improvements in reproducibility vary by disease category
+(e.g., cardiovascular, metabolic, psychiatric).
+
+##### 6b. Era dummies model
+
+Command:
+```bash
+just case-study-cs1-interaction-era-dummies
+```
+
+Script: `case_study_1_interaction_era_dummies.py`
+
+Input: `pair_reproducibility_metrics.csv`
+
+Compares two models:
+1. Continuous year: `direction_concordance ~ publication_year + study_count`
+2. Era dummies: `direction_concordance ~ era_dummy_1 + ... + era_dummy_n + study_count`
+
+Output (in `data/processed/case-study-cs1/models/`):
+- `temporal_model_era_dummies.csv`: Era dummy coefficients
+- `temporal_model_comparison.csv`: Likelihood ratio test comparing models
+- `temporal_model_era_dummies_metadata.json`: Model diagnostics
+
+Tests whether discrete era boundaries explain more variance than continuous
+linear trends.
+
+##### 6c. Category × Match type interaction
+
+Command:
+```bash
+just case-study-cs1-interaction-category-match
+```
+
+Script: `case_study_1_interaction_category_match.py`
+
+Input:
+- `pair_reproducibility_metrics.csv`
+- Excludes "uncategorized" category
+
+Model specification:
+```text
+direction_concordance ~ outcome_category * match_type + study_count
+```
+
+Output (in `data/processed/case-study-cs1/interactions/`):
+- `category_match_interaction.csv`: Model coefficients and interaction terms
+- `category_match_anova.json`: Two-way ANOVA results
+- `figures/category_match_interaction.png/svg`: Interaction plot
+
+Tests whether the impact of match quality (exact vs fuzzy) varies by disease
+category. Significant interaction suggests some categories are more sensitive
+to trait definition precision.
+
+#### Stage 7: Era evaluation
+
+Command:
+```bash
+just case-study-cs1-evaluate-eras
+```
+
+Script: `case_study_1_evaluate_eras.py`
+
+Input:
+- `pair_reproducibility_metrics.csv`
+- Configuration: `temporal_eras` from case_studies.yml
+
+Evaluates whether granular era definitions are justified by:
+1. Sufficient sample sizes per era
+2. Meaningful differences in concordance between eras
+3. Model improvement over continuous year
+
+Output:
+- Console report with era statistics and recommendations
+- Guidance on whether to keep granular eras or collapse to early/recent
+
+This analysis informs decisions about era stratification complexity.
+
+#### Stage 8: Similarity expansion analysis
+
+Analyzes expansion potential using trait embeddings to find semantically similar trait pairs beyond exact name matches.
+
+Command:
+
+```bash
+just case-study-cs1-extract-pairs-expanded
+```
+
+Script:
+
+```bash
+uv run scripts/analysis/case_study_1_extract_pairs_similarity_expanded.py
+```
+
+Input:
+
+- `data/processed/case-study-cs1/raw_pairs/multi_study_pairs.csv`
+- `data/db/vector_store.db`
+  - `trait_similarity_search` view: trait embeddings with cosine similarity search
+
+Configuration:
+
+- `similarity_expansion.similarity_threshold`: Minimum cosine similarity for trait matching (default: 0.9)
+- `similarity_expansion.min_similarity_for_match`: Minimum similarity threshold (default: 0.9)
+- `similarity_expansion.batch_size`: Number of traits to process per batch (default: 100)
+- `similarity_expansion.adaptive_thresholds`: Enable adaptive thresholds based on match quality (default: true)
+- `similarity_expansion.cache_size_limit`: Maximum cache size for similarity results (default: 10000)
+
+Output directory: `data/processed/case-study-cs1/similarity_expanded/`
+
+Output files:
+
+1. `multi_study_pairs_similarity_expanded.csv` (2,075 rows)
+   - Original columns from baseline pairs
+   - `expansion_potential`: Max combinations (similar_exposures x similar_outcomes)
+   - `max_similar_exposures`: Highest similarity count for any exposure trait
+   - `max_similar_outcomes`: Highest similarity count for any outcome trait
+   - `mean_concordance`: Average direction concordance from baseline
+
+2. `expansion_comparison.csv` (2,075 rows)
+   - Side-by-side comparison of exact matches vs expansion potential
+   - Columns: pmid, model, title, original_exposures, original_outcomes,
+     original_study_count, expansion_potential, max_similar_exposures,
+     max_similar_outcomes, mean_concordance
+
+3. `expansion_examples.csv` (20 rows)
+   - Top 20 pairs with highest expansion potential
+   - Illustrates which trait pairs would benefit most from similarity-based expansion
+   - Useful for assessing scientific value of full expansion implementation
+
+4. `similarity_expansion_metadata.json`
+   - Runtime statistics and summary metrics
+   - Documents: script name, mode, thresholds, unique traits analyzed
+   - Summary statistics: total pairs, pairs with potential, mean/median expansion
+
+Key findings:
+
+Runtime: 181.4 seconds (3.02 minutes) for 4,276 unique traits
+
+Coverage:
+- Total pairs analyzed: 2,075
+- Pairs with expansion potential: 1,804 (86.9%)
+- Pairs with no expansion (exact only): 271 (13.1%)
+
+Similarity distribution:
+- Mean similar exposures per trait: 29.5 (median: 10.9)
+- Mean similar outcomes per trait: 19.4 (median: 10.0)
+- Max similar exposures found: 605 traits
+- Max similar outcomes found: 593 traits
+
+Expansion potential:
+- Mean expansion potential: 1,351.8 combinations per pair
+- Median expansion potential: 280.0 combinations per pair
+- Max expansion potential: 10,000 combinations (capped for analysis)
+
+Top expansion examples (expansion_potential = 10,000):
+- Hypertension and Coronary artery disease (605 x 35 similar traits)
+- Alzheimer's disease bidirectional studies (113 x 113 similar traits)
+- Cholesterol measures and CAD (454 x 39 similar traits)
+- HDL/LDL cholesterol with various outcomes (400-600 similar traits)
+
+Interpretation:
+
+This stage serves as a feasibility analysis for similarity-based expansion. The results show:
+
+1. High expansion potential: 87% of pairs could be expanded using semantic similarity
+2. Computational implications: Full expansion would require millions of evidence profile queries
+3. Trait coverage: Some traits (cholesterol, Alzheimer's, cardiovascular) have extensive similar variants
+4. Scientific value assessment: High expansion potential often correlates with well-studied biomarkers
+
+Recommendations:
+
+- Similarity expansion would substantially increase trait pair coverage
+- Computational cost is significant but tractable with batch processing
+- Targeted expansion for high-potential pairs may be more efficient than full expansion
+- Manual review of top examples recommended to assess biological validity of similar trait matches
+
+Limitations:
+
+- Analysis computes expansion potential only (does not execute full expansion)
+- Cosine similarity threshold (0.9) is stringent; lower thresholds would increase expansion
+- Expansion potential capped at 10,000 for practical analysis bounds
+- Does not account for whether similar trait pairs would yield consistent evidence
+
 #### Running complete pipeline
 
 Execute all stages and figures sequentially:
@@ -425,6 +640,8 @@ This runs:
 3. `case-study-cs1-temporal-model`
 4. `case-study-cs1-validation-examples`
 5. `case-study-cs1-fig-all` (all 6 figures)
+
+Note: Stage 8 (similarity expansion analysis) is run separately and is not included in the default pipeline.
 
 ### Key findings
 
@@ -461,15 +678,41 @@ Study count:
 
 Temporal era:
 
-- Early studies (2000-2015): 60 pairs, mean concordance = 0.38 (55.0% high tier)
-- Recent studies (2016-2025): 2,014 pairs, mean concordance = 0.48 (61.1% high tier)
-- Note: One pair classified as "other" temporal band (100% high tier)
+- **early_mr** (2003-2014): N pairs, mean concordance (% high tier)
+- **mr_egger** (2015-2017): N pairs, mean concordance (% high tier)
+- **mr_presso** (2018-2019): N pairs, mean concordance (% high tier)
+- **within_family** (2020): N pairs, mean concordance (% high tier)
+- **strobe_mr** (2021-2025): N pairs, mean concordance (% high tier)
+- **other/unknown**: Pairs outside defined era boundaries
+- Pattern: No consistent temporal improvement across eras
+- Era boundaries align with major methodological developments
 
 Match type:
 
 - Exact matches: 438 pairs, mean concordance = 0.71 (70.5% high tier)
 - Fuzzy matches: 1,920 pairs, mean concordance = 0.44 (58.2% high tier)
 - EFO matches: 72 pairs, mean concordance = 0.52 (51.4% high tier)
+
+#### Interaction effects
+
+Era × Category:
+- No significant interaction (ANOVA p = 0.662)
+- Temporal patterns consistent across disease categories
+- 1,223 pairs analyzed (excluding "other"/"unknown" eras and "uncategorized")
+
+Era dummies vs continuous year:
+- Discrete era boundaries do not improve model fit
+- Likelihood ratio test: p = 0.843
+- Justifies using continuous year in main temporal model
+- 2,074 pairs analyzed
+
+Category × Match type:
+- **Significant interaction** (ANOVA p = 0.025)
+- Match quality effects vary by disease category
+- Autoimmune and metabolic categories most sensitive to match precision
+- Psychiatric categories show weaker match type effects
+- 1,224 pairs analyzed (excluding "uncategorized")
+- Finding suggests trait definition ambiguity varies across domains
 
 #### Canonical pair validation
 
@@ -547,8 +790,11 @@ case_study_1:
     - [11, 999]
   
   temporal_eras:
-    early: [2000, 2015]
-    recent: [2016, 2025]
+    early_mr: [2003, 2014]
+    mr_egger: [2015, 2017]
+    mr_presso: [2018, 2019]
+    within_family: [2020, 2020]
+    strobe_mr: [2021, 2025]
   
   validation:
     canonical_pairs:
@@ -571,6 +817,7 @@ output:
     raw_pairs: "data/processed/case-study-cs1/raw_pairs"
     metrics: "data/processed/case-study-cs1/metrics"
     models: "data/processed/case-study-cs1/models"
+    interactions: "data/processed/case-study-cs1/interactions"
     figures: "data/processed/case-study-cs1/figures"
 ```
 
@@ -591,18 +838,31 @@ data/processed/case-study-cs1/
 │   ├── temporal_model_coefficients.csv
 │   ├── temporal_model_diagnostics.json
 │   ├── temporal_model_summary.txt
-│   └── temporal_predictions.csv
+│   ├── temporal_predictions.csv
+│   ├── temporal_model_era_dummies.csv
+│   ├── temporal_model_comparison.csv
+│   └── temporal_model_era_dummies_metadata.json
+├── interactions/
+│   ├── era_category_interaction.csv
+│   ├── era_category_anova.json
+│   ├── category_match_interaction.csv
+│   └── category_match_anova.json
 └── figures/
     ├── tier_distribution.png/svg
     ├── study_count_vs_concordance.png/svg
     ├── study_count_correlation.csv
+    ├── study_count_violin.png/svg
+    ├── study_count_box_plot.png/svg
+    ├── study_count_stacked_histograms.png/svg
     ├── match_type_distribution.png/svg
     ├── match_type_distribution.csv
     ├── temporal_era_comparison.png/svg
     ├── temporal_era_comparison.csv
     ├── regression_diagnostics.png/svg
     ├── concordance_variance_heatmap.png/svg
-    └── concordance_variance_pivot.csv
+    ├── concordance_variance_pivot.csv
+    ├── era_category_interaction.png/svg
+    └── category_match_interaction.png/svg
 
 .notes/analysis-notes/case-study-analysis/cs1-validation/
 ├── canonical_*.md
