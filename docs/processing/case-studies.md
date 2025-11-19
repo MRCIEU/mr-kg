@@ -75,9 +75,19 @@ Output:
 
 Key metrics computed per pair:
 
-- `study_count`: Number of independent studies (primary metric)
-- `comparison_count`: Number of pairwise comparisons (study_count choose 2)
-- `mean_direction_concordance`: Average pairwise direction agreement
+- `study_count`: Total number of independent studies investigating the same
+  exposure-outcome trait pair
+  - Computation: `comparison_count + 1` (adds the focal study to comparison count)
+  - "Independent" means unique PMID and model combinations
+  - Example: If Study A matches with 5 other studies (B, C, D, E, F) on the
+    same trait pair, then comparison_count = 5 and study_count = 6
+  - Used for stratification into bands: 2-3, 4-6, 7-10, 11+ studies
+  - Primary metric for assessing replication breadth across the literature
+- `comparison_count`: Number of pairwise comparisons between studies
+  (mathematically: study_count choose 2)
+- `mean_direction_concordance`: Average pairwise direction agreement across all
+  study combinations for this trait pair (see direction concordance calculation
+  in @docs/processing/evidence-profile-similarity.md)
 - `trait_pairs_json`: JSON array of matched trait pairs with match types
 - Match indicators: Boolean flags for exact/fuzzy/EFO matches
 
@@ -103,9 +113,34 @@ Input:
 
 Configuration:
 
-- `reproducibility_tiers`: Concordance thresholds for high/moderate/low
-  (default: 0.7, 0.3, 0.0)
-- `study_count_bands`: Stratification bins (default: 2-3, 4-6, 7-10, 11+)
+- `reproducibility_tiers`: Four-tier classification system for categorizing
+  direction concordance quality across independent studies
+  - **High tier** (>= 0.7): Strong directional agreement; studies consistently
+    report the same effect direction (positive or negative)
+  - **Moderate tier** (0.3 to < 0.7): Mixed agreement; some studies agree but
+    substantial variation exists
+  - **Low tier** (0.0 to < 0.3): Weak agreement; minimal directional
+    consistency across studies
+  - **Discordant tier** (< 0.0): Systematic disagreement; studies report
+    opposite effect directions more often than same direction
+  - Default thresholds: high=0.7, moderate=0.3, low=0.0
+  - Based on mean pairwise direction concordance (range: -1 to +1)
+  - Concordance calculation: For each pair of studies, +1 if both report same
+    direction (both positive OR both negative), -1 if opposite directions (one
+    positive, one negative), 0 if either is null
+  - Used to identify high-quality reproducible findings (high tier) and
+    problematic trait pairs requiring investigation (discordant tier)
+- `study_count_bands`: Stratification bins for grouping trait pairs by
+  replication breadth
+  - Bands: 2-3, 4-6, 7-10, 11+ studies
+  - Rationale: Balance between statistical power (sufficient sample per band)
+    and granularity (detect non-linear trends)
+  - 2-3 studies: Initial replications, may show selection bias toward
+    concordant findings
+  - 4-6 studies: Moderate replication, heterogeneity begins to emerge
+  - 7-10 studies: Well-replicated pairs, heterogeneity often maximized
+  - 11+ studies: Extensively studied relationships, may represent settled
+    causal questions with methodological consensus
 - `temporal_eras`: Year ranges for early/recent studies
   (default: 2000-2015, 2016-2025)
 

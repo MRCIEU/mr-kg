@@ -187,6 +187,94 @@ Edge cases:
 - If no matched pairs: returns 0.0
 - If all pairs involve null directions: returns 0.0 (no directional comparisons possible)
 
+#### Direction concordance calculation examples
+
+To illustrate the direction concordance calculation, consider practical examples
+of how the metric behaves with different patterns of agreement.
+
+**Example 1: Perfect concordance (score = 1.0)**
+
+Studies A, B, and C all investigate "BMI -> Type 2 Diabetes":
+- Study A reports positive effect (beta > 0)
+- Study B reports positive effect (beta > 0)
+- Study C reports positive effect (beta > 0)
+
+Pairwise comparisons:
+- A vs B: Both positive → concordant (+1)
+- A vs C: Both positive → concordant (+1)
+- B vs C: Both positive → concordant (+1)
+
+Mean concordance = (+1 + 1 + 1) / 3 = 1.0 (perfect agreement, high tier)
+
+**Example 2: Perfect discordance (score = -1.0)**
+
+Studies A, B, and C investigate "Alcohol -> Cardiovascular Disease":
+- Study A reports positive effect
+- Study B reports negative effect
+- Study C reports negative effect
+
+Pairwise comparisons:
+- A vs B: Opposite directions → discordant (-1)
+- A vs C: Opposite directions → discordant (-1)
+- B vs C: Both negative → concordant (+1)
+
+Mean concordance = (-1 - 1 + 1) / 3 = -0.33 (low tier, trending discordant)
+
+**Example 3: Mixed concordance (score = 0.33)**
+
+Studies A, B, C, D investigate "Education -> Income":
+- Study A reports positive effect
+- Study B reports positive effect
+- Study C reports positive effect
+- Study D reports negative effect
+
+Pairwise comparisons (6 total):
+- A vs B: Both positive → concordant (+1)
+- A vs C: Both positive → concordant (+1)
+- A vs D: Opposite → discordant (-1)
+- B vs C: Both positive → concordant (+1)
+- B vs D: Opposite → discordant (-1)
+- C vs D: Opposite → discordant (-1)
+
+Mean concordance = (+1 + 1 - 1 + 1 - 1 - 1) / 6 = 0.0 (low tier)
+
+**Example 4: Handling null effects**
+
+Studies A, B, C investigate "Height -> Cancer":
+- Study A reports positive effect
+- Study B reports null effect (p > 0.05 or beta = 0)
+- Study C reports positive effect
+
+Pairwise comparisons:
+- A vs B: One null → excluded from calculation
+- A vs C: Both positive → concordant (+1)
+- B vs C: One null → excluded from calculation
+
+Mean concordance = (+1) / 1 = 1.0 (perfect concordance among non-null comparisons)
+
+Note: Only 1 comparison is valid (A vs C); the other pairs involving Study B
+are excluded because null directions provide no directional information.
+
+**Example 5: Case Study 1 application**
+
+In Case Study 1 reproducibility analysis, this metric is aggregated across all
+independent studies investigating the same trait pair to assess overall
+reproducibility:
+
+For a trait pair investigated by 5 studies with the following pattern:
+- 4 studies report positive effects
+- 1 study reports negative effect
+
+This yields:
+- 6 concordant pairs (4 choose 2 = 6 positive-positive comparisons)
+- 4 discordant pairs (4 positive vs 1 negative = 4 comparisons)
+
+Mean direction concordance = (6 - 4) / (6 + 4) = 2/10 = 0.2 (low tier)
+
+Despite 80% of studies reporting positive effects, the presence of one
+discordant study reduces concordance to the low tier, highlighting the
+metric's sensitivity to heterogeneity.
+
 ### 3. Statistical consistency
 
 Definition: Cohen's kappa coefficient for agreement in statistical
