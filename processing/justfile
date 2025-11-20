@@ -168,7 +168,7 @@ analyze-trait-summary-stats:
         --output-dir {{PROJECT_ROOT}}/data/processed/trait-profiles/analysis
 
 # Generate manuscript-ready summary tables from all databases
-[group('summary-statistics')]
+[group('summary-statistics'), group('manuscript')]
 generate-manuscript-tables:
     uv run scripts/analysis/generate-manuscript-summary-table.py \
         --overall-dir {{PROJECT_ROOT}}/data/processed/overall-stats \
@@ -377,14 +377,19 @@ case-study-cs1-fig-all: case-study-cs1-fig-tier case-study-cs1-fig-scatter case-
 
 # Run complete Case Study 1 pipeline
 [group('case-study-cs1')]
-case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples case-study-cs1-fig-all case-study-cs1-interactions case-study-cs1-evaluate-eras case-study-cs1-manuscript-tables
+case-study-cs1-all: case-study-cs1-extract-pairs case-study-cs1-reproducibility-metrics case-study-cs1-temporal-model case-study-cs1-validation-examples case-study-cs1-fig-all case-study-cs1-interactions case-study-cs1-evaluate-eras case-study-cs1-manuscript-tables case-study-cs1-manuscript-figures
 
 # Consolidate CS1 tables for manuscript
-[group('case-study-cs1')]
+[group('case-study-cs1'),group('manuscript')]
 case-study-cs1-manuscript-tables:
     uv run python scripts/analysis/consolidate_cs1_manuscript_tables.py \
         --input-dir {{PROJECT_ROOT}}/data/processed/case-study-cs1 \
         --output-dir {{PROJECT_ROOT}}/data/processed/manuscript-tables
+
+# Create CS1 figures for manuscript
+[group('case-study-cs1'),group('manuscript')]
+case-study-cs1-manuscript-figures:
+    uv run python scripts/analysis/case_study_1_manuscript_figures.py
 
 # ==== case study 5: temporal evolution of MR evidence ====
 
@@ -432,14 +437,29 @@ case-study-cs5-winners-curse:
 
 # Run complete Case Study 5 pipeline
 [group('case-study-cs5')]
-case-study-cs5-all: case-study-cs5-temporal-prep case-study-cs5-trait-diversity case-study-cs5-evidence-consistency case-study-cs5-reporting-completeness case-study-cs5-fashionable-traits case-study-cs5-pleiotropy-awareness case-study-cs5-winners-curse case-study-cs5-manuscript-tables
+case-study-cs5-all: case-study-cs5-temporal-prep case-study-cs5-trait-diversity case-study-cs5-evidence-consistency case-study-cs5-reporting-completeness case-study-cs5-fashionable-traits case-study-cs5-pleiotropy-awareness case-study-cs5-winners-curse case-study-cs5-manuscript-tables case-study-cs5-manuscript-figures
 
 # Consolidate CS5 tables for manuscript
-[group('case-study-cs5')]
+[group('case-study-cs5'),group('manuscript')]
 case-study-cs5-manuscript-tables:
     cd {{PROJECT_ROOT}} && uv run --project processing python processing/scripts/analysis/consolidate_cs5_manuscript_tables.py \
         --input-dir {{PROJECT_ROOT}}/data/processed/case-study-cs5 \
         --output-dir {{PROJECT_ROOT}}/data/processed/manuscript-tables
+
+# Create CS5 figures for manuscript
+[group('case-study-cs5'),group('manuscript')]
+case-study-cs5-manuscript-figures:
+    uv run python scripts/analysis/case_study_5_manuscript_figures.py
+
+# ==== manuscript artifacts ====
+
+# Generate summary manuscript figures
+[group('manuscript')]
+summary-manuscript-figures:
+    uv run python scripts/analysis/summary_manuscript_figures.py
+
+[group('manuscript')]
+manuscript-artifacts: summary-manuscript-figures case-study-cs1-manuscript-tables case-study-cs5-manuscript-tables
 
 # ==== diagnostic and development tools ====
 
