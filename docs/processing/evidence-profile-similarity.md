@@ -1059,32 +1059,9 @@ data.
 sizes and precision. High null_concordance + wide confidence intervals suggests
 power issues rather than evidence consistency.
 
-## Glossary
+## See also
 
-- **Evidence profile:** The collection of statistical results (effect sizes,
-  p-values, directions) for all exposure-outcome pairs investigated in a study,
-  representing the complete pattern of observed statistical evidence
-  (identified uniquely by PMID and extraction model)
-- **Evidence profile similarity:** A multi-metric quantitative assessment of
-  statistical evidence alignment between two studies, computed across matched
-  exposure-outcome pairs using effect size correlation, direction concordance,
-  significance consistency, and evidence overlap measures
-- **Harmonized effect size:** Effect size converted to beta (log) scale to
-  enable comparison across different effect measures (beta, OR, HR)
-- **Matched pairs:** Exposure-outcome trait combinations present in both
-  studies being compared, identified by matching trait indices
-- **Direction concordance:** Agreement in classified effect directions
-  (positive, negative, null) across matched pairs
-- **Statistical consistency:** Cohen's kappa measuring agreement in
-  statistical significance classifications (p < 0.05 threshold)
-- **Evidence overlap:** Jaccard similarity of sets of statistically
-  significant exposure-outcome pairs between studies
-- **Null concordance:** Proportion of matched pairs where both results are
-  non-significant, indicating shared null findings
-- **Within-type similarity:** Effect size correlation computed only for
-  matched pairs with identical effect types (beta-beta, OR-OR, HR-HR)
-- **Cross-type similarity:** Effect size correlation computed for matched
-  pairs with different effect types after harmonization
-- **Quality weighting:** Adjustment of composite scores by multiplying by
-  min(query_completeness, similar_completeness) to account for data quality
-  differences
+- Key terms and concepts: @docs/GLOSSARY.md
+- Trait profile similarity: @docs/processing/trait-profile-similarity.md
+- Database schema: @docs/processing/db-schema.md
+- Processing pipeline: @docs/processing/pipeline.md

@@ -149,7 +149,8 @@ Each query produces a record containing:
   - Jaccard similarity score
   - Trait counts for comparison
 
-## Glossary
+## See also
 
-- **Trait profile:** The combined set of exposure and outcome traits extracted from a study, representing all traits investigated in that research (identified uniquely by PMID and extraction model)
-- **Trait profile similarity:** A quantitative measure of research focus overlap between two studies, computed using both semantic similarity (embedding-based) and Jaccard similarity (set-based) of their trait profiles
+- Key terms and concepts: @docs/GLOSSARY.md
+- Evidence profile similarity: @docs/processing/evidence-profile-similarity.md
+- Processing pipeline: @docs/processing/pipeline.md

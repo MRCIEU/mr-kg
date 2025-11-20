@@ -281,6 +281,7 @@ mr-kg/
 - Webapp: @webapp/README.md
 - Common utilities: @src/common_funcs/README.md
 - Data structure: @docs/DATA.md
+- Key terms and concepts: @docs/GLOSSARY.md
 
 ## Data documentation
 
