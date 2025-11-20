@@ -15,7 +15,6 @@ Outputs:
 """
 
 import argparse
-import json
 from pathlib import Path
 from typing import Dict
 
@@ -164,7 +163,7 @@ def create_figure_1(
         "discordant": "#95a5a6",
     }
 
-    chart1 = (
+    bars = (
         alt.Chart(tier_counts)
         .mark_bar()
         .encode(
@@ -192,11 +191,49 @@ def create_figure_1(
         .transform_calculate(
             tier_order=(f"indexof({tier_order}, datum.reproducibility_tier)")
         )
-        .properties(
-            width=400,
-            height=300,
-            title="Tier Distribution by Outcome Category",
+    )
+
+    # ---- Add text labels to bars ----
+    # Calculate cumulative percentages for proper text positioning
+    tier_counts_sorted = tier_counts.sort_values(
+        ["outcome_category", "reproducibility_tier"],
+        key=lambda x: (
+            x
+            if x.name != "reproducibility_tier"
+            else x.map(lambda v: tier_order.index(v))
+        ),
+    )
+    tier_counts_sorted["cumulative_pct"] = tier_counts_sorted.groupby(
+        "outcome_category"
+    )["percentage"].cumsum()
+    tier_counts_sorted["label_position"] = (
+        tier_counts_sorted["cumulative_pct"]
+        - tier_counts_sorted["percentage"] / 2
+    )
+
+    text_labels = (
+        alt.Chart(tier_counts_sorted)
+        .mark_text(
+            align="center",
+            baseline="middle",
+            fontSize=9,
+            color="black",
         )
+        .encode(
+            x=alt.X("label_position:Q"),
+            y=alt.Y("outcome_category:N", sort=category_order),
+            text=alt.Text("count:Q", format="d"),
+            order=alt.Order("tier_order:Q"),
+        )
+        .transform_calculate(
+            tier_order=(f"indexof({tier_order}, datum.reproducibility_tier)")
+        )
+    )
+
+    chart1 = (bars + text_labels).properties(
+        width=400,
+        height=300,
+        title="Tier Distribution by Outcome Category",
     )
 
     # ---- Prepare data for concordance subplot ----
@@ -266,15 +303,40 @@ def create_figure_1(
         )
     )
 
-    chart2_with_errors = chart2 + error_bars
+    # ---- Add text labels inside bars ----
+    text_labels_chart2 = (
+        alt.Chart(match_df)
+        .mark_text(
+            align="center",
+            baseline="middle",
+            fontSize=9,
+            color="white",
+            fontWeight="bold",
+        )
+        .encode(
+            x=alt.X("text_position:Q"),
+            y=alt.Y("category:N", sort=category_order),
+            text=alt.Text("mean_concordance:Q", format=".2f"),
+            yOffset=alt.YOffset("match_type:N"),
+        )
+        .transform_calculate(
+            text_position="datum.mean_concordance / 2"
+        )
+    )
+
+    chart2_with_errors = chart2 + error_bars + text_labels_chart2
 
     # ---- Combine subplots ----
-    combined = alt.hconcat(chart1, chart2_with_errors).properties(
-        title=alt.TitleParams(
-            f"Reproducibility and Outcome Category (n={len(df_clean):,} "
-            f"pairs)",
-            fontSize=16,
-            anchor="middle",
+    combined = (
+        alt.hconcat(chart1, chart2_with_errors)
+        .resolve_scale(color="independent")
+        .properties(
+            title=alt.TitleParams(
+                f"Reproducibility and Outcome Category (n={len(df_clean):,} "
+                f"pairs)",
+                fontSize=16,
+                anchor="middle",
+            )
         )
     )
 
@@ -320,9 +382,13 @@ def create_figure_2(
         .reset_index(name="mean_conc")
     )
 
+    # ---- Add mean_conc and threshold to df_clean for unified data ----
+    df_with_lines = df_clean.merge(means, on="study_count_band")
+    df_with_lines["threshold"] = 0.7
+
     # ---- Create histogram ----
     histogram = (
-        alt.Chart(df_clean)
+        alt.Chart()
         .mark_bar(color="steelblue", opacity=0.7)
         .encode(
             x=alt.X(
@@ -335,28 +401,86 @@ def create_figure_2(
         )
     )
 
-    # ---- Add mean lines ----
+    # ---- Add mean lines (one per facet) ----
     mean_lines = (
-        alt.Chart(means)
+        alt.Chart()
         .mark_rule(color="red", strokeWidth=2)
         .encode(
-            x=alt.X("mean_conc:Q", scale=alt.Scale(domain=[-1, 1])),
+            x=alt.X("mean_conc:Q"),
+        )
+        .transform_aggregate(
+            mean_conc="mean(mean_conc)", groupby=["study_count_band"]
+        )
+    )
+
+    # ---- Add text labels to mean lines ----
+    mean_labels = (
+        alt.Chart()
+        .mark_text(
+            align="left",
+            baseline="top",
+            dx=5,
+            dy=10,
+            fontSize=10,
+            color="red",
+            fontWeight="bold",
+        )
+        .encode(
+            x=alt.X("mean_conc:Q"),
+            y=alt.value(10),
+            text=alt.Text("mean_conc:Q", format=".2f"),
+        )
+        .transform_aggregate(
+            mean_conc="mean(mean_conc)", groupby=["study_count_band"]
         )
     )
 
     # ---- Add high tier threshold line (0.7) ----
-    threshold_df = pd.DataFrame([{"threshold": 0.7}])
     threshold_lines = (
-        alt.Chart(threshold_df)
+        alt.Chart()
         .mark_rule(color="green", strokeDash=[5, 5], strokeWidth=1.5)
+        .encode(x=alt.X("threshold:Q"))
+    )
+
+    # ---- Create legend for lines ----
+    # Create a dummy dataset for legend
+    legend_data = pd.DataFrame(
+        [
+            {"type": "Mean concordance", "color": "red"},
+            {"type": "High tier (0.7)", "color": "green"},
+        ]
+    )
+
+    legend_chart = (
+        alt.Chart(legend_data)
+        .mark_point(size=0, opacity=0)
         .encode(
-            x=alt.X("threshold:Q", scale=alt.Scale(domain=[-1, 1])),
+            color=alt.Color(
+                "type:N",
+                scale=alt.Scale(
+                    domain=["Mean concordance", "High tier (0.7)"],
+                    range=["red", "green"],
+                ),
+                legend=alt.Legend(
+                    title="Reference Lines",
+                    orient="bottom",
+                    direction="horizontal",
+                ),
+            )
         )
     )
 
-    # ---- Layer charts and then facet ----
-    combined = (
-        alt.layer(histogram, mean_lines, threshold_lines, data=df_clean)
+    # ---- Layer and then facet ----
+    # Increase width by 1.5x (from default ~200 to 300)
+    faceted = (
+        alt.layer(
+            histogram,
+            mean_lines,
+            mean_labels,
+            threshold_lines,
+            data=df_with_lines,
+        )
+        .properties(width=300, height=200)
         .facet(
             facet=alt.Facet(
                 "study_count_band:N",
@@ -366,6 +490,15 @@ def create_figure_2(
             ),
             columns=2,
         )
+        .resolve_scale(x="independent", y="independent")
+    )
+
+    # ---- Combine with legend ----
+    combined = (
+        alt.vconcat(
+            faceted,
+            legend_chart,
+        )
         .properties(
             title=alt.TitleParams(
                 f"Concordance Distribution by Study Count "
@@ -374,7 +507,7 @@ def create_figure_2(
                 anchor="middle",
             ),
         )
-        .resolve_scale(x="independent", y="independent")
+        .resolve_scale(color="independent")
     )
 
     # ---- Save figure ----

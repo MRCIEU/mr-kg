@@ -156,27 +156,53 @@ Users should reference the subplot titles and line colors to interpret each pane
 1. **Tier Distribution by Outcome Category** (left): Stacked horizontal bars showing reproducibility tier distribution
 2. **Concordance by Match Quality and Outcome Category** (right): Error bars showing mean direction concordance
 
+**Visual elements (left panel)**:
+- Stacked horizontal bars showing percentage distribution
+- Four reproducibility tiers with distinct colors:
+  - High (green)
+  - Moderate (orange)
+  - Low (red)
+  - Discordant (gray)
+- Text labels centered within each bar segment showing absolute counts
+- Categories sorted by high tier percentage (ascending)
+
+**Visual elements (right panel)**:
+- Horizontal bars showing mean direction concordance
+- Error bars representing 95% confidence intervals
+- Two match types with distinct colors:
+  - Exact match (dark green)
+  - Fuzzy match (orange)
+- Y-offset positioning for grouped comparison within each category
+
 **Key features**:
 - Uses "Outcome Category" (not "Disease Category") for consistency
 - Categories: cancer, autoimmune, cardiovascular, metabolic, other, psychiatric
 - Reproducibility tiers: high, moderate, low, discordant
 - Match types: exact, fuzzy
+- Text labels improve readability by showing exact pair counts
 
 ### Figure 2: Study count and reproducibility
 
 **Purpose**: Examine relationship between number of studies per trait pair and reproducibility.
 
 **Structure**: 2×2 faceted histograms showing concordance distribution across four study count bands:
-- Small sample (2-3 studies)
-- Medium sample (4-6 studies)
-- Large sample (7-10 studies)
-- Very large sample (11+ studies)
+- Small sample (2-3 studies): mean = 0.50
+- Medium sample (4-6 studies): mean = 0.44
+- Large sample (7-10 studies): mean = 0.33
+- Very large sample (11+ studies): mean = 0.44
 
 **Visual elements**:
-- Histograms showing distribution of direction concordance values
-- Red vertical line: mean concordance
+- Steelblue histograms showing distribution of direction concordance values (20 bins)
+- Red vertical line: mean concordance for each band
+- Red text label: numeric value of mean (2 decimal places, positioned near top)
 - Green dashed line: high reproducibility threshold (0.7)
-- Gray dotted line: discordant threshold (0.0)
+- Reference lines legend at bottom
+
+**Technical specifications**:
+- Width: 300 pixels per panel (1.5× standard)
+- Height: 200 pixels per panel
+- Independent scales for both x and y axes across facets
+- Each facet computes and displays its own mean value
 
 ## Summary figure: MR literature temporal distribution
 
@@ -224,18 +250,6 @@ When updating figures:
 2. Run the appropriate just command
 3. Verify the output in `data/artifacts/manuscript-figures/`
 4. Update this documentation if visual elements or interpretations change
-
-### Figure quality checks
-
-Before using figures in manuscripts, verify:
-
-- [ ] Resolution is 300 DPI
-- [ ] Text is readable at publication size
-- [ ] Color scheme is colorblind-friendly
-- [ ] Axes are properly labeled
-- [ ] Legends are clear and positioned appropriately
-- [ ] Data ranges are appropriate
-- [ ] No overlapping text or visual elements
 
 ## Related documentation
 
