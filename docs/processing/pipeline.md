@@ -1574,7 +1574,7 @@ Default: data/processed/evidence-profiles/analysis.
 `--output-dir <PATH>`
 
 Output directory for tables.
-Default: data/processed/manuscript-tables.
+Default: data/artifacts/manuscript-tables.
 
 Input files
 
@@ -1586,15 +1586,15 @@ Requires outputs from:
 
 Output files
 
-`data/processed/manuscript-tables/summary-table-full.tex`
+`data/artifacts/manuscript-tables/summary-table-full.tex`
 
 Complete LaTeX table with all statistics from three databases.
 
-`data/processed/manuscript-tables/summary-table-compact.tex`
+`data/artifacts/manuscript-tables/summary-table-compact.tex`
 
 Condensed table for main manuscript text.
 
-`data/processed/manuscript-tables/summary-table-data.json`
+`data/artifacts/manuscript-tables/summary-table-data.json`
 
 Raw consolidated data for custom table generation.
 

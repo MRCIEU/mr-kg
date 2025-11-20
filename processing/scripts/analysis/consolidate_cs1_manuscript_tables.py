@@ -35,7 +35,7 @@ def parse_args():
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("../data/processed/manuscript-tables"),
+        default=Path("../data/artifacts/manuscript-tables"),
         help="Output directory for manuscript tables",
     )
 

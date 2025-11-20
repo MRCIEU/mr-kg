@@ -156,7 +156,7 @@ uv run scripts/analysis/generate-manuscript-summary-table.py \
   --overall-dir ../data/processed/overall-stats \
   --trait-dir ../data/processed/trait-profiles/analysis \
   --evidence-dir ../data/processed/evidence-profiles/analysis \
-  --output-dir ../data/processed/manuscript-tables
+  --output-dir ../data/artifacts/manuscript-tables
 ```
 
 Prerequisites:
@@ -170,7 +170,7 @@ Must have run:
 Outputs:
 
 ```text
-data/processed/manuscript-tables/
+data/artifacts/manuscript-tables/
 ├── summary-table-full.tex                        # Aggregated across all models
 ├── summary-table-full-deepseek-r1-distilled.tex
 ├── summary-table-full-gpt-4-1.tex
@@ -323,7 +323,7 @@ custom tables in any format:
 import json
 import pandas as pd
 
-with open('data/processed/manuscript-tables/summary-table-data.json') as f:
+with open('data/artifacts/manuscript-tables/summary-table-data.json') as f:
     data = json.load(f)
 
 overall = data['overall']
@@ -488,7 +488,7 @@ ls -lh data/processed/overall-stats/
 ls -lh data/processed/trait-profiles/analysis/
 
 # Check manuscript tables
-ls -lh data/processed/manuscript-tables/
+ls -lh data/artifacts/manuscript-tables/
 ```
 
 Expected file counts:
@@ -511,11 +511,11 @@ just generate-manuscript-tables
 
 ```bash
 # Copy aggregated table
-cp data/processed/manuscript-tables/summary-table-full.tex \
+cp data/artifacts/manuscript-tables/summary-table-full.tex \
    /path/to/manuscript/tables/
 
 # Copy specific model tables
-cp data/processed/manuscript-tables/summary-table-full-gpt-4-1.tex \
+cp data/artifacts/manuscript-tables/summary-table-full-gpt-4-1.tex \
    /path/to/manuscript/tables/
 ```
 

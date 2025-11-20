@@ -1,0 +1,147 @@
+{
+  "overall": {
+    "total_unique_pmids": 15635,
+    "total_unique_traits": 75121,
+    "total_model_results": 50402,
+    "total_unique_models": 6,
+    "temporal_range_start": 2003,
+    "temporal_range_end": 2026,
+    "avg_results_per_pmid": 3.22,
+    "total_extraction_results": 253650,
+    "total_trait_mentions": 283537
+  },
+  "trait_profile": {
+    "model_stats": [
+      {
+        "model": "deepseek-r1-distilled",
+        "total_combinations": 718,
+        "avg_trait_count": 4.452646239554317,
+        "min_trait_count": 0,
+        "max_trait_count": 23,
+        "sd_trait_count": 2.856528940446688,
+        "total_similarity_pairs": 7180
+      },
+      {
+        "model": "gpt-4-1",
+        "total_combinations": 15626,
+        "avg_trait_count": 5.168373224113656,
+        "min_trait_count": 0,
+        "max_trait_count": 38,
+        "sd_trait_count": 3.293516030256289,
+        "total_similarity_pairs": 156260
+      },
+      {
+        "model": "gpt-5",
+        "total_combinations": 15606,
+        "avg_trait_count": 6.81443034730232,
+        "min_trait_count": 0,
+        "max_trait_count": 74,
+        "sd_trait_count": 4.5938928074027565,
+        "total_similarity_pairs": 156060
+      },
+      {
+        "model": "llama3",
+        "total_combinations": 6416,
+        "avg_trait_count": 4.3682980049875315,
+        "min_trait_count": 0,
+        "max_trait_count": 31,
+        "sd_trait_count": 2.998170959401118,
+        "total_similarity_pairs": 64160
+      },
+      {
+        "model": "llama3-2",
+        "total_combinations": 6670,
+        "avg_trait_count": 5.029535232383808,
+        "min_trait_count": 0,
+        "max_trait_count": 30,
+        "sd_trait_count": 3.21354456987332,
+        "total_similarity_pairs": 66700
+      },
+      {
+        "model": "o4-mini",
+        "total_combinations": 5366,
+        "avg_trait_count": 5.899925456578457,
+        "min_trait_count": 0,
+        "max_trait_count": 38,
+        "sd_trait_count": 3.918352208841819,
+        "total_similarity_pairs": 53660
+      }
+    ],
+    "distributions_summary": {
+      "mean_semantic": 0.6950147612320494,
+      "median_semantic": 0.7318879800538222,
+      "mean_jaccard": 0.09000698570958494,
+      "median_jaccard": 0.0555555555555555
+    }
+  },
+  "evidence_profile": {
+    "model_stats": [
+      {
+        "model": "deepseek-r1-distilled",
+        "total_combinations": 177,
+        "avg_result_count": 4.418478260869565,
+        "avg_completeness": 0.6459190115440115,
+        "min_result_count": 1,
+        "max_result_count": 16,
+        "sd_result_count": 2.483582347781798,
+        "total_similarity_pairs": 22
+      },
+      {
+        "model": "gpt-4-1",
+        "total_combinations": 1579,
+        "avg_result_count": 5.021283783783784,
+        "avg_completeness": 0.6779438131644018,
+        "min_result_count": 1,
+        "max_result_count": 20,
+        "sd_result_count": 3.2013461979963993,
+        "total_similarity_pairs": 2066
+      },
+      {
+        "model": "gpt-5",
+        "total_combinations": 1498,
+        "avg_result_count": 5.422191528545119,
+        "avg_completeness": 0.6294839655259421,
+        "min_result_count": 1,
+        "max_result_count": 69,
+        "sd_result_count": 4.0551160382881335,
+        "total_similarity_pairs": 1249
+      },
+      {
+        "model": "llama3",
+        "total_combinations": 866,
+        "avg_result_count": 4.56692242114237,
+        "avg_completeness": 0.7246626568801992,
+        "min_result_count": 1,
+        "max_result_count": 20,
+        "sd_result_count": 2.8676726763086786,
+        "total_similarity_pairs": 608
+      },
+      {
+        "model": "llama3-2",
+        "total_combinations": 709,
+        "avg_result_count": 5.696650717703349,
+        "avg_completeness": 0.6485382385072785,
+        "min_result_count": 1,
+        "max_result_count": 21,
+        "sd_result_count": 3.3850638626086,
+        "total_similarity_pairs": 609
+      },
+      {
+        "model": "o4-mini",
+        "total_combinations": 1303,
+        "avg_result_count": 5.40523945968072,
+        "avg_completeness": 0.7821074072896371,
+        "min_result_count": 1,
+        "max_result_count": 23,
+        "sd_result_count": 3.698108783264321,
+        "total_similarity_pairs": 1709
+      }
+    ],
+    "distributions_summary": {
+      "mean_direction": 0.42632133567012565,
+      "median_direction": 1.0,
+      "mean_composite": 0.3855093447392428,
+      "median_composite": 0.3205128205128205
+    }
+  }
+}

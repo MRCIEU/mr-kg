@@ -29,11 +29,12 @@ from yiutils.project_utils import find_project_root
 PROJECT_ROOT = find_project_root("docker-compose.yml")
 DATA_DIR = PROJECT_ROOT / "data"
 PROCESSED_DIR = DATA_DIR / "processed"
+ARTIFACTS_DIR = DATA_DIR / "artifacts"
 
 DEFAULT_OVERALL_DIR = PROCESSED_DIR / "overall-stats"
 DEFAULT_TRAIT_DIR = PROCESSED_DIR / "trait-profiles" / "analysis"
 DEFAULT_EVIDENCE_DIR = PROCESSED_DIR / "evidence-profiles" / "analysis"
-DEFAULT_OUTPUT_DIR = PROCESSED_DIR / "manuscript-tables"
+DEFAULT_OUTPUT_DIR = ARTIFACTS_DIR / "manuscript-tables"
 
 
 # ==== Argument parsing ====

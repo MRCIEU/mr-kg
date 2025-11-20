@@ -1,0 +1,9 @@
+{
+  "script": "consolidate_cs1_manuscript_tables.py",
+  "input_dir": "/Users/ik18445/local-projects/+dmer/+mr-paper-data-extraction/mr-kg/data/processed/case-study-cs1",
+  "output_dir": "/Users/ik18445/local-projects/+dmer/+mr-paper-data-extraction/mr-kg/data/processed/manuscript-tables",
+  "tables_generated": [
+    "cs1_tier_distribution",
+    "cs1_match_type_stratification"
+  ]
+}
