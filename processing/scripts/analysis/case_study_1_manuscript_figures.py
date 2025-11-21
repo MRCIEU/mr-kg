@@ -26,6 +26,12 @@ import yaml
 from loguru import logger
 from yiutils.project_utils import find_project_root
 
+from color_schemes import (
+    GRUVBOX_DARK,
+    get_match_type_colors,
+    get_tier_colors,
+)
+
 # ==== Project configuration ====
 
 PROJECT_ROOT = find_project_root("docker-compose.yml")
@@ -146,12 +152,7 @@ def create_figure_1(
 
     # ---- Create subplot A: Overall tier distribution ----
     tier_order = ["High", "Moderate", "Low", "Discordant"]
-    tier_colors = {
-        "High": "#2ecc71",
-        "Moderate": "#f39c12",
-        "Low": "#e74c3c",
-        "Discordant": "#95a5a6",
-    }
+    tier_colors = get_tier_colors(use_gruvbox=True)
 
     # Calculate cumulative percentages for text positioning
     tier_dist_df["tier_index"] = tier_dist_df["Reproducibility Tier"].map(
@@ -365,6 +366,7 @@ def create_figure_1(
     match_df = pd.read_csv(category_match_path)
 
     # ---- Create subplot C: Match type concordance ----
+    match_type_colors = get_match_type_colors(use_gruvbox=True)
     chartC = (
         alt.Chart(match_df)
         .mark_bar(size=20)
@@ -383,7 +385,10 @@ def create_figure_1(
                 "match_type:N",
                 scale=alt.Scale(
                     domain=["exact", "fuzzy"],
-                    range=["#2E7D32", "#F57C00"],
+                    range=[
+                        match_type_colors["exact"],
+                        match_type_colors["fuzzy"],
+                    ],
                 ),
                 title="Match Type",
                 legend=alt.Legend(orient="bottom"),
@@ -498,7 +503,7 @@ def create_figure_2(
     # ---- Create histogram ----
     histogram = (
         alt.Chart()
-        .mark_bar(color="steelblue", opacity=0.7)
+        .mark_bar(color=GRUVBOX_DARK["blue"], opacity=0.7)
         .encode(
             x=alt.X(
                 "mean_direction_concordance:Q",
@@ -513,7 +518,7 @@ def create_figure_2(
     # ---- Add mean lines (one per facet) ----
     mean_lines = (
         alt.Chart()
-        .mark_rule(color="red", strokeWidth=2)
+        .mark_rule(color=GRUVBOX_DARK["red"], strokeWidth=2)
         .encode(
             x=alt.X("mean_conc:Q"),
         )
@@ -531,7 +536,7 @@ def create_figure_2(
             dx=5,
             dy=10,
             fontSize=10,
-            color="red",
+            color=GRUVBOX_DARK["red"],
             fontWeight="bold",
         )
         .encode(
@@ -547,7 +552,9 @@ def create_figure_2(
     # ---- Add high tier threshold line (0.7) ----
     threshold_lines = (
         alt.Chart()
-        .mark_rule(color="green", strokeDash=[5, 5], strokeWidth=1.5)
+        .mark_rule(
+            color=GRUVBOX_DARK["green"], strokeDash=[5, 5], strokeWidth=1.5
+        )
         .encode(x=alt.X("threshold:Q"))
     )
 
@@ -555,8 +562,8 @@ def create_figure_2(
     # Create a dummy dataset for legend
     legend_data = pd.DataFrame(
         [
-            {"type": "Mean concordance", "color": "red"},
-            {"type": "High tier (0.7)", "color": "green"},
+            {"type": "Mean concordance", "color": GRUVBOX_DARK["red"]},
+            {"type": "High tier (0.7)", "color": GRUVBOX_DARK["green"]},
         ]
     )
 
@@ -568,7 +575,7 @@ def create_figure_2(
                 "type:N",
                 scale=alt.Scale(
                     domain=["Mean concordance", "High tier (0.7)"],
-                    range=["red", "green"],
+                    range=[GRUVBOX_DARK["red"], GRUVBOX_DARK["green"]],
                 ),
                 legend=alt.Legend(
                     title="Reference Lines",

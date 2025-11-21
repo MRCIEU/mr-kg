@@ -20,6 +20,8 @@ import altair as alt
 import pandas as pd
 from yiutils.project_utils import find_project_root
 
+from color_schemes import GRUVBOX_DARK
+
 
 # ==== Path setup ====
 
@@ -113,7 +115,9 @@ def create_temporal_distribution_figure(df: pd.DataFrame) -> alt.LayerChart:
     base_chart = alt.Chart(df).properties(width=800, height=420)
 
     # ---- Line chart with points ----
-    line_raw = base_chart.mark_line(point=True, color="#356bb3").encode(
+    line_raw = base_chart.mark_line(
+        point=True, color=GRUVBOX_DARK["blue"]
+    ).encode(
         x=alt.X(
             "publication_year:Q",
             title="Publication Year",

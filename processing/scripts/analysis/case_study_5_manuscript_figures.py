@@ -26,6 +26,8 @@ import yaml
 from loguru import logger
 from yiutils.project_utils import find_project_root
 
+from color_schemes import GRUVBOX_DARK, get_field_type_colors
+
 # ==== Project configuration ====
 
 PROJECT_ROOT = find_project_root("docker-compose.yml")
@@ -250,7 +252,7 @@ def create_era_markers(
     # ---- Vertical lines ----
     lines = (
         alt.Chart(transitions_df)
-        .mark_rule(color="red", strokeWidth=1)
+        .mark_rule(color=GRUVBOX_DARK["red"], strokeWidth=1)
         .encode(x=alt.X("year:Q"))
     )
 
@@ -262,7 +264,7 @@ def create_era_markers(
             dx=3,
             dy=5,
             fontSize=12,
-            color="red",
+            color=GRUVBOX_DARK["red"],
             fontWeight="bold",
         )
         .encode(
@@ -294,7 +296,7 @@ def create_diversity_subplot(
     # ---- Dashed line connecting points ----
     line = (
         alt.Chart(diversity_df)
-        .mark_line(strokeDash=[5, 5], color="steelblue")
+        .mark_line(strokeDash=[5, 5], color=GRUVBOX_DARK["blue"])
         .encode(
             x=alt.X(
                 "pub_year:Q",
@@ -312,7 +314,7 @@ def create_diversity_subplot(
     # ---- Points ----
     points = (
         alt.Chart(diversity_df)
-        .mark_point(size=60, color="steelblue", filled=True)
+        .mark_point(size=60, color=GRUVBOX_DARK["blue"], filled=True)
         .encode(
             x=alt.X("pub_year:Q"),
             y=alt.Y("mean_trait_count:Q"),
@@ -392,6 +394,9 @@ def create_completeness_subplot(
 
     plot_df = pd.DataFrame(plot_data)
 
+    # ---- Get field type colors ----
+    field_colors = get_field_type_colors(use_gruvbox=True)
+
     # ---- Main time series ----
     line = (
         alt.Chart(plot_df)
@@ -411,7 +416,10 @@ def create_completeness_subplot(
             color=alt.Color(
                 "field:N",
                 title="Field",
-                scale=alt.Scale(scheme="category10"),
+                scale=alt.Scale(
+                    domain=list(field_labels.values()),
+                    range=[field_colors[f] for f in field_labels.values()],
+                ),
             ),
             tooltip=[
                 alt.Tooltip("pub_year:Q", title="Year", format="d"),
@@ -453,6 +461,10 @@ def create_field_type_subplot(
     """
     logger.info("Creating field type subplot...")
 
+    # ---- Get field type colors ----
+    field_colors = get_field_type_colors(use_gruvbox=True)
+    field_types = field_type_df["field_type"].unique().tolist()
+
     # ---- Create line chart with year on x-axis ----
     line = (
         alt.Chart(field_type_df)
@@ -472,7 +484,10 @@ def create_field_type_subplot(
             color=alt.Color(
                 "field_type:N",
                 title="Field Type",
-                scale=alt.Scale(scheme="category10"),
+                scale=alt.Scale(
+                    domain=field_types,
+                    range=[field_colors[f] for f in field_types],
+                ),
             ),
             tooltip=[
                 alt.Tooltip("pub_year:Q", title="Year", format="d"),
