@@ -258,10 +258,9 @@ def create_era_markers(
     labels = (
         alt.Chart(transitions_df)
         .mark_text(
-            angle=270,
             align="left",
             dx=3,
-            dy=-5,
+            dy=5,
             fontSize=12,
             color="red",
             fontWeight="bold",
@@ -347,7 +346,7 @@ def create_diversity_subplot(
     combined = (error_band + line + points + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="Trait Diversity Over Time",
+        title="A. Trait Diversity Over Time",
     )
 
     return combined
@@ -433,7 +432,7 @@ def create_completeness_subplot(
     combined = (line + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="Overall Reporting Completeness Over Time",
+        title="B. Overall Reporting Completeness Over Time",
     )
 
     return combined
@@ -494,7 +493,7 @@ def create_field_type_subplot(
     combined = (line + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="Reporting Completeness Over Time by Field Type",
+        title="C. Reporting Completeness Over Time by Field Type",
     )
 
     return combined

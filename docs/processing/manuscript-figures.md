@@ -148,38 +148,68 @@ Users should reference the subplot titles and line colors to interpret each pane
 
 **Just command**: `just case-study-cs1-manuscript-figures`
 
-### Figure 1: Reproducibility and outcome category
+### Figure 1: Distribution of reproducibility metrics
 
-**Purpose**: Show relationship between reproducibility and disease outcome category through two complementary views.
+**Figure title**: Distribution of reproducibility metrics
 
-**Structure**: Side-by-side faceted plot with two panels:
-1. **Tier Distribution by Outcome Category** (left): Stacked horizontal bars showing reproducibility tier distribution
-2. **Concordance by Match Quality and Outcome Category** (right): Error bars showing mean direction concordance
+**Purpose**: Show reproducibility metrics distribution through three complementary views: overall tier distribution, category-specific tier distribution, and concordance by match quality.
 
-**Visual elements (left panel)**:
-- Stacked horizontal bars showing percentage distribution
+**Structure**: Three-panel layout with:
+1. **Overall Tier Distribution** (top panel): Single stacked horizontal bar showing overall reproducibility tier percentages
+2. **Tier Distribution by Outcome Category** (bottom left): Stacked horizontal bars showing tier distribution per outcome category
+3. **Concordance by Match Quality and Outcome Category** (bottom right): Error bars showing mean direction concordance
+
+**Visual elements (Panel A - top)**:
+- Single stacked horizontal bar showing percentage distribution across all pairs
 - Four reproducibility tiers with distinct colors:
   - High (green)
   - Moderate (orange)
   - Low (red)
   - Discordant (gray)
+- Text labels showing absolute pair counts (n) centered within each bar segment
+- X-axis spans 0-100% with percentage scale
+- Width: 800px (combined width of panels B and C)
+- Height: 80px
+- No legend (legend shown in panel B instead)
+
+**Visual elements (Panel B - bottom left)**:
+- Stacked horizontal bars showing percentage distribution per outcome category
+- Four reproducibility tiers with distinct colors (same as Panel A)
 - Text labels centered within each bar segment showing absolute counts
 - Categories sorted by high tier percentage (ascending)
+- X-axis: Percentage (0-100%)
+- Y-axis: Outcome Category
+- Width: 400px
+- Height: 300px
+- Legend: Reproducibility Tier (bottom)
 
-**Visual elements (right panel)**:
+**Visual elements (Panel C - bottom right)**:
 - Horizontal bars showing mean direction concordance
 - Error bars representing 95% confidence intervals
 - Two match types with distinct colors:
   - Exact match (dark green)
   - Fuzzy match (orange)
 - Y-offset positioning for grouped comparison within each category
+- White bold text labels inside bars showing concordance values (2 decimal places)
+- Width: 400px
+- Height: 300px
+- Legend: Match Type (bottom)
 
 **Key features**:
+- Panel A provides high-level summary of overall reproducibility distribution
+- Panel B shows how reproducibility varies by disease category
+- Panel C examines effect of match quality on reproducibility
 - Uses "Outcome Category" (not "Disease Category") for consistency
 - Categories: cancer, autoimmune, cardiovascular, metabolic, other, psychiatric
 - Reproducibility tiers: high, moderate, low, discordant
 - Match types: exact, fuzzy
 - Text labels improve readability by showing exact pair counts
+- Independent color scales for different legend types
+
+**Data sources**:
+- Panel A: `data/artifacts/manuscript-tables/cs1_tier_distribution.csv`
+- Panel B: Computed from `pair_reproducibility_metrics.csv`
+- Panel C: `data/processed/case-study-cs1/interactions/category_match_interaction.csv`
 
 ### Figure 2: Study count and reproducibility
 

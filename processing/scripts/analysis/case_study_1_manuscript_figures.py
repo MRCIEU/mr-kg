@@ -5,8 +5,10 @@ plots from the CS1 analysis. All figures are exported as PNG for manuscript
 inclusion.
 
 Figures generated:
-- Figure 1: Faceted plot combining reproducibility tier distribution and
-  outcome category concordance
+- Figure 1: Three-panel plot showing reproducibility metrics distribution
+  - Panel A: Overall tier distribution (stacked bar)
+  - Panel B: Tier distribution by outcome category
+  - Panel C: Concordance by match quality and outcome category
 - Figure 2: Refined study count vs reproducibility histogram with labels
 
 Outputs:
@@ -31,6 +33,9 @@ CONFIG_DIR = PROJECT_ROOT / "processing" / "config"
 DEFAULT_CONFIG = CONFIG_DIR / "case_studies.yml"
 MANUSCRIPT_FIGURES_DIR = (
     PROJECT_ROOT / "data" / "artifacts" / "manuscript-figures"
+)
+MANUSCRIPT_TABLES_DIR = (
+    PROJECT_ROOT / "data" / "artifacts" / "manuscript-tables"
 )
 
 
@@ -104,26 +109,118 @@ def load_config(config_path: Path) -> Dict:
     return config
 
 
-# ==== Figure 1: Category reproducibility faceted plot ====
+# ==== Figure 1: Distribution of reproducibility metrics ====
 
 
 def create_figure_1(
     metrics_df: pd.DataFrame, output_dir: Path, dry_run: bool = False
 ):
-    """Create faceted plot of category tier distribution and concordance.
+    """Create three-panel plot of reproducibility metrics distribution.
 
     Args:
         metrics_df: DataFrame with pair reproducibility metrics
         output_dir: Directory to save figure outputs
         dry_run: If True, show what would be done without executing
     """
-    logger.info("Creating Figure 1: Category reproducibility faceted plot...")
+    logger.info(
+        "Creating Figure 1: Distribution of reproducibility metrics..."
+    )
 
     if dry_run:
         logger.info("DRY RUN - Would generate Figure 1")
         return
 
-    # ---- Prepare data for tier distribution subplot ----
+    # ---- Load overall tier distribution data ----
+    tier_dist_path = MANUSCRIPT_TABLES_DIR / "cs1_tier_distribution.csv"
+
+    if not tier_dist_path.exists():
+        logger.error(f"Tier distribution data not found: {tier_dist_path}")
+        return
+
+    tier_dist_df = pd.read_csv(tier_dist_path)
+
+    # ---- Remove the "Total" row for visualization ----
+    tier_dist_df = tier_dist_df[
+        tier_dist_df["Reproducibility Tier"] != "Total"
+    ].copy()
+
+    # ---- Create subplot A: Overall tier distribution ----
+    tier_order = ["High", "Moderate", "Low", "Discordant"]
+    tier_colors = {
+        "High": "#2ecc71",
+        "Moderate": "#f39c12",
+        "Low": "#e74c3c",
+        "Discordant": "#95a5a6",
+    }
+
+    # Calculate cumulative percentages for text positioning
+    tier_dist_df["tier_index"] = tier_dist_df["Reproducibility Tier"].map(
+        {tier: i for i, tier in enumerate(tier_order)}
+    )
+    tier_dist_df = tier_dist_df.sort_values("tier_index")
+    tier_dist_df["cumulative_pct"] = tier_dist_df["Percentage (%)"].cumsum()
+    tier_dist_df["label_position"] = (
+        tier_dist_df["cumulative_pct"] - tier_dist_df["Percentage (%)"] / 2
+    )
+
+    bars_overall = (
+        alt.Chart(tier_dist_df)
+        .mark_bar(size=50)
+        .encode(
+            x=alt.X(
+                "Percentage (%):Q",
+                title="Percentage (%)",
+                scale=alt.Scale(domain=[0, 100]),
+            ),
+            y=alt.Y(
+                "constant:N",
+                title=None,
+                axis=None,
+            ),
+            color=alt.Color(
+                "Reproducibility Tier:N",
+                scale=alt.Scale(
+                    domain=tier_order,
+                    range=[tier_colors[t] for t in tier_order],
+                ),
+                title="Reproducibility Tier",
+                legend=None,
+            ),
+            order=alt.Order("tier_index:Q"),
+        )
+        .transform_calculate(constant="''")
+    )
+
+    # Add text labels showing pair counts
+    text_labels_overall = (
+        alt.Chart(tier_dist_df)
+        .mark_text(
+            align="center",
+            baseline="middle",
+            fontSize=11,
+            color="black",
+            fontWeight="bold",
+        )
+        .encode(
+            x=alt.X("label_position:Q"),
+            y=alt.Y(
+                "constant:N",
+                title=None,
+                axis=None,
+            ),
+            text=alt.Text("Pairs (n):Q", format="d"),
+            order=alt.Order("tier_index:Q"),
+        )
+        .transform_calculate(constant="''")
+    )
+
+    chartA = (bars_overall + text_labels_overall).properties(
+        width=900,
+        height=80,
+        title="A. Overall Tier Distribution",
+    )
+
+    # ---- Prepare data for tier distribution by category subplot ----
     df_clean = metrics_df[
         (metrics_df["outcome_category"] != "uncategorized")
         & (metrics_df["outcome_category"].notna())
@@ -135,7 +232,7 @@ def create_figure_1(
         .reset_index(name="count")
     )
 
-    tier_order = ["high", "moderate", "low", "discordant"]
+    tier_order_lower = ["high", "moderate", "low", "discordant"]
     tier_totals = (
         tier_counts.groupby("outcome_category")["count"]
         .sum()
@@ -155,14 +252,7 @@ def create_figure_1(
     )
     category_order = high_tier_pct.index.tolist()
 
-    # ---- Create subplot 1: Tier distribution ----
-    tier_colors = {
-        "high": "#2ecc71",
-        "moderate": "#f39c12",
-        "low": "#e74c3c",
-        "discordant": "#95a5a6",
-    }
-
+    # ---- Create subplot B: Tier distribution by category ----
     bars = (
         alt.Chart(tier_counts)
         .mark_bar()
@@ -180,8 +270,10 @@ def create_figure_1(
             color=alt.Color(
                 "reproducibility_tier:N",
                 scale=alt.Scale(
-                    domain=tier_order,
-                    range=[tier_colors[t] for t in tier_order],
+                    domain=tier_order_lower,
+                    range=[
+                        tier_colors[t.capitalize()] for t in tier_order_lower
+                    ],
                 ),
                 title="Reproducibility Tier",
                 legend=alt.Legend(orient="bottom"),
@@ -189,7 +281,9 @@ def create_figure_1(
             order=alt.Order("tier_order:Q"),
         )
         .transform_calculate(
-            tier_order=(f"indexof({tier_order}, datum.reproducibility_tier)")
+            tier_order=(
+                f"indexof({tier_order_lower}, datum.reproducibility_tier)"
+            )
         )
     )
 
@@ -200,7 +294,7 @@ def create_figure_1(
         key=lambda x: (
             x
             if x.name != "reproducibility_tier"
-            else x.map(lambda v: tier_order.index(v))
+            else x.map(lambda v: tier_order_lower.index(v))
         ),
     )
     tier_counts_sorted["cumulative_pct"] = tier_counts_sorted.groupby(
@@ -226,14 +320,16 @@ def create_figure_1(
             order=alt.Order("tier_order:Q"),
         )
         .transform_calculate(
-            tier_order=(f"indexof({tier_order}, datum.reproducibility_tier)")
+            tier_order=(
+                f"indexof({tier_order_lower}, datum.reproducibility_tier)"
+            )
         )
     )
 
-    chart1 = (bars + text_labels).properties(
+    chartB = (bars + text_labels).properties(
         width=400,
         height=300,
-        title="Tier Distribution by Outcome Category",
+        title="B. Tier Distribution by Outcome Category",
     )
 
     # ---- Prepare data for concordance subplot ----
@@ -250,16 +346,26 @@ def create_figure_1(
         logger.warning(
             f"Category match interaction data not found: {category_match_path}"
         )
-        logger.info("Generating only subplot 1 (tier distribution)")
+        logger.info("Generating only subplots A and B")
+        combined = alt.vconcat(
+            chartA,
+            chartB,
+        ).properties(
+            title=alt.TitleParams(
+                "Distribution of reproducibility metrics",
+                fontSize=16,
+                anchor="middle",
+            )
+        )
         output_file = output_dir / "cs1_fig1_category_reproducibility.png"
-        chart1.save(str(output_file), ppi=300)
+        combined.save(str(output_file), ppi=300)
         logger.info(f"Saved figure: {output_file}")
         return
 
     match_df = pd.read_csv(category_match_path)
 
-    # ---- Create subplot 2: Match type concordance ----
-    chart2 = (
+    # ---- Create subplot C: Match type concordance ----
+    chartC = (
         alt.Chart(match_df)
         .mark_bar(size=20)
         .encode(
@@ -287,7 +393,7 @@ def create_figure_1(
         .properties(
             width=400,
             height=300,
-            title="Concordance by Match Quality and Outcome Category",
+            title="C. Concordance by Match Quality and Outcome Category",
         )
     )
 
@@ -304,7 +410,7 @@ def create_figure_1(
     )
 
     # ---- Add text labels inside bars ----
-    text_labels_chart2 = (
+    text_labels_chartC = (
         alt.Chart(match_df)
         .mark_text(
             align="center",
@@ -319,21 +425,24 @@ def create_figure_1(
             text=alt.Text("mean_concordance:Q", format=".2f"),
             yOffset=alt.YOffset("match_type:N"),
         )
-        .transform_calculate(
-            text_position="datum.mean_concordance / 2"
-        )
+        .transform_calculate(text_position="datum.mean_concordance / 2")
     )
 
-    chart2_with_errors = chart2 + error_bars + text_labels_chart2
+    chartC_with_errors = chartC + error_bars + text_labels_chartC
 
     # ---- Combine subplots ----
+    # Top panel: subplot A (overall distribution)
+    # Bottom panel: subplots B and C side by side
+    bottom_row = alt.hconcat(chartB, chartC_with_errors).resolve_scale(
+        color="independent"
+    )
+
     combined = (
-        alt.hconcat(chart1, chart2_with_errors)
+        alt.vconcat(chartA, bottom_row)
         .resolve_scale(color="independent")
         .properties(
             title=alt.TitleParams(
-                f"Reproducibility and Outcome Category (n={len(df_clean):,} "
-                f"pairs)",
+                "Distribution of reproducibility metrics",
                 fontSize=16,
                 anchor="middle",
             )
