@@ -58,6 +58,33 @@ This domain-specific pattern suggests that match quality thresholds should be
 adapted by disease category rather than applied uniformly across all MR
 research.
 
+#### Technical implementation
+
+The three-tier matching algorithm is implemented in
+`processing/scripts/evidence-profile/compute-evidence-similarity.py`
+(function `match_exposure_outcome_pairs_with_type`). The matching proceeds in
+order of precision, with each trait pair matched at most once:
+
+1. **Exact matching**: Direct comparison of trait indices
+   (`compute-evidence-similarity.py`)
+
+2. **Fuzzy matching**: Semantic similarity using cosine distance between
+   200-dimensional trait embeddings (`compute-evidence-similarity.py`).
+   Both exposure AND outcome traits must have cosine similarity >= threshold
+   (default: 0.70, defined in `compute-evidence-similarity.py`). When
+   multiple candidates exist, selects the best match using combined score
+   `(exp_sim + out_sim) / 2`. The threshold is configurable via the
+   `--fuzzy-threshold` parameter.
+
+3. **EFO matching**: Ontology-based matching through shared EFO term mappings
+   (`compute-evidence-similarity.py`)
+
+Cosine similarity computation: `compute-evidence-similarity.py`
+
+The matching algorithm is greedy: each query result is matched to at most one
+similar result, and previously matched pairs are excluded from subsequent
+matching rounds.
+
 See @docs/processing/evidence-profile-similarity.md for how match types are
 used in similarity computation.
 
@@ -90,6 +117,26 @@ where:
 - Null pairs: Pairs where either study reports null effect are excluded from
   calculation
 
+#### Technical implementation
+
+Direction concordance is computed in
+`processing/scripts/evidence-profile/compute-evidence-similarity.py`
+(function `compute_direction_concordance`).
+
+Direction classification occurs during evidence profile preprocessing in
+`processing/scripts/evidence-profile/preprocess-evidence-profiles.py`
+(function `classify_direction`). Effect directions are converted from string
+labels (e.g., "positive", "negative", "null") to numeric indicators: +1
+(positive), -1 (negative), 0 (null/unclear). The classifier uses pattern
+matching against predefined term lists for each direction category.
+
+The concordance calculation:
+1. Iterates through matched trait pairs
+2. Excludes pairs where either study has direction = 0 (null effect)
+3. Counts concordant pairs (same non-zero direction) and discordant pairs
+   (opposite directions)
+4. Returns `(concordant - discordant) / (concordant + discordant)`
+
 See @docs/processing/evidence-profile-similarity.md for detailed computation
 methodology.
 
@@ -118,6 +165,17 @@ High tier pairs represent reproducible findings suitable for downstream
 synthesis. Discordant tier pairs require investigation for methodological
 issues, phenotype misalignment, or true heterogeneity.
 
+#### Technical implementation
+
+Reproducibility tier classification is performed in Case Study 1 analysis
+scripts. The tier assignment logic:
+1. Computes mean pairwise direction concordance for each trait pair across all
+   independent studies
+2. Applies threshold-based classification (default thresholds: 0.7, 0.3, 0.0)
+3. Assigns tier labels: "High", "Moderate", "Low", "Discordant"
+
+Threshold values are configurable in `processing/config/case_studies.yml`.
+
 See @docs/processing/case-studies.md (Case Study 1) for reproducibility
 analysis methodology.
 
@@ -130,6 +188,16 @@ identified uniquely by PMID and extraction model.
 Trait profiles enable discovery of studies with similar research focuses by
 comparing trait sets using semantic similarity (embedding-based) and Jaccard
 similarity (set-based) metrics.
+
+#### Technical implementation
+
+Trait profile similarity computation is implemented in
+`processing/scripts/trait-profile/compute-trait-similarity.py`. The script
+compares trait profiles using:
+1. Semantic similarity: Cosine distance between aggregated trait embeddings
+2. Jaccard similarity: Set-based overlap of unique trait indices
+
+Results are stored in `data/db/trait_profile_db.db`.
 
 See @docs/processing/trait-profile-similarity.md for trait profile similarity
 methodology.
@@ -164,6 +232,20 @@ Primary metrics:
 - Effect size similarity (~3.82 percent availability)
 - Statistical consistency (~0.27 percent availability)
 - Precision concordance (~3.33 percent availability)
+
+#### Technical implementation
+
+Evidence profile similarity computation is implemented in
+`processing/scripts/evidence-profile/compute-evidence-similarity.py`. Key
+functions:
+- `compute_direction_concordance`: Direction agreement metric
+- `compute_effect_size_correlation`: Pearson correlation of
+  harmonized effect sizes
+- `compute_statistical_consistency`: Cohen's kappa for significance
+  agreement
+- `compute_precision_concordance`: Correlation of standard errors
+
+Results are stored in `data/db/evidence_profile_db.db`.
 
 See @docs/processing/evidence-profile-similarity.md for detailed methodology.
 
@@ -221,6 +303,23 @@ Conversion rules:
 This harmonization enables correlation and comparison of effect sizes across
 studies that report results in different formats.
 
+#### Technical implementation
+
+Effect size harmonization is performed during evidence profile preprocessing in
+`processing/scripts/evidence-profile/preprocess-evidence-profiles.py`
+(function `harmonize_effect_size`).
+
+The transformation logic:
+1. For OR and HR values: applies natural logarithm transformation
+   (`math.log(value)`)
+2. For beta coefficients: returns the value unchanged
+3. Validates that OR/HR values are positive before transformation
+4. Returns None for invalid values or unknown effect types
+
+The harmonized effect sizes are stored in the `harmonized_effect_size` field
+of evidence profile records and used for computing effect size correlation
+metrics (`compute-evidence-similarity.py`).
+
 ### Matched pairs
 
 Exposure-outcome trait combinations present in both studies being compared,
@@ -239,6 +338,14 @@ Cohen's kappa measuring agreement in statistical significance classifications
 abstracts)
 
 Range: -1 to +1, where +1 indicates perfect agreement in significance calls.
+
+#### Technical implementation
+
+Statistical consistency computation is implemented in
+`processing/scripts/evidence-profile/compute-evidence-similarity.py`
+(function `compute_statistical_consistency`). The function uses Cohen's kappa
+to measure agreement in binary significance classifications (significant vs
+non-significant at p < 0.05 threshold) across matched pairs.
 
 ### Comparison count
 
@@ -302,6 +409,17 @@ embedding similarity.
 EFO mappings enable robust cross-study trait matching when researchers use
 different terminology for the same biomedical concept.
 
+#### Technical implementation
+
+EFO preprocessing and embedding generation:
+- `processing/scripts/main-processing/preprocess-efo.py`: Extracts and
+  normalizes EFO terms from ontology files
+- `processing/scripts/main-processing/embed-efo.py`: Generates 200-dimensional
+  embeddings for EFO terms
+
+Trait-to-EFO mapping is performed during evidence profile computation using
+precomputed similarity scores from the vector store database.
+
 Source: https://github.com/EBISPOT/efo/releases
 
 ### Vector store
@@ -311,6 +429,18 @@ with precomputed cosine similarity pairs for semantic search.
 
 Contains ~1.7 billion trait-EFO similarity pairs enabling fast nearest-neighbor
 queries for trait matching and evidence profile construction.
+
+#### Technical implementation
+
+The vector store is constructed by:
+1. `processing/scripts/main-processing/embed-traits.py`: Generates
+   200-dimensional embeddings for trait labels
+2. `processing/scripts/main-processing/aggregate-embeddings.py`: Aggregates
+   embeddings from distributed computation
+3. Similarity computation scripts: Precompute cosine similarities between all
+   trait-EFO pairs above a threshold
+
+The database schema is documented in @docs/processing/db-schema.md.
 
 See @docs/processing/databases.md for database schema and @docs/DATA.md for
 data structure details.

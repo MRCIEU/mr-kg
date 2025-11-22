@@ -181,7 +181,8 @@ EVIDENCE_PROFILE_SCHEMA = {
                 ColumnType.BOOLEAN,
                 nullable=False,
                 # Boolean flag indicating presence of fuzzy semantic matches.
-                # TRUE if at least one pair matched by semantic similarity (cosine >= 0.80).
+                # TRUE if at least one pair matched by semantic similarity (cosine >= threshold).
+                # Default threshold is 0.70, configurable via --fuzzy-threshold parameter.
                 # Second tier matching using 200-dim trait embeddings from vector_store.db.
                 # Captures semantic variants like "BMI" vs "body mass index" or "BMI" vs "obesity".
             ),
