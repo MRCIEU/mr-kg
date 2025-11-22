@@ -154,12 +154,16 @@ Users should reference the subplot titles and line colors to interpret each pane
 
 **Purpose**: Show reproducibility metrics distribution through three complementary views: overall tier distribution, category-specific tier distribution, and concordance by match quality.
 
-**Structure**: Three-panel layout with:
-1. **Overall Tier Distribution** (top panel): Single stacked horizontal bar showing overall reproducibility tier percentages
-2. **Tier Distribution by Outcome Category** (bottom left): Stacked horizontal bars showing tier distribution per outcome category
-3. **Concordance by Match Quality and Outcome Category** (bottom right): Error bars showing mean direction concordance
+**Structure**: Two-column layout with:
+- **Left panel**: 
+  1. **Overall Tier Distribution** (top): Single stacked horizontal bar showing overall reproducibility tier percentages
+  2. **Tier Distribution by Outcome Category** (bottom): Stacked horizontal bars showing tier distribution per outcome category
+- **Right panel**:
+  3. **Concordance by Match Quality and Outcome Category**: Error bars showing mean direction concordance
 
-**Visual elements (Panel A - top)**:
+**Layout rationale**: Subplots A and B are grouped together in the left panel because they both show tier distribution metrics, while subplot C displays a different metric (concordance) in the right panel. This grouping emphasizes the relationship between overall and category-specific tier distributions.
+
+**Visual elements (Panel A - top left)**:
 - Single stacked horizontal bar showing percentage distribution across all pairs
 - Four reproducibility tiers with distinct colors:
   - High (green)
@@ -168,7 +172,7 @@ Users should reference the subplot titles and line colors to interpret each pane
   - Discordant (gray)
 - Text labels showing absolute pair counts (n) centered within each bar segment
 - X-axis spans 0-100% with percentage scale
-- Width: 800px (combined width of panels B and C)
+- Width: 400px
 - Height: 80px
 - No legend (legend shown in panel B instead)
 
@@ -183,7 +187,7 @@ Users should reference the subplot titles and line colors to interpret each pane
 - Height: 300px
 - Legend: Reproducibility Tier (bottom)
 
-**Visual elements (Panel C - bottom right)**:
+**Visual elements (Panel C - right)**:
 - Horizontal bars showing mean direction concordance
 - Error bars representing 95% confidence intervals
 - Two match types with distinct colors:
@@ -196,9 +200,10 @@ Users should reference the subplot titles and line colors to interpret each pane
 - Legend: Match Type (bottom)
 
 **Key features**:
+- Left panel (A+B) groups tier distribution metrics for visual coherence
 - Panel A provides high-level summary of overall reproducibility distribution
 - Panel B shows how reproducibility varies by disease category
-- Panel C examines effect of match quality on reproducibility
+- Right panel (C) examines effect of match quality on reproducibility
 - Uses "Outcome Category" (not "Disease Category") for consistency
 - Categories: cancer, autoimmune, cardiovascular, metabolic, other, psychiatric
 - Reproducibility tiers: high, moderate, low, discordant

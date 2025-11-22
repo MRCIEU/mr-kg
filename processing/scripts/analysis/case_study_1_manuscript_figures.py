@@ -5,10 +5,10 @@ plots from the CS1 analysis. All figures are exported as PNG for manuscript
 inclusion.
 
 Figures generated:
-- Figure 1: Three-panel plot showing reproducibility metrics distribution
-  - Panel A: Overall tier distribution (stacked bar)
-  - Panel B: Tier distribution by outcome category
-  - Panel C: Concordance by match quality and outcome category
+- Figure 1: Two-column plot showing reproducibility metrics distribution
+  - Left panel (top): Overall tier distribution (stacked bar)
+  - Left panel (bottom): Tier distribution by outcome category
+  - Right panel: Concordance by match quality and outcome category
 - Figure 2: Refined study count vs reproducibility histogram with labels
 
 Outputs:
@@ -121,7 +121,12 @@ def load_config(config_path: Path) -> Dict:
 def create_figure_1(
     metrics_df: pd.DataFrame, output_dir: Path, dry_run: bool = False
 ):
-    """Create three-panel plot of reproducibility metrics distribution.
+    """Create two-column plot of reproducibility metrics distribution.
+
+    Left panel contains subplots A (overall tier distribution) and B (tier
+    distribution by category) stacked vertically. Right panel contains
+    subplot C (concordance by match quality). This layout groups the related
+    tier distribution metrics together.
 
     Args:
         metrics_df: DataFrame with pair reproducibility metrics
@@ -216,7 +221,7 @@ def create_figure_1(
     )
 
     chartA = (bars_overall + text_labels_overall).properties(
-        width=900,
+        width=400,
         height=80,
         title="A. Overall Tier Distribution",
     )
@@ -397,7 +402,7 @@ def create_figure_1(
         )
         .properties(
             width=400,
-            height=300,
+            height=450,
             title="C. Concordance by Match Quality and Outcome Category",
         )
     )
@@ -436,14 +441,12 @@ def create_figure_1(
     chartC_with_errors = chartC + error_bars + text_labels_chartC
 
     # ---- Combine subplots ----
-    # Top panel: subplot A (overall distribution)
-    # Bottom panel: subplots B and C side by side
-    bottom_row = alt.hconcat(chartB, chartC_with_errors).resolve_scale(
-        color="independent"
-    )
+    # Left panel: subplots A and B stacked vertically
+    # Right panel: subplot C
+    left_panel = alt.vconcat(chartA, chartB).resolve_scale(color="independent")
 
     combined = (
-        alt.vconcat(chartA, bottom_row)
+        alt.hconcat(left_panel, chartC_with_errors)
         .resolve_scale(color="independent")
         .properties(
             title=alt.TitleParams(
