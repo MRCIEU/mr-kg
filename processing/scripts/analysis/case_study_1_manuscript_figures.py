@@ -125,8 +125,10 @@ def create_figure_1(
 
     Left panel contains subplots A (overall tier distribution) and B (tier
     distribution by category) stacked vertically. Right panel contains
-    subplot C (concordance by match quality). This layout groups the related
-    tier distribution metrics together.
+    subplot C (overall concordance distribution) and subplot D
+    (category-specific concordance distribution). This layout groups the
+    related tier distribution metrics together in the left panel, and
+    concordance metrics in the right panel.
 
     Args:
         metrics_df: DataFrame with pair reproducibility metrics
@@ -223,7 +225,7 @@ def create_figure_1(
     chartA = (bars_overall + text_labels_overall).properties(
         width=400,
         height=80,
-        title="A. Overall Tier Distribution",
+        title=alt.TitleParams("A. Overall Tier Distribution", anchor="end"),
     )
 
     # ---- Prepare data for tier distribution by category subplot ----
@@ -335,56 +337,65 @@ def create_figure_1(
     chartB = (bars + text_labels).properties(
         width=400,
         height=300,
-        title="B. Tier Distribution by Outcome Category",
+        title=alt.TitleParams(
+            "B. Tier Distribution by Outcome Category", anchor="end"
+        ),
     )
 
-    # ---- Prepare data for concordance subplot ----
-    category_match_path = (
-        PROJECT_ROOT
-        / "data"
-        / "processed"
-        / "case-study-cs1"
-        / "interactions"
-        / "category_match_interaction.csv"
+    # ---- Prepare data for concordance subplots ----
+    # Extract individual pair concordance values with match type
+    df_concordance = metrics_df[
+        (metrics_df["outcome_category"] != "uncategorized")
+        & (metrics_df["outcome_category"].notna())
+    ].copy()
+
+    # Create match_type column based on has_exact_match
+    df_concordance["match_type"] = df_concordance["has_exact_match"].apply(
+        lambda x: "exact" if x else "fuzzy"
     )
 
-    if not category_match_path.exists():
-        logger.warning(
-            f"Category match interaction data not found: {category_match_path}"
-        )
-        logger.info("Generating only subplots A and B")
-        combined = alt.vconcat(
-            chartA,
-            chartB,
-        ).properties(
-            title=alt.TitleParams(
-                "Distribution of reproducibility metrics",
-                fontSize=16,
-                anchor="middle",
-            )
-        )
-        output_file = output_dir / "cs1_fig1_category_reproducibility.png"
-        combined.save(str(output_file), ppi=300)
-        logger.info(f"Saved figure: {output_file}")
-        return
+    # Prepare data for subplot C (all categories combined)
+    df_all_categories = df_concordance[
+        ["match_type", "mean_direction_concordance"]
+    ].copy()
 
-    match_df = pd.read_csv(category_match_path)
+    # Prepare data for subplot D (category-specific)
+    df_by_category = df_concordance[
+        ["outcome_category", "match_type", "mean_direction_concordance"]
+    ].copy()
 
-    # ---- Create subplot C: Match type concordance ----
+    # ---- Create subplot C: Overall concordance ridgeline plot ----
     match_type_colors = get_match_type_colors(use_gruvbox=True)
-    chartC = (
-        alt.Chart(match_df)
-        .mark_bar(size=20)
+
+    # Use faceted approach for subplot C to match subplot D style
+    step_c = 30
+    overlap_c = 1.5
+
+    base_chart_c = (
+        alt.Chart(df_all_categories)
+        .transform_density(
+            density="mean_direction_concordance",
+            bandwidth=0.15,
+            groupby=["match_type"],
+            as_=["concordance", "density"],
+        )
+        .mark_area(
+            interpolate="monotone",
+            fillOpacity=0.7,
+            stroke="lightgray",
+            strokeWidth=0.5,
+        )
         .encode(
             x=alt.X(
-                "mean_concordance:Q",
-                title="Mean Direction Concordance",
-                scale=alt.Scale(domain=[-0.1, 1.0]),
+                "concordance:Q",
+                title="Direction Concordance",
+                scale=alt.Scale(domain=[-1.0, 1.0]),
+                axis=alt.Axis(ticks=False, domain=False, grid=False),
             ),
             y=alt.Y(
-                "category:N",
-                title="Outcome Category",
-                sort=category_order,
+                "density:Q",
+                axis=None,
+                scale=alt.Scale(range=[step_c, -step_c * overlap_c]),
             ),
             color=alt.Color(
                 "match_type:N",
@@ -395,58 +406,140 @@ def create_figure_1(
                         match_type_colors["fuzzy"],
                     ],
                 ),
-                title="Match Type",
-                legend=alt.Legend(orient="bottom"),
+                legend=None,
             ),
-            yOffset=alt.YOffset("match_type:N"),
         )
         .properties(
             width=400,
-            height=450,
-            title="C. Concordance by Match Quality and Outcome Category",
+            height=step_c,
         )
     )
 
-    # ---- Add error bars ----
-    error_bars = (
-        alt.Chart(match_df)
-        .mark_errorbar()
+    # chartC = base_chart_c.facet(
+    #     row=alt.Row(
+    #         "match_type:N",
+    #         title=None,
+    #         sort=["exact", "fuzzy"],
+    #         header=alt.Header(
+    #             labelAngle=0,
+    #             labelAlign="left",
+    #             labelFontSize=11,
+    #         ),
+    #     )
+    # ).properties(
+    #     bounds="flush",
+    #     title=alt.TitleParams(
+    #         "C. Overall Concordance Distribution by Match Type",
+    #         anchor="end",
+    #     )
+    # )
+    chartC = base_chart_c.properties(
+        bounds="flush",
+        title=alt.TitleParams(
+            "C. Overall Concordance Distribution by Match Type",
+            anchor="end",
+        ),
+    )
+
+    # ---- Create subplot D: Category-specific ridgeline plots ----
+    # We need subplot D to have the same total height as subplot B (300px)
+    # With 6 categories, each should get 50px height
+
+    step_d = 42
+    overlap_d = 1.5
+
+    base_chart_d = (
+        alt.Chart(df_by_category)
+        .transform_density(
+            density="mean_direction_concordance",
+            bandwidth=0.15,
+            groupby=["outcome_category", "match_type"],
+            as_=["concordance", "density"],
+        )
+        .mark_area(
+            interpolate="monotone",
+            fillOpacity=0.7,
+            stroke="lightgray",
+            strokeWidth=0.5,
+        )
         .encode(
-            x=alt.X("ci_lower:Q"),
-            x2=alt.X2("ci_upper:Q"),
-            y=alt.Y("category:N", sort=category_order),
-            yOffset=alt.YOffset("match_type:N"),
+            x=alt.X(
+                "concordance:Q",
+                title="Direction Concordance",
+                scale=alt.Scale(domain=[-1.0, 1.0]),
+                axis=alt.Axis(ticks=False, domain=False, grid=False),
+            ),
+            y=alt.Y(
+                "density:Q",
+                axis=None,
+                scale=alt.Scale(range=[step_d, -step_d * overlap_d]),
+            ),
+            color=alt.Color(
+                "match_type:N",
+                scale=alt.Scale(
+                    domain=["exact", "fuzzy"],
+                    range=[
+                        match_type_colors["exact"],
+                        match_type_colors["fuzzy"],
+                    ],
+                ),
+                legend=alt.Legend(
+                    title="Match Type",
+                    orient="bottom",
+                    direction="horizontal",
+                    symbolType="square",
+                    symbolSize=150,
+                    titleFontSize=11,
+                    labelFontSize=10,
+                ),
+            ),
+        )
+        .properties(
+            width=400,
+            height=step_d,
         )
     )
 
-    # ---- Add text labels inside bars ----
-    text_labels_chartC = (
-        alt.Chart(match_df)
-        .mark_text(
-            align="center",
-            baseline="middle",
-            fontSize=9,
-            color="white",
-            fontWeight="bold",
+    chartD = base_chart_d.facet(
+        row=alt.Row(
+            "outcome_category:N",
+            title="Outcome Category",
+            sort=category_order,
+            header=alt.Header(
+                labelAngle=0,
+                labelAlign="left",
+                labelFontSize=11,
+            ),
         )
-        .encode(
-            x=alt.X("text_position:Q"),
-            y=alt.Y("category:N", sort=category_order),
-            text=alt.Text("mean_concordance:Q", format=".2f"),
-            yOffset=alt.YOffset("match_type:N"),
-        )
-        .transform_calculate(text_position="datum.mean_concordance / 2")
+    ).properties(
+        bounds="flush",
+        title=alt.TitleParams(
+            "D. Concordance Distribution by Match Type and Outcome Category",
+            anchor="end",
+        ),
     )
-
-    chartC_with_errors = chartC + error_bars + text_labels_chartC
 
     # ---- Combine subplots ----
-    # Left panel: subplots A and B stacked vertically
-    # Right panel: subplot C
-    left_panel = alt.vconcat(chartA, chartB).resolve_scale(color="independent")
+    # Left panel: subplots A and B stacked vertically (tier distributions)
+    # Right panel: subplots C and D stacked vertically (concordance distributions)
+    # Add spacer above chartC to align it with chartA
+    spacer = (
+        alt.Chart()
+        .mark_text()
+        .encode()
+        .properties(
+            width=400,
+            height=1,
+        )
+    )
+
+    left_panel = alt.vconcat(spacer, chartA, chartB).resolve_scale(color="independent")
+    right_panel = alt.vconcat(spacer, chartC, chartD).resolve_scale(
+        color="independent"
+    )
 
     combined = (
-        alt.hconcat(left_panel, chartC_with_errors)
+        alt.hconcat(left_panel, right_panel)
         .resolve_scale(color="independent")
         .properties(
             title=alt.TitleParams(
@@ -455,6 +548,8 @@ def create_figure_1(
                 anchor="middle",
             )
         )
+        .configure_facet(spacing=0)
+        .configure_view(stroke=None)
     )
 
     # ---- Save figure ----

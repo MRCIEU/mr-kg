@@ -152,16 +152,21 @@ Users should reference the subplot titles and line colors to interpret each pane
 
 **Figure title**: Distribution of reproducibility metrics
 
-**Purpose**: Show reproducibility metrics distribution through three complementary views: overall tier distribution, category-specific tier distribution, and concordance by match quality.
+**Purpose**: Show reproducibility metrics distribution through four complementary views: overall tier distribution, category-specific tier distribution, overall concordance distribution, and category-specific concordance distribution.
 
 **Structure**: Two-column layout with:
 - **Left panel**: 
-  1. **Overall Tier Distribution** (top): Single stacked horizontal bar showing overall reproducibility tier percentages
-  2. **Tier Distribution by Outcome Category** (bottom): Stacked horizontal bars showing tier distribution per outcome category
+  1. **Overall Tier Distribution** (subplot A, top): Single stacked horizontal bar showing overall reproducibility tier percentages
+  2. **Tier Distribution by Outcome Category** (subplot B, bottom): Stacked horizontal bars showing tier distribution per outcome category
 - **Right panel**:
-  3. **Concordance by Match Quality and Outcome Category**: Error bars showing mean direction concordance
+  3. **Overall Concordance by Match Type** (subplot C, top): Ridge plots (overlapping density curves) showing distribution of concordance values for all categories combined, stratified by match type (exact vs fuzzy)
+  4. **Concordance by Match Type and Outcome Category** (subplot D, bottom): Faceted ridge plots showing distribution of concordance values for each outcome category, stratified by match type
 
-**Layout rationale**: Subplots A and B are grouped together in the left panel because they both show tier distribution metrics, while subplot C displays a different metric (concordance) in the right panel. This grouping emphasizes the relationship between overall and category-specific tier distributions.
+**Layout rationale**: 
+- Subplots A and B are grouped together in the left panel because they both show tier distribution metrics
+- Subplots C and D in the right panel both show concordance distributions
+- Subplot C is vertically aligned with subplot A via a spacer, creating a balanced two-column layout
+- This grouping emphasizes the relationship between aggregate (A, C) and category-specific (B, D) views for both reproducibility tiers and direction concordance
 
 **Visual elements (Panel A - top left)**:
 - Single stacked horizontal bar showing percentage distribution across all pairs
@@ -187,34 +192,65 @@ Users should reference the subplot titles and line colors to interpret each pane
 - Height: 300px
 - Legend: Reproducibility Tier (bottom)
 
-**Visual elements (Panel C - right)**:
-- Horizontal bars showing mean direction concordance
-- Error bars representing 95% confidence intervals
+**Visual elements (Panel C - top right)**:
+- Ridge plot (overlapping density curves) showing distribution of direction concordance values
 - Two match types with distinct colors:
-  - Exact match (dark green)
+  - Exact match (olive green)
   - Fuzzy match (orange)
-- Y-offset positioning for grouped comparison within each category
-- White bold text labels inside bars showing concordance values (2 decimal places)
+- Semi-transparent area fills (70% opacity) to show overlapping distributions
+- Smooth monotone interpolation for density curves
+- Light gray outlines on density areas
+- X-axis: Direction Concordance (-1 to 1)
+- Y-axis: Density (axis hidden)
+- No grid lines for clean visualization
 - Width: 400px
-- Height: 300px
-- Legend: Match Type (bottom)
+- Height: 30px (reduced height for compact display)
+- No legend (shared legend shown in Panel D)
+- Vertically aligned with Panel A via 80px spacer above
+
+**Visual elements (Panel D - bottom right)**:
+- Faceted ridge plots (stacked density curves) showing distribution of direction concordance values per category
+- Each category has its own row (facet) with overlapping density curves for exact and fuzzy matches
+- Two match types with distinct colors:
+  - Exact match (olive green)
+  - Fuzzy match (orange)
+- Semi-transparent area fills (70% opacity) to show overlapping distributions
+- Smooth monotone interpolation for density curves
+- Light gray outlines on density areas
+- X-axis: Direction Concordance (-1 to 1)
+- Y-axis: None (density axis hidden for clean faceted display)
+- No grid lines for clean visualization
+- Categories stacked vertically with labels on the left
+- Width: 400px
+- Height: 42px per category row
+- Legend: Match Type (bottom, horizontal orientation)
+- Facet spacing: 0 (tight vertical stacking)
+- Row headers: Category names, left-aligned
 
 **Key features**:
 - Left panel (A+B) groups tier distribution metrics for visual coherence
+- Right panel (C+D) groups concordance distribution metrics for visual coherence
+- Panel C vertically aligned with Panel A using invisible spacer for balanced layout
 - Panel A provides high-level summary of overall reproducibility distribution
 - Panel B shows how reproducibility varies by disease category
-- Right panel (C) examines effect of match quality on reproducibility
+- Panel C shows overall distribution of concordance values using ridge plot style with overlapping densities
+- Panel D uses faceted ridge plots to compare distributions across categories
+- Ridge plots provide intuitive visualization of distribution shapes and overlaps
+- Overlapping distributions make it easy to compare exact vs fuzzy match quality
+- Grid lines removed from subplots C and D for cleaner visualization
 - Uses "Outcome Category" (not "Disease Category") for consistency
 - Categories: cancer, autoimmune, cardiovascular, metabolic, other, psychiatric
 - Reproducibility tiers: high, moderate, low, discordant
 - Match types: exact, fuzzy
-- Text labels improve readability by showing exact pair counts
+- Text labels improve readability by showing exact pair counts in panels A and B
 - Independent color scales for different legend types
+- Compact vertical design maximizes information density
 
 **Data sources**:
 - Panel A: `data/artifacts/manuscript-tables/cs1_tier_distribution.csv`
 - Panel B: Computed from `pair_reproducibility_metrics.csv`
-- Panel C: `data/processed/case-study-cs1/interactions/category_match_interaction.csv`
+- Panel C: Extracted from `pair_reproducibility_metrics.csv` (individual concordance values, all categories)
+- Panel D: Extracted from `pair_reproducibility_metrics.csv` (individual concordance values by category)
 
 ### Figure 2: Study count and reproducibility
 

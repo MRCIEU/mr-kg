@@ -58,45 +58,56 @@ reproducibility tiers.
 high reproducibility, while a notable fraction (20.2%) show discordant
 results, highlighting both the reliability and challenges in MR literature.
 
-### Table 2: Match type stratification
+### Table 2: Concordance statistics by match type and category
 
 **Files**:
-- `cs1_match_type_stratification.csv` - Data in CSV format
-- `cs1_match_type_stratification.tex` - LaTeX formatted table
+- `cs1_match_type_by_category.csv` - Data in CSV format
+- `cs1_match_type_by_category.tex` - LaTeX formatted table
 
-**Purpose**: Compare reproducibility across different trait matching quality
-levels.
+**Purpose**: Present concordance distribution statistics for both overall
+(subplot C) and category-specific (subplot D) analyses, showing how match
+quality affects concordance distributions.
 
 **Data source**:
-`data/processed/case-study-cs1/metrics/stratified_by_match_type.csv`
+`data/processed/case-study-cs1/metrics/pair_reproducibility_metrics.csv`
 
 **Structure**:
 
 | Column | Description |
 |--------|-------------|
-| Match Type | Exact, Fuzzy, or EFO |
-| Total Pairs | Total number of trait pairs for this match type |
-| High (n) | Count of pairs with high reproducibility |
-| High (%) | Percentage achieving high reproducibility |
-| Discordant (n) | Count of pairs with discordant results |
-| Discordant (%) | Percentage with discordant results |
+| Outcome Category | "All" for overall, or specific category name |
+| Match Type | Exact or Fuzzy |
+| N | Number of trait pairs |
+| Mean | Mean direction concordance |
+| Median | Median direction concordance |
+| SD | Standard deviation of concordance |
 
 **Match type definitions**:
 
 - **Exact**: Identical trait descriptions across studies (highest confidence)
 - **Fuzzy**: Similar trait descriptions via fuzzy string matching (moderate
   confidence)
-- **EFO**: Matched via Experimental Factor Ontology mapping (ontology-based)
+
+**Table organization**:
+- First two rows show overall statistics ("All" category) corresponding to
+  subplot C
+- Remaining rows show category-specific statistics corresponding to subplot D
+- Categories sorted alphabetically within each match type group
 
 **Key features**:
-- Focuses on extreme reproducibility tiers (High and Discordant)
-- Shows both counts and percentages for each match type
-- Enables assessment of whether match quality predicts reproducibility
+- Combines subplot C (overall) and subplot D (by category) statistics in a
+  single table
+- Shows complete distribution characteristics (N, mean, median, SD) for each
+  combination
+- Long format allows easy comparison across categories and match types
+- Statistics rounded to 3 decimal places for precision
 
-**Interpretation**: Exact matches show highest reproducibility (70.5% high,
-8.0% discordant), while fuzzy matches have lower reproducibility (58.2% high,
-21.4% discordant), suggesting trait identification quality impacts
-reproducibility assessment.
+**Interpretation**: Overall, exact matches show substantially higher mean
+concordance (0.739) than fuzzy matches (0.414). This pattern holds across most
+outcome categories, with psychiatric traits showing the highest exact match
+concordance (0.903) and cancer traits the lowest (0.462). The table reveals
+that match quality is a strong predictor of reproducibility, with exact matches
+consistently outperforming fuzzy matches by 0.3+ concordance points on average.
 
 ## Case Study 5: Temporal trends tables
 

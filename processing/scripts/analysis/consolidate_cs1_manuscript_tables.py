@@ -5,7 +5,7 @@ Consolidate Case Study 1 reproducibility analysis into manuscript tables.
 
 Produces LaTeX-formatted tables for:
 1. Overall reproducibility tier distribution
-2. Stratification by match type quality
+2. Concordance statistics by match type and outcome category
 """
 
 import argparse
@@ -14,6 +14,13 @@ import sys
 from pathlib import Path
 
 import pandas as pd
+from yiutils.project_utils import find_project_root
+
+# ==== Project configuration ====
+
+PROJECT_ROOT = find_project_root("docker-compose.yml")
+DEFAULT_INPUT_DIR = PROJECT_ROOT / "data" / "processed" / "case-study-cs1"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "artifacts" / "manuscript-tables"
 
 
 def parse_args():
@@ -27,16 +34,16 @@ def parse_args():
     parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path("../data/processed/case-study-cs1"),
-        help="Input directory containing CS1 analysis outputs",
+        default=DEFAULT_INPUT_DIR,
+        help=f"Input directory containing CS1 analysis outputs (default: {DEFAULT_INPUT_DIR})",
     )
 
     # ---- --output-dir ----
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("../data/artifacts/manuscript-tables"),
-        help="Output directory for manuscript tables",
+        default=DEFAULT_OUTPUT_DIR,
+        help=f"Output directory for manuscript tables (default: {DEFAULT_OUTPUT_DIR})",
     )
 
     # ---- --dry-run ----
@@ -56,10 +63,10 @@ def load_tier_distribution(input_dir: Path) -> pd.DataFrame:
     return pd.read_csv(tier_path)
 
 
-def load_match_type_stratification(input_dir: Path) -> pd.DataFrame:
-    """Load stratification by match type."""
-    match_path = input_dir / "metrics" / "stratified_by_match_type.csv"
-    return pd.read_csv(match_path)
+def load_pair_metrics(input_dir: Path) -> pd.DataFrame:
+    """Load individual pair metrics for concordance analysis."""
+    metrics_path = input_dir / "metrics" / "pair_reproducibility_metrics.csv"
+    return pd.read_csv(metrics_path)
 
 
 def create_tier_distribution_table(tier_dist: pd.DataFrame) -> pd.DataFrame:
@@ -95,42 +102,80 @@ def create_tier_distribution_table(tier_dist: pd.DataFrame) -> pd.DataFrame:
     return table
 
 
-def create_match_type_table(match_type: pd.DataFrame) -> pd.DataFrame:
-    """Create match type stratification table."""
-    table = match_type.copy()
+def create_match_type_by_category_table(
+    pair_metrics: pd.DataFrame,
+) -> pd.DataFrame:
+    """Create concordance statistics by match type and outcome category.
 
-    table["match_type"] = table["match_type"].str.replace("_", " ").str.title()
-
-    result = table[
-        [
-            "match_type",
-            "n_pairs",
-            "n_high",
-            "pct_high",
-            "n_discordant",
-            "pct_discordant",
-        ]
+    This table shows summary statistics for the concordance distributions
+    displayed in subplots C (overall) and D (by category) of the manuscript
+    figures. Overall statistics are concatenated at the top.
+    """
+    # Filter to valid data
+    df_concordance = pair_metrics[
+        (pair_metrics["outcome_category"] != "uncategorized")
+        & (pair_metrics["outcome_category"].notna())
     ].copy()
 
-    result.columns = [
+    # Create match_type column
+    df_concordance["match_type"] = df_concordance["has_exact_match"].apply(
+        lambda x: "exact" if x else "fuzzy"
+    )
+
+    # Compute overall statistics (for subplot C)
+    overall_stats = (
+        df_concordance.groupby("match_type")["mean_direction_concordance"]
+        .agg(["count", "mean", "median", "std"])
+        .reset_index()
+    )
+    overall_stats.insert(0, "outcome_category", "All")
+
+    # Compute category-specific statistics (for subplot D)
+    category_stats = (
+        df_concordance.groupby(["outcome_category", "match_type"])[
+            "mean_direction_concordance"
+        ]
+        .agg(["count", "mean", "median", "std"])
+        .reset_index()
+    )
+
+    # Concatenate overall at the top
+    combined_stats = pd.concat(
+        [overall_stats, category_stats], ignore_index=True
+    )
+
+    # Rename and format match type labels first
+    combined_stats["match_type"] = (
+        combined_stats["match_type"].str.replace("_", " ").str.title()
+    )
+
+    # Rename columns
+    combined_stats.columns = [
+        "Outcome Category",
         "Match Type",
-        "Total Pairs",
-        "High (n)",
-        "High (%)",
-        "Discordant (n)",
-        "Discordant (%)",
+        "N",
+        "Mean",
+        "Median",
+        "SD",
     ]
 
-    result["High (%)"] = result["High (%)"].round(1)
-    result["Discordant (%)"] = result["Discordant (%)"].round(1)
+    # Format numeric columns
+    combined_stats["Mean"] = combined_stats["Mean"].round(3)
+    combined_stats["Median"] = combined_stats["Median"].round(3)
+    combined_stats["SD"] = combined_stats["SD"].round(3)
 
-    match_order = ["Exact", "Fuzzy", "Efo"]
-    result["Match Type"] = pd.Categorical(
-        result["Match Type"], categories=match_order, ordered=True
+    # Sort: All first, then by category name, then by match type
+    combined_stats["sort_category"] = combined_stats["Outcome Category"].apply(
+        lambda x: "0_All" if x == "All" else f"1_{x}"
     )
-    result = result.sort_values("Match Type")
+    combined_stats = combined_stats.sort_values(
+        ["sort_category", "Match Type"], ascending=[True, False]
+    )
+    combined_stats = combined_stats.drop(columns=["sort_category"])
 
-    return result
+    return combined_stats
+
+    return combined_stats
 
 
 def format_latex_table(df: pd.DataFrame, caption: str, label: str) -> str:
@@ -159,20 +204,20 @@ def main():
 
     print("Loading data...")
     tier_dist = load_tier_distribution(args.input_dir)
-    match_type = load_match_type_stratification(args.input_dir)
+    pair_metrics = load_pair_metrics(args.input_dir)
 
     print("Creating tier distribution table...")
     tier_table = create_tier_distribution_table(tier_dist)
 
-    print("Creating match type table...")
-    match_table = create_match_type_table(match_type)
+    print("Creating match type by category table...")
+    match_category_table = create_match_type_by_category_table(pair_metrics)
 
     print("Saving CSV tables...")
     tier_table.to_csv(
         args.output_dir / "cs1_tier_distribution.csv", index=False
     )
-    match_table.to_csv(
-        args.output_dir / "cs1_match_type_stratification.csv", index=False
+    match_category_table.to_csv(
+        args.output_dir / "cs1_match_type_by_category.csv", index=False
     )
 
     print("Generating LaTeX tables...")
@@ -184,26 +229,26 @@ def main():
         label="tab:cs1-tier-distribution",
     )
 
-    match_latex = format_latex_table(
-        match_table,
+    match_category_latex = format_latex_table(
+        match_category_table,
         caption=(
-            "Reproducibility by trait matching quality: exact ontology matches "
-            "show higher concordance than fuzzy matches."
+            "Concordance distribution statistics by match type overall (All) and "
+            "by outcome category."
         ),
-        label="tab:cs1-match-type",
+        label="tab:cs1-match-type-category",
     )
 
     with open(args.output_dir / "cs1_tier_distribution.tex", "w") as f:
         f.write(tier_latex)
 
-    with open(args.output_dir / "cs1_match_type_stratification.tex", "w") as f:
-        f.write(match_latex)
+    with open(args.output_dir / "cs1_match_type_by_category.tex", "w") as f:
+        f.write(match_category_latex)
 
     print("\nOutput files:")
     print(f"  {args.output_dir / 'cs1_tier_distribution.csv'}")
     print(f"  {args.output_dir / 'cs1_tier_distribution.tex'}")
-    print(f"  {args.output_dir / 'cs1_match_type_stratification.csv'}")
-    print(f"  {args.output_dir / 'cs1_match_type_stratification.tex'}")
+    print(f"  {args.output_dir / 'cs1_match_type_by_category.csv'}")
+    print(f"  {args.output_dir / 'cs1_match_type_by_category.tex'}")
 
     metadata = {
         "script": Path(__file__).name,
@@ -211,7 +256,7 @@ def main():
         "output_dir": str(args.output_dir),
         "tables_generated": [
             "cs1_tier_distribution",
-            "cs1_match_type_stratification",
+            "cs1_match_type_by_category",
         ],
     }
 
