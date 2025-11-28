@@ -1,9 +1,10 @@
 {
   "script": "consolidate_cs5_manuscript_tables.py",
-  "input_dir": "/Users/ik18445/local-projects/+dmer/+mr-paper-data-extraction/mr-kg/data/processed/case-study-cs5",
-  "output_dir": "/Users/ik18445/local-projects/+dmer/+mr-paper-data-extraction/mr-kg/data/processed/manuscript-tables",
+  "input_dir": "../data/processed/case-study-cs5",
+  "output_dir": "../data/artifacts/manuscript-tables",
   "tables_generated": [
     "cs5_era_summary",
-    "cs5_strobe_impact"
+    "cs5_strobe_impact",
+    "cs5_strobe_study_counts"
   ]
 }

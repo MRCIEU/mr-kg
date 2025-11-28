@@ -8,7 +8,6 @@ eras provide scientific value or should be collapsed.
 import argparse
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import yaml
 from loguru import logger

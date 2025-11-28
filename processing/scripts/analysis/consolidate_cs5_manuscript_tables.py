@@ -68,6 +68,13 @@ def load_strobe_impact(input_dir: Path) -> pd.DataFrame:
     return pd.read_csv(strobe_path)
 
 
+def load_completeness_metadata(input_dir: Path) -> dict:
+    """Load completeness metadata containing study counts."""
+    metadata_path = input_dir / "completeness" / "completeness_metadata.json"
+    with open(metadata_path, "r") as f:
+        return json.load(f)
+
+
 def create_era_summary_table(
     era_stats: pd.DataFrame, diversity: pd.DataFrame
 ) -> pd.DataFrame:
@@ -170,6 +177,37 @@ def create_strobe_impact_table(strobe_impact: pd.DataFrame) -> pd.DataFrame:
     return table
 
 
+def create_strobe_study_counts_table(metadata: dict) -> pd.DataFrame:
+    """Create supplementary table with study counts by period.
+
+    Args:
+        metadata: Completeness metadata containing study count information
+
+    Returns:
+        DataFrame with period, year range, study counts, and percentages
+    """
+    strobe_analysis = metadata["strobe_impact_analysis"]
+
+    pre_studies = strobe_analysis["pre_strobe"]["n_studies"]
+    post_studies = strobe_analysis["post_strobe"]["n_studies"]
+    total_studies = pre_studies + post_studies
+
+    data = {
+        "Period": ["Pre-STROBE", "Post-STROBE"],
+        "Year Range": ["2003-2020", "2021-2025"],
+        "n_studies": [pre_studies, post_studies],
+        "Percent of Total": [
+            (pre_studies / total_studies) * 100,
+            (post_studies / total_studies) * 100,
+        ],
+    }
+
+    table = pd.DataFrame(data)
+    table["Percent of Total"] = table["Percent of Total"].round(1)
+
+    return table
+
+
 def format_latex_table(df: pd.DataFrame, caption: str, label: str) -> str:
     """Format DataFrame as LaTeX table."""
     latex = df.to_latex(
@@ -198,6 +236,7 @@ def main():
     era_stats = load_era_statistics(args.input_dir)
     diversity = load_diversity_by_era(args.input_dir)
     strobe_impact = load_strobe_impact(args.input_dir)
+    completeness_metadata = load_completeness_metadata(args.input_dir)
 
     print("Creating era summary table...")
     era_table = create_era_summary_table(era_stats, diversity)
@@ -205,9 +244,17 @@ def main():
     print("Creating STROBE impact table...")
     strobe_table = create_strobe_impact_table(strobe_impact)
 
+    print("Creating STROBE study counts supplementary table...")
+    study_counts_table = create_strobe_study_counts_table(
+        completeness_metadata
+    )
+
     print("Saving CSV tables...")
     era_table.to_csv(args.output_dir / "cs5_era_summary.csv", index=False)
     strobe_table.to_csv(args.output_dir / "cs5_strobe_impact.csv", index=False)
+    study_counts_table.to_csv(
+        args.output_dir / "cs5_strobe_study_counts.csv", index=False
+    )
 
     print("Generating LaTeX tables...")
     era_latex = format_latex_table(
@@ -226,17 +273,28 @@ def main():
         label="tab:cs5-strobe-impact",
     )
 
+    study_counts_latex = format_latex_table(
+        study_counts_table,
+        caption=("Study counts by STROBE-MR period (2021 publication)."),
+        label="tab:cs5-strobe-study-counts",
+    )
+
     with open(args.output_dir / "cs5_era_summary.tex", "w") as f:
         f.write(era_latex)
 
     with open(args.output_dir / "cs5_strobe_impact.tex", "w") as f:
         f.write(strobe_latex)
 
+    with open(args.output_dir / "cs5_strobe_study_counts.tex", "w") as f:
+        f.write(study_counts_latex)
+
     print("\nOutput files:")
     print(f"  {args.output_dir / 'cs5_era_summary.csv'}")
     print(f"  {args.output_dir / 'cs5_era_summary.tex'}")
     print(f"  {args.output_dir / 'cs5_strobe_impact.csv'}")
     print(f"  {args.output_dir / 'cs5_strobe_impact.tex'}")
+    print(f"  {args.output_dir / 'cs5_strobe_study_counts.csv'}")
+    print(f"  {args.output_dir / 'cs5_strobe_study_counts.tex'}")
 
     metadata = {
         "script": Path(__file__).name,
@@ -245,6 +303,7 @@ def main():
         "tables_generated": [
             "cs5_era_summary",
             "cs5_strobe_impact",
+            "cs5_strobe_study_counts",
         ],
     }
 

@@ -28,7 +28,6 @@ import numpy as np
 import pandas as pd
 import yaml
 from loguru import logger
-from scipy import stats
 from statsmodels.formula.api import ols
 from statsmodels.stats.anova import anova_lm
 from yiutils.project_utils import find_project_root

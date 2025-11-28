@@ -503,15 +503,15 @@ def perform_strobe_impact_analysis(df: pd.DataFrame) -> Dict[str, Any]:
     pre_strobe = df[df["pub_year"] < 2021].copy()
     post_strobe = df[df["pub_year"] >= 2021].copy()
 
-    logger.info(f"Pre-STROBE studies (2015-2020): {len(pre_strobe)}")
-    logger.info(f"Post-STROBE studies (2021-2024): {len(post_strobe)}")
+    logger.info(f"Pre-STROBE studies (2003-2020): {len(pre_strobe)}")
+    logger.info(f"Post-STROBE studies (2021-2025): {len(post_strobe)}")
 
     results = {}
 
     # ---- Pre-STROBE statistics ----
     if len(pre_strobe) > 0:
         results["pre_strobe"] = {
-            "period": "2015-2020",
+            "period": "2003-2020",
             "n_studies": int(len(pre_strobe)),
             "mean_completeness": float(
                 pre_strobe["overall_completeness"].mean()
@@ -537,7 +537,7 @@ def perform_strobe_impact_analysis(df: pd.DataFrame) -> Dict[str, Any]:
     # ---- Post-STROBE statistics ----
     if len(post_strobe) > 0:
         results["post_strobe"] = {
-            "period": "2021-2024",
+            "period": "2021-2025",
             "n_studies": int(len(post_strobe)),
             "mean_completeness": float(
                 post_strobe["overall_completeness"].mean()
@@ -733,8 +733,8 @@ def plot_strobe_reporting_impact(
     width = 0.35
 
     # ---- Plot bars ----
-    ax.bar(x - width / 2, pre_pcts, width, label="Pre-STROBE (2015-2020)")
-    ax.bar(x + width / 2, post_pcts, width, label="Post-STROBE (2021-2024)")
+    ax.bar(x - width / 2, pre_pcts, width, label="Pre-STROBE (2003-2020)")
+    ax.bar(x + width / 2, post_pcts, width, label="Post-STROBE (2021-2025)")
 
     # ---- Add significance markers ----
     for i, test in enumerate(tests):

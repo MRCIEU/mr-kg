@@ -9,7 +9,6 @@ import time
 from pathlib import Path
 
 import duckdb
-import pandas as pd
 
 
 def main() -> None:
@@ -300,7 +299,7 @@ def print_recommendation(query_time: float, match_rate: float) -> None:
             details += "  - Poor label matching rate\n"
             details += "  - Trait labels may need extensive preprocessing\n"
 
-    print(f"Based on these checks, Phase 3 (Similarity Expansion) is:")
+    print("Based on these checks, Phase 3 (Similarity Expansion) is:")
     print(f"  {recommendation}")
     print(f"\n{details}")
     print("=" * 70)

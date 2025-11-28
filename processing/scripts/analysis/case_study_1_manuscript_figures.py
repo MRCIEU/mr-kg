@@ -533,7 +533,9 @@ def create_figure_1(
         )
     )
 
-    left_panel = alt.vconcat(spacer, chartA, chartB).resolve_scale(color="independent")
+    left_panel = alt.vconcat(spacer, chartA, chartB).resolve_scale(
+        color="independent"
+    )
     right_panel = alt.vconcat(spacer, chartC, chartD).resolve_scale(
         color="independent"
     )
