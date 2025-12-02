@@ -348,9 +348,6 @@ def generate_evidence_section(
     avg_direction = distributions["mean_direction_concordance"].mean()
     median_direction = distributions["median_direction_concordance"].median()
 
-    avg_composite = distributions["mean_composite_direction"].mean()
-    median_composite = distributions["median_composite_direction"].median()
-
     res = [
         "\\hline",
         "\\multicolumn{2}{l}{\\textbf{Evidence Profile Similarity}} \\\\",
@@ -359,8 +356,6 @@ def generate_evidence_section(
         f"Total pairwise comparisons & {total_pairs:,} \\\\",
         f"Direction concordance (mean) & {avg_direction:.3f} \\\\",
         f"Direction concordance (median) & {median_direction:.3f} \\\\",
-        f"Composite similarity (mean) & {avg_composite:.3f} \\\\",
-        f"Composite similarity (median) & {median_composite:.3f} \\\\",
     ]
 
     return res
@@ -707,8 +702,6 @@ def generate_model_evidence_section(
                 "Total pairwise comparisons & N/A \\\\",
                 "Direction concordance (mean) & N/A \\\\",
                 "Direction concordance (median) & N/A \\\\",
-                "Composite similarity (mean) & N/A \\\\",
-                "Composite similarity (median) & N/A \\\\",
                 "Data completeness (mean) & N/A \\\\",
             ]
         )
@@ -721,10 +714,6 @@ def generate_model_evidence_section(
     median_direction = float(
         distributions["median_direction_concordance"].iloc[0]
     )
-    avg_composite = float(distributions["mean_composite_direction"].iloc[0])
-    median_composite = float(
-        distributions["median_composite_direction"].iloc[0]
-    )
 
     res.extend(
         [
@@ -732,8 +721,6 @@ def generate_model_evidence_section(
             f"Total pairwise comparisons & {total_pairs:,} \\\\",
             f"Direction concordance (mean) & {avg_direction:.3f} \\\\",
             f"Direction concordance (median) & {median_direction:.3f} \\\\",
-            f"Composite similarity (mean) & {avg_composite:.3f} \\\\",
-            f"Composite similarity (median) & {median_composite:.3f} \\\\",
         ]
     )
 
@@ -843,16 +830,6 @@ def consolidate_data_for_json(
                 "median_direction": float(
                     evidence_stats["distributions"][
                         "median_direction_concordance"
-                    ].median()
-                ),
-                "mean_composite": float(
-                    evidence_stats["distributions"][
-                        "mean_composite_direction"
-                    ].mean()
-                ),
-                "median_composite": float(
-                    evidence_stats["distributions"][
-                        "median_composite_direction"
                     ].median()
                 ),
             },

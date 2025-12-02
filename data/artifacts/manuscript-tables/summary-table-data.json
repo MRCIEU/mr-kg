@@ -139,9 +139,7 @@
     ],
     "distributions_summary": {
       "mean_direction": 0.42632133567012565,
-      "median_direction": 1.0,
-      "mean_composite": 0.3855093447392428,
-      "median_composite": 0.3205128205128205
+      "median_direction": 1.0
     }
   }
 }
