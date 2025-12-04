@@ -192,7 +192,22 @@ list-backups:
 setup-dev:
     @echo "Setting up development environment..."
     @if [ ! -f .env ]; then echo "Creating .env from .env.development..."; cp .env.development .env; fi
-    @if [ ! -f webapp/.env ]; then echo "Creating webapp/.env..."; cp .env.development webapp/.env; fi
+    @if [ ! -f api/.env ]; then \
+        echo "Creating api/.env with database paths..."; \
+        echo "# API Development Environment" > api/.env; \
+        echo "# Database paths relative to project root (one level up from api/)" >> api/.env; \
+        echo "VECTOR_STORE_PATH=../data/db/vector_store.db" >> api/.env; \
+        echo "TRAIT_PROFILE_PATH=../data/db/trait_profile_db.db" >> api/.env; \
+        echo "EVIDENCE_PROFILE_PATH=../data/db/evidence_profile_db.db" >> api/.env; \
+        echo "DEFAULT_MODEL=gpt-5" >> api/.env; \
+        echo "LOG_LEVEL=DEBUG" >> api/.env; \
+    fi
+    @if [ ! -f webapp/.env ]; then \
+        echo "Creating webapp/.env..."; \
+        echo "# Webapp Development Environment" > webapp/.env; \
+        echo "API_URL=http://localhost:8000" >> webapp/.env; \
+        echo "DEFAULT_MODEL=gpt-5" >> webapp/.env; \
+    fi
     @echo "Development environment configured!"
 
 # Set up production environment files

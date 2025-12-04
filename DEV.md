@@ -24,16 +24,25 @@ cd mr-kg
 just setup-dev
 ```
 
-Start the web services:
+Start the web services using Docker (recommended):
 
 ```bash
+# IMPORTANT: Run this from the project root, not from api/ or webapp/
 just dev
 ```
+
+This starts both the API and webapp services in Docker containers.
 
 Access the services:
 
 - Webapp: http://localhost:8501
 - API docs: http://localhost:8000/api/docs
+
+Note: The `just dev` command behavior depends on your current directory:
+
+- **From project root**: Starts both API and webapp in Docker containers
+- **From api/ directory**: Starts API only in local development mode
+- **From webapp/ directory**: Starts webapp only in local development mode
 
 ## Prerequisites
 
@@ -73,6 +82,28 @@ LOG_LEVEL=INFO
 LOG_FORMAT=json
 ```
 
+For local development (without Docker), each service needs its own .env file:
+
+API (.env in api/ directory):
+
+```env
+VECTOR_STORE_PATH=../data/db/vector_store.db
+TRAIT_PROFILE_PATH=../data/db/trait_profile_db.db
+EVIDENCE_PROFILE_PATH=../data/db/evidence_profile_db.db
+DEFAULT_MODEL=gpt-5
+LOG_LEVEL=DEBUG
+```
+
+Webapp (.env in webapp/ directory):
+
+```env
+API_URL=http://localhost:8000
+DEFAULT_MODEL=gpt-5
+```
+
+Note: The database paths in the API .env use `../` to reference the project
+root from the api/ directory.
+
 ### Data prerequisites
 
 MR-KG services expect local DuckDB databases:
@@ -89,19 +120,39 @@ See:
 
 ## Development workflows
 
-### API development
+### Docker-based development (recommended)
 
-The API is built with FastAPI and provides RESTful endpoints for accessing
-study data, extraction results, and similarity metrics.
+The recommended approach is to use Docker Compose to run both services
+together.
+This handles all networking and dependencies automatically.
 
-Docker-based development (recommended):
+From the project root:
 
 ```bash
-# Start both API and webapp in Docker
+# Start both services
 just dev
+
+# View logs
+just dev-logs
+
+# Stop services
+just dev-down
 ```
 
-Local development:
+Services are accessible at:
+
+- Webapp: http://localhost:8501
+- API: http://localhost:8000
+- API docs: http://localhost:8000/api/docs
+
+### Local development (without Docker)
+
+For local development, you need to run both the API and webapp separately.
+This requires two terminal sessions and manual dependency management.
+
+Important: The webapp depends on the API, so you must start the API first.
+
+Terminal 1 (API):
 
 ```bash
 cd api
@@ -109,8 +160,21 @@ uv sync
 just dev
 ```
 
-The API is accessible at http://localhost:8000 with documentation at
-http://localhost:8000/api/docs
+Terminal 2 (Webapp):
+
+```bash
+cd webapp
+uv sync
+just dev
+```
+
+The API must be running before starting the webapp, otherwise the webapp will
+fail with a connection error.
+
+### API development
+
+The API is built with FastAPI and provides RESTful endpoints for accessing
+study data, extraction results, and similarity metrics.
 
 Running API tests:
 
@@ -129,23 +193,6 @@ Key files:
 ### Webapp development
 
 The webapp is built with Streamlit and communicates with the API backend.
-
-Docker-based development (recommended):
-
-```bash
-# Start both API and webapp in Docker
-just dev
-```
-
-Local development (requires API to be running):
-
-```bash
-cd webapp
-uv sync
-just dev
-```
-
-The webapp is accessible at http://localhost:8501
 
 Running webapp tests:
 
@@ -197,13 +244,16 @@ See @src/common_funcs/README.md for details.
 
 ## Docker commands
 
-All Docker commands use the top-level justfile:
+Important: All Docker commands must be run from the project root directory,
+not from within api/ or webapp/ subdirectories.
 
 Development:
 
 ```bash
+# From project root only
 just dev              # Start development stack (API + webapp)
 just dev-logs         # View development logs
+just dev-down         # Stop development stack
 ```
 
 Production:
@@ -444,3 +494,115 @@ processing:
 - Database schema: @docs/processing/db-schema.md
 - Trait profile similarity: @docs/processing/trait-profile-similarity.md
 - Evidence profile similarity: @docs/processing/evidence-profile-similarity.md
+
+## Troubleshooting
+
+### API returns "Database not found" errors
+
+**Symptom**: API returns 500 errors with messages like "Vector store database
+not found: data/db/vector_store.db"
+
+**Cause**: The API is looking for databases in the wrong location due to
+incorrect relative paths.
+
+**Solution**:
+
+1. Ensure you have a .env file in the api/ directory:
+
+   ```bash
+   cd api
+   cat .env
+   ```
+
+   It should contain:
+
+   ```env
+   VECTOR_STORE_PATH=../data/db/vector_store.db
+   TRAIT_PROFILE_PATH=../data/db/trait_profile_db.db
+   EVIDENCE_PROFILE_PATH=../data/db/evidence_profile_db.db
+   ```
+
+2. If the .env file is missing or incorrect, run:
+
+   ```bash
+   # From project root
+   just setup-dev
+   ```
+
+3. Verify databases exist at the project root:
+
+   ```bash
+   ls -la data/db/
+   ```
+
+4. Check API health:
+
+   ```bash
+   curl http://localhost:8000/api/health
+   ```
+
+   All databases should show `true`.
+
+### Webapp shows "Connection refused" error
+
+**Symptom**: Webapp fails with "Connection refused [Errno 61]" or similar
+error.
+
+**Cause**: The API is not running or the webapp is configured with the wrong
+API URL.
+
+**Solution**:
+
+1. Ensure the API is running:
+
+   ```bash
+   curl http://localhost:8000/api/health
+   ```
+
+2. Check the webapp's .env file:
+
+   ```bash
+   cd webapp
+   cat .env
+   ```
+
+   It should contain:
+
+   ```env
+   API_URL=http://localhost:8000
+   ```
+
+3. For local development, start the API before the webapp (see "Local
+   development" section above).
+
+### Docker services fail to start
+
+**Symptom**: `just dev` fails or containers exit immediately.
+
+**Cause**: Missing environment files or database files.
+
+**Solution**:
+
+1. Run setup:
+
+   ```bash
+   just setup-dev
+   ```
+
+2. Ensure databases exist:
+
+   ```bash
+   ls -la data/db/
+   ```
+
+3. Check container logs:
+
+   ```bash
+   just dev-logs
+   ```
+
+4. Verify Docker Compose configuration:
+
+   ```bash
+   docker-compose config
+   ```

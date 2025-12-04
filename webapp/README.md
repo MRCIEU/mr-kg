@@ -7,9 +7,11 @@ through the MR-KG API.
 
 ### Docker (recommended)
 
-From the project root:
+Start both API and webapp services from the project root:
 
 ```bash
+# IMPORTANT: Run from project root, not from webapp/ directory
+cd /path/to/mr-kg
 just dev
 ```
 
@@ -17,13 +19,28 @@ The webapp will be available at http://localhost:8501
 
 ### Local development
 
-Requires the API to be running.
+Important: The webapp requires the API to be running first.
+
+Terminal 1 (start API first):
 
 ```bash
+# From project root
+cd api
+uv sync
+just dev
+```
+
+Terminal 2 (start webapp):
+
+```bash
+# From project root
 cd webapp
 uv sync
 just dev
 ```
+
+If the API is not running, the webapp will fail with a connection error:
+"Connection refused [Errno 61]"
 
 ## Pages
 

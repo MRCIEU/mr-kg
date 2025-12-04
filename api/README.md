@@ -7,9 +7,11 @@ Randomization study data, extraction results, and similarity metrics.
 
 ### Docker (recommended)
 
-From the project root:
+Start both API and webapp services from the project root:
 
 ```bash
+# IMPORTANT: Run from project root, not from api/ directory
+cd /path/to/mr-kg
 just dev
 ```
 
@@ -17,11 +19,17 @@ The API will be available at http://localhost:8000
 
 ### Local development
 
+Run the API standalone without Docker:
+
 ```bash
+# From project root
 cd api
 uv sync
 just dev
 ```
+
+Note: When running locally, the API can operate independently but the webapp
+will need to connect to it separately.
 
 ## API documentation
 

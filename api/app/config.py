@@ -8,7 +8,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """API configuration settings loaded from environment variables."""
 
-    model_config = SettingsConfigDict(env_prefix="")
+    model_config = SettingsConfigDict(
+        env_prefix="",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
 
     vector_store_path: str = "data/db/vector_store.db"
     trait_profile_path: str = "data/db/trait_profile_db.db"

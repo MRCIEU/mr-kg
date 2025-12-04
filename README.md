@@ -21,9 +21,10 @@ cd mr-kg
 just setup-dev
 ```
 
-Start the web services:
+Start the web services using Docker:
 
 ```bash
+# Run from project root
 just dev
 ```
 
@@ -31,6 +32,9 @@ Access the services:
 
 - Webapp: http://localhost:8501
 - API documentation: http://localhost:8000/api/docs
+
+For detailed development instructions including local development without
+Docker, see @DEV.md
 
 ## Web services
 
