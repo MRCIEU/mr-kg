@@ -15,7 +15,9 @@ services:
       - VECTOR_STORE_PATH=/app/data/db/vector_store.db
       - TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
       - EVIDENCE_PROFILE_PATH=/app/data/db/evidence_profile_db.db
-      - DEFAULT_MODEL=gpt-5
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-5}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
     networks:
       - mr-kg-network
     restart: unless-stopped
@@ -54,11 +56,13 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
       - API_URL=http://api:8000
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-5}
     networks:
       - mr-kg-network
     restart: unless-stopped
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
       interval: 30s

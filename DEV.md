@@ -7,11 +7,12 @@ information and vector similarity search.
 
 ## Project overview
 
-MR-KG consists of two main components:
+MR-KG consists of three main components:
 
+- **API (FastAPI)**: RESTful backend providing programmatic access to MR data
+- **Webapp (Streamlit)**: User-facing interface for interactive exploration
 - **Processing pipeline**: ETL pipeline that creates DuckDB databases from raw
   LLM results and EFO ontology data
-- **Webapp**: Streamlit interface for exploring the processed data
 
 ## Quick start
 
@@ -23,13 +24,16 @@ cd mr-kg
 just setup-dev
 ```
 
-Start the webapp:
+Start the web services:
 
 ```bash
 just dev
 ```
 
-Access the webapp at http://localhost:8501
+Access the services:
+
+- Webapp: http://localhost:8501
+- API docs: http://localhost:8000/api/docs
 
 ## Prerequisites
 
@@ -46,13 +50,14 @@ For the processing pipeline:
 
 ### Environment files
 
-The `just setup-dev` command creates .env files from templates. You can also
-create them manually:
+The `just setup-dev` command creates .env files from templates.
+You can also create them manually:
 
 Development (.env.development):
 
 ```env
 WEBAPP_PORT=8501
+API_PORT=8000
 PYTHON_ENV=development
 HOT_RELOAD=true
 LOG_LEVEL=DEBUG
@@ -63,6 +68,7 @@ Production (.env.production):
 
 ```env
 WEBAPP_PORT=8501
+API_PORT=8000
 LOG_LEVEL=INFO
 LOG_FORMAT=json
 ```
@@ -73,31 +79,87 @@ MR-KG services expect local DuckDB databases:
 
 - data/db/vector_store.db
 - data/db/trait_profile_db.db
+- data/db/evidence_profile_db.db
 
-You can produce these via the processing pipeline. See:
+You can produce these via the processing pipeline.
+See:
 
 - Processing pipeline documentation: @docs/processing/pipeline.md
 - Data structures and schema details: @docs/DATA.md
 
 ## Development workflows
 
-### Webapp development
+### API development
+
+The API is built with FastAPI and provides RESTful endpoints for accessing
+study data, extraction results, and similarity metrics.
 
 Docker-based development (recommended):
 
 ```bash
-# Start webapp in Docker
+# Start both API and webapp in Docker
 just dev
 ```
 
 Local development:
 
 ```bash
+cd api
+uv sync
+just dev
+```
+
+The API is accessible at http://localhost:8000 with documentation at
+http://localhost:8000/api/docs
+
+Running API tests:
+
+```bash
+cd api
+just test
+```
+
+Key files:
+
+- `api/app/main.py`: FastAPI application entry point
+- `api/app/routers/`: API endpoint definitions
+- `api/app/repositories/`: Database access layer
+- `api/app/models.py`: Pydantic response models
+
+### Webapp development
+
+The webapp is built with Streamlit and communicates with the API backend.
+
+Docker-based development (recommended):
+
+```bash
+# Start both API and webapp in Docker
+just dev
+```
+
+Local development (requires API to be running):
+
+```bash
 cd webapp
-just local-run
+uv sync
+just dev
 ```
 
 The webapp is accessible at http://localhost:8501
+
+Running webapp tests:
+
+```bash
+cd webapp
+just test
+```
+
+Key files:
+
+- `webapp/app.py`: Main application entry point
+- `webapp/pages/`: Streamlit page definitions
+- `webapp/services/api_client.py`: API client
+- `webapp/components/`: Reusable UI components
 
 ### Processing pipeline
 
@@ -125,12 +187,13 @@ uv run python scripts/main-processing/<script_name>.py
 For HPC batch jobs and embedding generation:
 
 - See scripts/bc4/ for SLURM batch job templates
-- See @docs/processing/trait-profile-similarity.md for trait similarity computation
+- See @docs/processing/trait-profile-similarity.md for trait similarity
 
 ### Common utilities
 
 The src/common_funcs/ directory contains shared utilities used across
-components. See @src/common_funcs/README.md for details.
+components.
+See @src/common_funcs/README.md for details.
 
 ## Docker commands
 
@@ -139,13 +202,16 @@ All Docker commands use the top-level justfile:
 Development:
 
 ```bash
-just dev              # Start development stack
+just dev              # Start development stack (API + webapp)
+just dev-logs         # View development logs
 ```
 
 Production:
 
 ```bash
 just prod             # Deploy production stack
+just prod-logs        # View production logs
+just prod-update      # Update production deployment
 ```
 
 Build:
@@ -159,7 +225,7 @@ just build webapp     # Build specific service
 Health and maintenance:
 
 ```bash
-just health           # Check service health
+just health           # Check service health (API + webapp)
 just status           # View container status
 just clean            # Clean up Docker resources
 just usage            # View Docker resource usage
@@ -172,23 +238,81 @@ just backup           # Create database backup
 just list-backups     # List available backups
 ```
 
+## Testing
+
+### Unit tests
+
+Each component has its own test suite:
+
+```bash
+# API tests
+cd api && just test
+
+# Webapp tests
+cd webapp && just test
+
+# Processing tests
+cd processing && just test
+```
+
+### Integration tests
+
+Integration tests verify the complete API workflow with real databases.
+They require the API service to be running:
+
+```bash
+# Start services
+just dev
+
+# Run integration tests (from project root)
+API_URL=http://localhost:8000 python -m pytest tests/integration -v
+```
+
+Integration tests are automatically skipped if the API is unavailable.
+
+### Performance tests
+
+Performance tests measure API response times against targets:
+
+```bash
+# Start services
+just dev
+
+# Run performance tests
+python tests/performance/test_response_times.py
+```
+
+Performance targets:
+
+- Autocomplete: <300ms
+- Study search: <500ms
+- Similarity queries: <1000ms
+
 ## Environment variables
 
 ### Docker Compose variables
 
 - `WEBAPP_PORT`: Host port for webapp (default: 8501)
+- `API_PORT`: Host port for API (default: 8000)
+
+### API variables
+
+- `VECTOR_STORE_PATH`: Path to vector store database
+- `TRAIT_PROFILE_PATH`: Path to trait profile database
+- `EVIDENCE_PROFILE_PATH`: Path to evidence profile database
+- `DEFAULT_MODEL`: Default extraction model (default: gpt-5)
+- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
+
+### Webapp variables
+
+- `API_URL`: API backend URL (default: http://localhost:8000)
+- `DEFAULT_MODEL`: Default extraction model (default: gpt-5)
 
 ### Development variables
 
 - `PYTHON_ENV`: Python environment mode (default: development)
 - `HOT_RELOAD`: Enable hot reload for development (default: true)
-- `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
 - `LOG_FORMAT`: Log format (text/json)
-
-### Production variables
-
-- `LOG_LEVEL`: Logging level (default: INFO)
-- `LOG_FORMAT`: Log format (default: json)
 
 ## Deployment
 
@@ -218,26 +342,33 @@ just prod-update
 just prod-down
 ```
 
-Access the webapp at <http://localhost:8501>
+Access the services:
+
+- Webapp: http://localhost:8501
+- API: http://localhost:8000
 
 ### Resource limits
 
-The production webapp container has the following resource limits:
+Production containers have resource limits configured in docker-compose.prod.yml:
+
+API:
+
+- Memory: 512M limit, 256M reservation
+- CPU: 0.5 limit, 0.25 reservation
+
+Webapp:
 
 - Memory: 1G limit, 512M reservation
 - CPU: 0.5 limit, 0.25 reservation
-- Logs: 100MB max size, 3 files
 
-Adjust these in docker-compose.prod.yml as needed for your workload.
+Adjust these as needed for your workload.
 
 ### Health checks
 
-The webapp includes a health check endpoint:
+Both services include health check endpoints:
 
-- Endpoint: <http://localhost:8501/_stcore/health>
-- Interval: 30s
-- Timeout: 10s
-- Retries: 3
+- API: http://localhost:8000/api/health
+- Webapp: http://localhost:8501/_stcore/health
 
 Check service health:
 
@@ -249,36 +380,56 @@ just health
 
 ```text
 mr-kg/
-├── README.md                  # Project overview
-├── DEV.md                     # This file
-├── docs/
-│   ├── DATA.md                # Data structure documentation
-│   └── processing/            # Processing pipeline docs
-│       ├── pipeline.md
-│       ├── databases.md
-│       ├── db-schema.md       # Auto-generated schema
-│       └── trait-profile-similarity.md
-├── data/                      # Data files (gitignored)
-│   ├── raw/                   # Raw input data
-│   ├── processed/             # Processed data
-│   └── db/                    # DuckDB databases
-├── processing/                # ETL processing pipeline
-│   ├── scripts/               # Processing scripts
-│   └── README.md
-├── webapp/                    # Streamlit webapp
-│   └── README.md
-├── src/
-│   └── common_funcs/          # Shared utilities
-├── docker-compose.yml         # Development compose file
-├── docker-compose.prod.yml    # Production compose file
-├── justfile                   # Task runner commands
-└── .env.development           # Development environment template
++-- README.md                  # Project overview
++-- DEV.md                     # This file
++-- api/                       # FastAPI backend service
+|   +-- app/                   # Application code
+|   |   +-- routers/           # API endpoints
+|   |   +-- repositories/      # Database access
+|   |   +-- main.py            # Application entry
+|   |   +-- models.py          # Response models
+|   +-- tests/                 # Unit tests
+|   +-- Dockerfile
+|   +-- justfile
+|   +-- pyproject.toml
+|   +-- README.md
++-- webapp/                    # Streamlit frontend
+|   +-- pages/                 # Page definitions
+|   +-- components/            # UI components
+|   +-- services/              # API client
+|   +-- tests/                 # Unit tests
+|   +-- Dockerfile
+|   +-- justfile
+|   +-- pyproject.toml
+|   +-- README.md
++-- processing/                # ETL processing pipeline
+|   +-- scripts/               # Processing scripts
+|   +-- README.md
++-- tests/                     # Integration and performance tests
+|   +-- integration/           # Integration tests
+|   +-- performance/           # Performance tests
++-- docs/
+|   +-- DATA.md                # Data structure documentation
+|   +-- GLOSSARY.md            # Key terms
+|   +-- processing/            # Processing pipeline docs
++-- data/                      # Data files (gitignored)
+|   +-- raw/                   # Raw input data
+|   +-- processed/             # Processed data
+|   +-- db/                    # DuckDB databases
++-- src/
+|   +-- common_funcs/          # Shared utilities
++-- docker-compose.yml         # Development compose file
++-- docker-compose.prod.yml    # Production compose file
++-- justfile                   # Task runner commands
++-- .env.development           # Development environment
++-- .env.production            # Production environment
 ```
 
 ## Component documentation
 
-- Processing pipeline: @docs/processing/pipeline.md
+- API: @api/README.md
 - Webapp: @webapp/README.md
+- Processing pipeline: @docs/processing/pipeline.md
 - Common utilities: @src/common_funcs/README.md
 - Data structure: @docs/DATA.md
 - Key terms and concepts: @docs/GLOSSARY.md

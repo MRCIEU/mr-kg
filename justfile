@@ -9,13 +9,13 @@ default:
 [group('development')]
 dev:
     @echo "Starting development environment..."
-    docker-compose up --build
+    docker-compose --env-file .env.development up --build
 
 # Start development environment in background
 [group('development')]
 dev-detached:
     @echo "Starting development environment in background..."
-    docker-compose up --build -d
+    docker-compose --env-file .env.development up --build -d
 
 # Start webapp development server locally without Docker
 [group('development')]
@@ -59,7 +59,7 @@ dev-restart service="":
 [group('production')]
 prod:
     @echo "Deploying production environment..."
-    docker-compose -f docker-compose.prod.yml up --build -d
+    docker-compose -f docker-compose.prod.yml --env-file .env.production up --build -d
 
 # Stop production environment
 [group('production')]
@@ -80,8 +80,17 @@ prod-logs service="":
 [group('production')]
 prod-update:
     @echo "Updating production deployment..."
-    docker-compose -f docker-compose.prod.yml pull
-    docker-compose -f docker-compose.prod.yml up --build -d
+    docker-compose -f docker-compose.prod.yml --env-file .env.production pull
+    docker-compose -f docker-compose.prod.yml --env-file .env.production up --build -d
+
+# Restart production services (optionally specific service)
+[group('production')]
+prod-restart service="":
+    @if [ "{{service}}" = "" ]; then \
+        docker-compose -f docker-compose.prod.yml restart; \
+    else \
+        docker-compose -f docker-compose.prod.yml restart {{service}}; \
+    fi
 
 # ==== Build Commands ====
 
@@ -108,17 +117,26 @@ build service:
 # Check health of running services
 [group('health')]
 health:
-    @echo "Checking service health..."
-    @echo "\n=== API Health ==="
-    @curl -s http://localhost:8000/api/health > /dev/null && echo "API is healthy" || echo "API not accessible"
-    @echo "\n=== Webapp Health ==="
-    @curl -s http://localhost:8501/_stcore/health > /dev/null && echo "Webapp is healthy" || echo "Webapp not accessible"
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Checking service health..."
+    echo ""
+    echo "=== API Health ==="
+    api_response=$(curl -sf http://localhost:8000/api/health 2>/dev/null) && {
+        echo "API is healthy"
+        echo "Response: $api_response"
+    } || echo "API not accessible"
+    echo ""
+    echo "=== Webapp Health ==="
+    curl -sf http://localhost:8501/_stcore/health > /dev/null 2>&1 && echo "Webapp is healthy" || echo "Webapp not accessible"
 
 # View status of Docker containers
 [group('health')]
 status:
     @echo "Docker container status:"
     docker-compose ps
+    @echo ""
+    docker-compose -f docker-compose.prod.yml ps 2>/dev/null || true
 
 # ==== Maintenance Commands ====
 
@@ -199,3 +217,10 @@ stop:
 # Reset: stop, clean, and restart development environment
 [group('quickstart')]
 reset: stop clean setup-dev dev
+
+# ==== Verification Commands ====
+
+# Verify deployment is working correctly
+[group('verification')]
+verify:
+    @./scripts/verify-deployment.sh

@@ -104,3 +104,6 @@ models/*.joblib
 
 # ==== repo ====
 .notes
+.env
+.env.production
+.env.development

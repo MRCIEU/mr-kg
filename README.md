@@ -6,20 +6,80 @@ large language model-extracted trait information and vector similarity search.
 
 ## Components
 
+- **API (FastAPI)**: RESTful backend providing programmatic access to MR data
+- **Webapp (Streamlit)**: User-facing interface for interactive exploration
 - **Processing pipeline**: ETL pipeline that creates DuckDB databases from raw
   LLM results and EFO ontology data
-- **Webapp**: Streamlit interface for exploring the processed data
 
 ## Quick start
+
+Clone the repository and set up the development environment:
 
 ```bash
 git clone https://github.com/MRCIEU/mr-kg
 cd mr-kg
 just setup-dev
+```
+
+Start the web services:
+
+```bash
 just dev
 ```
 
-Access the webapp at http://localhost:8501
+Access the services:
+
+- Webapp: http://localhost:8501
+- API documentation: http://localhost:8000/api/docs
+
+## Web services
+
+MR-KG provides web services for:
+
+- Searching and exploring MR studies by trait or study title
+- Viewing detailed extraction results from multiple LLM models
+- Discovering similar studies through trait profile and evidence profile
+  similarity metrics
+- Accessing resource-wide statistics
+
+### API endpoints
+
+| Endpoint                          | Description                           |
+|-----------------------------------|---------------------------------------|
+| GET /api/studies                  | Search and list studies               |
+| GET /api/studies/{pmid}/extraction| Get extraction results for a study    |
+| GET /api/studies/{pmid}/similar/trait | Find similar studies by trait     |
+| GET /api/studies/{pmid}/similar/evidence | Find similar studies by evidence |
+| GET /api/traits/autocomplete      | Trait name suggestions                |
+| GET /api/studies/autocomplete     | Study title suggestions               |
+| GET /api/statistics               | Resource-wide statistics              |
+| GET /api/health                   | Service health check                  |
+
+Full API documentation available at `/api/docs` when the service is running.
+
+### Webapp pages
+
+- **Search by Trait**: Find studies investigating specific traits
+- **Search by Study**: Search studies by title
+- **Study Info**: View extraction details and similar studies
+- **Info**: Resource statistics and methodology documentation
+
+## Project structure
+
+```text
+mr-kg/
++-- api/                    # FastAPI backend service
++-- webapp/                 # Streamlit frontend service
++-- processing/             # ETL processing pipeline
++-- data/                   # Data files (gitignored)
+|   +-- db/                 # DuckDB databases
++-- docs/                   # Documentation
++-- src/                    # Shared utilities
++-- tests/                  # Integration and performance tests
++-- docker-compose.yml      # Development orchestration
++-- docker-compose.prod.yml # Production orchestration
++-- justfile                # Task runner commands
+```
 
 ## Documentation
 
@@ -28,6 +88,8 @@ Access the webapp at http://localhost:8501
 - Key terms and concepts: @docs/GLOSSARY.md
 - Processing pipeline: @docs/processing/pipeline.md
 - Case study analyses: @docs/processing/case-studies.md
+- API documentation: @api/README.md
+- Webapp documentation: @webapp/README.md
 
 ## Citation
 
