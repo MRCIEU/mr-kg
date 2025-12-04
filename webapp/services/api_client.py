@@ -1,6 +1,7 @@
 """API client service for communicating with the MR-KG API backend."""
 
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -9,6 +10,32 @@ import streamlit as st
 from config import get_settings
 
 logger = logging.getLogger(__name__)
+
+
+# ==== Result types ====
+
+
+@dataclass
+class AutocompleteResult:
+    """Result of an autocomplete request.
+
+    Distinguishes between successful results (possibly empty), API errors,
+    and connection errors.
+    """
+
+    items: list
+    success: bool
+    error_message: str | None = None
+
+    @classmethod
+    def success_result(cls, items: list) -> "AutocompleteResult":
+        """Create a successful result."""
+        return cls(items=items, success=True, error_message=None)
+
+    @classmethod
+    def error_result(cls, message: str) -> "AutocompleteResult":
+        """Create an error result."""
+        return cls(items=[], success=False, error_message=message)
 
 
 # ==== HTTP client utilities ====
@@ -198,6 +225,74 @@ def autocomplete_studies(q: str, limit: int = 20) -> list[dict]:
     if result is None:
         return []
     return result.get("studies", [])
+
+
+def autocomplete_traits_with_status(
+    q: str, limit: int = 20
+) -> AutocompleteResult:
+    """Get trait autocomplete suggestions with error status.
+
+    Unlike autocomplete_traits, this function distinguishes between
+    "no results found" and "API error".
+
+    Args:
+        q: Search term (prefix match)
+        limit: Maximum suggestions to return
+
+    Returns:
+        AutocompleteResult with items and success/error status
+    """
+    if len(q) < 2:
+        return AutocompleteResult.success_result([])
+
+    params = {"q": q, "limit": limit}
+    try:
+        result = _make_request(
+            "GET", "/api/traits/autocomplete", params=params
+        )
+        if result is None:
+            return AutocompleteResult.error_result("API returned no response")
+        return AutocompleteResult.success_result(result.get("traits", []))
+    except httpx.RequestError as e:
+        return AutocompleteResult.error_result(f"Connection error: {e}")
+    except httpx.HTTPStatusError as e:
+        return AutocompleteResult.error_result(
+            f"API error: {e.response.status_code}"
+        )
+
+
+def autocomplete_studies_with_status(
+    q: str, limit: int = 20
+) -> AutocompleteResult:
+    """Get study autocomplete suggestions with error status.
+
+    Unlike autocomplete_studies, this function distinguishes between
+    "no results found" and "API error".
+
+    Args:
+        q: Search term (substring match in title)
+        limit: Maximum suggestions to return
+
+    Returns:
+        AutocompleteResult with items and success/error status
+    """
+    if len(q) < 2:
+        return AutocompleteResult.success_result([])
+
+    params = {"q": q, "limit": limit}
+    try:
+        result = _make_request(
+            "GET", "/api/studies/autocomplete", params=params
+        )
+        if result is None:
+            return AutocompleteResult.error_result("API returned no response")
+        return AutocompleteResult.success_result(result.get("studies", []))
+    except httpx.RequestError as e:
+        return AutocompleteResult.error_result(f"Connection error: {e}")
+    except httpx.HTTPStatusError as e:
+        return AutocompleteResult.error_result(
+            f"API error: {e.response.status_code}"
+        )
 
 
 # ==== Statistics endpoint ====

@@ -43,8 +43,7 @@ def get_model_similarity_stats() -> list[dict[str, Any]]:
     """Get model statistics from trait_profile_db.db.
 
     Returns:
-        List of dicts with model stats (model, total_combinations,
-        avg_trait_count, etc.)
+        List of dicts with model stats (model, extractions, avg_traits, etc.)
     """
     conn = get_trait_profile_connection()
 
@@ -53,16 +52,20 @@ def get_model_similarity_stats() -> list[dict[str, Any]]:
     """
 
     result = conn.execute(query).fetchall()
-    columns = [
-        "model",
-        "total_combinations",
-        "avg_trait_count",
-        "min_trait_count",
-        "max_trait_count",
-        "total_similarity_pairs",
+    # Database columns: model, total_combinations, avg_trait_count,
+    # min_trait_count, max_trait_count, total_similarity_pairs
+    # Map to API field names expected by webapp
+    res = [
+        {
+            "model": row[0],
+            "extractions": row[1],
+            "avg_traits": row[2],
+            "min_traits": row[3],
+            "max_traits": row[4],
+            "similarities": row[5],
+        }
+        for row in result
     ]
-
-    res = [dict(zip(columns, row)) for row in result]
     return res
 
 
@@ -70,8 +73,8 @@ def get_model_evidence_stats() -> list[dict[str, Any]]:
     """Get evidence statistics from evidence_profile_db.db.
 
     Returns:
-        List of dicts with model evidence stats (model, total_combinations,
-        avg_result_count, etc.)
+        List of dicts with model evidence stats (model, extractions,
+        avg_results, etc.)
     """
     conn = get_evidence_profile_connection()
 
@@ -80,17 +83,22 @@ def get_model_evidence_stats() -> list[dict[str, Any]]:
     """
 
     result = conn.execute(query).fetchall()
-    columns = [
-        "model",
-        "total_combinations",
-        "avg_result_count",
-        "avg_completeness",
-        "min_result_count",
-        "max_result_count",
-        "total_similarity_pairs",
+    # Database columns: model, total_combinations, avg_result_count,
+    # avg_completeness, min_result_count, max_result_count,
+    # total_similarity_pairs
+    # Map to API field names expected by webapp
+    res = [
+        {
+            "model": row[0],
+            "extractions": row[1],
+            "avg_results": row[2],
+            "avg_completeness": row[3],
+            "min_results": row[4],
+            "max_results": row[5],
+            "similarities": row[6],
+        }
+        for row in result
     ]
-
-    res = [dict(zip(columns, row)) for row in result]
     return res
 
 

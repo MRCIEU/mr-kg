@@ -1,5 +1,7 @@
 """Configuration settings for the API service."""
 
+from functools import lru_cache
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,6 +19,7 @@ class Settings(BaseSettings):
     cache_ttl_data: int = 3600
 
 
+@lru_cache
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()

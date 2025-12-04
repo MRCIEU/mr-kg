@@ -73,7 +73,7 @@ def evidence_similarity_table(similar_studies: list[dict]) -> str | None:
     selected_pmid = None
 
     # ---- Header row ----
-    cols = st.columns([2, 4, 2, 2])
+    cols = st.columns([2, 3, 2, 1, 2])
     with cols[0]:
         st.markdown("**PMID**")
     with cols[1]:
@@ -81,7 +81,9 @@ def evidence_similarity_table(similar_studies: list[dict]) -> str | None:
     with cols[2]:
         st.markdown("**Concordance**")
     with cols[3]:
-        st.markdown("**Matched Pairs**")
+        st.markdown("**Pairs**")
+    with cols[4]:
+        st.markdown("**Match Type**")
 
     st.divider()
 
@@ -91,19 +93,27 @@ def evidence_similarity_table(similar_studies: list[dict]) -> str | None:
         title = study.get("title", "")
         concordance = study.get("direction_concordance", 0)
         matched_pairs = study.get("matched_pairs", 0)
+        match_type_exact = study.get("match_type_exact", False)
+        match_type_fuzzy = study.get("match_type_fuzzy", False)
+        match_type_efo = study.get("match_type_efo", False)
 
-        cols = st.columns([2, 4, 2, 2])
+        cols = st.columns([2, 3, 2, 1, 2])
         with cols[0]:
             if st.button(pmid, key=f"evidence_sim_{i}_{pmid}"):
                 selected_pmid = pmid
         with cols[1]:
-            st.write(_truncate_text(title, 50))
+            st.write(_truncate_text(title, 40))
         with cols[2]:
             # Color code concordance: green for positive, red for negative
             color = _concordance_color(concordance)
             st.markdown(f":{color}[{concordance:+.2f}]")
         with cols[3]:
             st.write(str(matched_pairs))
+        with cols[4]:
+            match_type_str = _format_match_type(
+                match_type_exact, match_type_fuzzy, match_type_efo
+            )
+            st.write(match_type_str)
 
     return selected_pmid
 
@@ -138,3 +148,27 @@ def _concordance_color(value: float) -> str:
         return "orange"
     else:
         return "red"
+
+
+def _format_match_type(exact: bool, fuzzy: bool, efo: bool) -> str:
+    """Format match type flags into a readable string.
+
+    Args:
+        exact: Whether exact matching was used
+        fuzzy: Whether fuzzy matching was used
+        efo: Whether EFO ontology matching was used
+
+    Returns:
+        Formatted string indicating match types
+    """
+    types = []
+    if exact:
+        types.append("Exact")
+    if fuzzy:
+        types.append("Fuzzy")
+    if efo:
+        types.append("EFO")
+
+    if not types:
+        return "N/A"
+    return ", ".join(types)

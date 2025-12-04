@@ -23,6 +23,9 @@ st.set_page_config(
     layout="wide",
 )
 
+# ---- Constants ----
+ABSTRACT_TRUNCATE_LENGTH = 500
+
 
 def main() -> None:
     """Render the study info page."""
@@ -40,6 +43,9 @@ def main() -> None:
             if st.button("Search by Study"):
                 st.switch_page("pages/2_Search_by_Study.py")
         return
+
+    # ---- Invalidate cache if study changed ----
+    _invalidate_cache_on_study_change(pmid, model)
 
     st.title("Study Information")
 
@@ -80,6 +86,30 @@ def main() -> None:
         _render_evidence_similarity(pmid, model)
 
 
+def _invalidate_cache_on_study_change(pmid: str, model: str) -> None:
+    """Invalidate cached similarity data when study changes.
+
+    Args:
+        pmid: Current PubMed ID
+        model: Current extraction model
+    """
+    current_key = f"{pmid}_{model}"
+    previous_key = st.session_state.get("_current_study_key", "")
+
+    if current_key != previous_key:
+        # Clear old similarity cache entries
+        keys_to_remove = [
+            key
+            for key in st.session_state.keys()
+            if key.startswith("trait_sim_") or key.startswith("evidence_sim_")
+        ]
+        for key in keys_to_remove:
+            del st.session_state[key]
+
+        # Update current study key
+        st.session_state["_current_study_key"] = current_key
+
+
 def _render_study_info(data: dict) -> None:
     """Render the study information panel.
 
@@ -111,10 +141,43 @@ def _render_study_info(data: dict) -> None:
     abstract = data.get("abstract", "")
     if abstract:
         st.markdown("**Abstract:**")
-        with st.container():
-            st.write(abstract)
+        _render_truncated_abstract(abstract)
 
     st.divider()
+
+
+def _render_truncated_abstract(abstract: str) -> None:
+    """Render abstract with truncation and expand option.
+
+    Args:
+        abstract: Full abstract text
+    """
+    if len(abstract) <= ABSTRACT_TRUNCATE_LENGTH:
+        st.write(abstract)
+        return
+
+    # Truncate at word boundary
+    truncated = abstract[:ABSTRACT_TRUNCATE_LENGTH]
+    last_space = truncated.rfind(" ")
+    if last_space > 0:
+        truncated = truncated[:last_space]
+    truncated += "..."
+
+    # Use session state to track expansion
+    expand_key = "abstract_expanded"
+    if expand_key not in st.session_state:
+        st.session_state[expand_key] = False
+
+    if st.session_state[expand_key]:
+        st.write(abstract)
+        if st.button("Show less", key="collapse_abstract"):
+            st.session_state[expand_key] = False
+            st.rerun()
+    else:
+        st.write(truncated)
+        if st.button("Show more", key="expand_abstract"):
+            st.session_state[expand_key] = True
+            st.rerun()
 
 
 def _render_extraction_results(data: dict) -> None:
