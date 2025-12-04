@@ -28,6 +28,9 @@ def main() -> None:
     # ---- Search controls ----
     col1, col2 = st.columns([3, 1])
 
+    with col2:
+        selected_model = model_selector(key="trait_search_model")
+
     with col1:
         # ---- Trait search with autocomplete ----
         search_term = st.text_input(
@@ -40,7 +43,9 @@ def main() -> None:
         # Get autocomplete suggestions
         selected_trait = None
         if search_term and len(search_term) >= 2:
-            suggestions = autocomplete_traits(search_term, limit=20)
+            suggestions = autocomplete_traits(
+                search_term, model=selected_model, limit=20
+            )
             if suggestions:
                 selected_trait = st.selectbox(
                     "Select trait",
@@ -49,10 +54,9 @@ def main() -> None:
                     help="Select a trait from the suggestions",
                 )
             else:
-                st.info("No matching traits found.")
-
-    with col2:
-        selected_model = model_selector(key="trait_search_model")
+                st.info(
+                    f"No matching traits found for model '{selected_model}'."
+                )
 
     # ---- Search and display results ----
     if selected_trait:
@@ -74,9 +78,9 @@ def main() -> None:
             selected_pmid = study_table(results["studies"])
 
             if selected_pmid:
-                # Navigate to study info page
-                st.query_params["pmid"] = selected_pmid
-                st.query_params["model"] = selected_model
+                # Store in session state and navigate to study info page
+                st.session_state["selected_pmid"] = selected_pmid
+                st.session_state["selected_model"] = selected_model
                 st.switch_page("pages/3_Study_Info.py")
         else:
             st.info(

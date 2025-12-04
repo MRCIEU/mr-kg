@@ -10,52 +10,62 @@ from typing import Any
 from app.database import get_vector_store_connection
 
 
-def search_traits(search_term: str, limit: int = 20) -> list[str]:
+def search_traits(search_term: str, model: str, limit: int = 20) -> list[str]:
     """Autocomplete suggestions for traits (prefix search).
 
     Args:
         search_term: Search term for prefix matching
+        model: Filter by extraction model
         limit: Maximum number of suggestions to return
 
     Returns:
-        List of trait labels matching the search term
+        List of trait labels matching the search term that have
+        extraction results for the specified model
     """
     conn = get_vector_store_connection()
 
     query = """
-        SELECT DISTINCT trait_label
-        FROM trait_embeddings
-        WHERE trait_label ILIKE ? || '%'
-        ORDER BY trait_label
+        SELECT DISTINCT mrt.trait_label
+        FROM model_result_traits mrt
+        JOIN model_results mr ON mrt.model_result_id = mr.id
+        WHERE mrt.trait_label ILIKE ? || '%'
+            AND mr.model = ?
+        ORDER BY mrt.trait_label
         LIMIT ?
     """
 
-    result = conn.execute(query, [search_term, limit]).fetchall()
+    result = conn.execute(query, [search_term, model, limit]).fetchall()
     res = [row[0] for row in result]
     return res
 
 
-def search_studies(search_term: str, limit: int = 20) -> list[dict[str, Any]]:
+def search_studies(
+    search_term: str, model: str, limit: int = 20
+) -> list[dict[str, Any]]:
     """Autocomplete suggestions for studies (pmid, title).
 
     Args:
         search_term: Search term for substring matching in title
+        model: Filter by extraction model
         limit: Maximum number of suggestions to return
 
     Returns:
-        List of dicts with pmid and title
+        List of dicts with pmid and title for studies that have
+        extraction results for the specified model
     """
     conn = get_vector_store_connection()
 
     query = """
-        SELECT pmid, title
-        FROM mr_pubmed_data
-        WHERE title ILIKE '%' || ? || '%'
-        ORDER BY pub_date DESC
+        SELECT DISTINCT mr.pmid, mpd.title
+        FROM model_results mr
+        JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
+        WHERE mpd.title ILIKE '%' || ? || '%'
+            AND mr.model = ?
+        ORDER BY mpd.pub_date DESC
         LIMIT ?
     """
 
-    result = conn.execute(query, [search_term, limit]).fetchall()
+    result = conn.execute(query, [search_term, model, limit]).fetchall()
     res = [{"pmid": row[0], "title": row[1]} for row in result]
     return res
 
@@ -136,7 +146,8 @@ def get_studies(
     params.extend([limit, offset])
 
     # ---- Execute queries ----
-    total = conn.execute(count_query, count_params).fetchone()[0]
+    count_result = conn.execute(count_query, count_params).fetchone()
+    total = count_result[0] if count_result else 0
 
     result = conn.execute(base_query, params).fetchall()
     studies = [

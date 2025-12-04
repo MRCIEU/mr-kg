@@ -27,6 +27,9 @@ def main() -> None:
     # ---- Search controls ----
     col1, col2 = st.columns([3, 1])
 
+    with col2:
+        selected_model = model_selector(key="study_search_model")
+
     with col1:
         # ---- Study search with autocomplete ----
         search_term = st.text_input(
@@ -36,13 +39,12 @@ def main() -> None:
             help="Type at least 2 characters to see suggestions",
         )
 
-    with col2:
-        selected_model = model_selector(key="study_search_model")
-
     # ---- Display autocomplete results ----
     if search_term and len(search_term) >= 2:
         with st.spinner("Searching..."):
-            suggestions = autocomplete_studies(search_term, limit=20)
+            suggestions = autocomplete_studies(
+                search_term, model=selected_model, limit=20
+            )
 
         if suggestions:
             st.divider()
@@ -59,14 +61,14 @@ def main() -> None:
                     st.write(_truncate_text(title, 100))
                 with col2:
                     if st.button("View", key=f"study_btn_{i}_{pmid}"):
-                        # Navigate to study info page
-                        st.query_params["pmid"] = pmid
-                        st.query_params["model"] = selected_model
+                        # Store in session state and navigate to study info page
+                        st.session_state["selected_pmid"] = pmid
+                        st.session_state["selected_model"] = selected_model
                         st.switch_page("pages/3_Study_Info.py")
 
                 st.divider()
         else:
-            st.info("No matching studies found.")
+            st.info(f"No matching studies found for model '{selected_model}'.")
     elif search_term:
         st.info("Please enter at least 2 characters to search.")
 

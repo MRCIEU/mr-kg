@@ -2,6 +2,9 @@
 
 Display comprehensive information about a selected study with collapsible
 panels for different data views.
+
+This page is hidden from the sidebar and only accessible via navigation
+from search pages.
 """
 
 import streamlit as st
@@ -17,10 +20,23 @@ from services.api_client import (
     get_similar_by_trait,
 )
 
+# Hide this page from the sidebar
 st.set_page_config(
     page_title="Study Info - MR-KG",
     page_icon=None,
     layout="wide",
+)
+
+# CSS to hide this page from the sidebar navigation
+st.markdown(
+    """
+    <style>
+        [data-testid="stSidebarNav"] li:has(a[href*="3_Study_Info"]) {
+            display: none;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 # ---- Constants ----
@@ -29,9 +45,9 @@ ABSTRACT_TRUNCATE_LENGTH = 500
 
 def main() -> None:
     """Render the study info page."""
-    # ---- Get query parameters ----
-    pmid = st.query_params.get("pmid", "")
-    model = st.query_params.get("model", "gpt-5")
+    # ---- Get study info from session state ----
+    pmid = st.session_state.get("selected_pmid", "")
+    model = st.session_state.get("selected_model", "gpt-5")
 
     if not pmid:
         st.warning("No study selected. Please search for a study first.")
@@ -56,7 +72,7 @@ def main() -> None:
     with col2:
         new_model = model_selector(key="study_info_model")
         if new_model != model:
-            st.query_params["model"] = new_model
+            st.session_state["selected_model"] = new_model
             st.rerun()
 
     # ---- Fetch extraction data ----
@@ -101,7 +117,10 @@ def _invalidate_cache_on_study_change(pmid: str, model: str) -> None:
         keys_to_remove = [
             key
             for key in st.session_state.keys()
-            if key.startswith("trait_sim_") or key.startswith("evidence_sim_")
+            if isinstance(key, str)
+            and (
+                key.startswith("trait_sim_") or key.startswith("evidence_sim_")
+            )
         ]
         for key in keys_to_remove:
             del st.session_state[key]
@@ -275,7 +294,7 @@ def _render_trait_similarity(pmid: str, model: str) -> None:
     selected_pmid = trait_similarity_table(similar_studies)
 
     if selected_pmid:
-        st.query_params["pmid"] = selected_pmid
+        st.session_state["selected_pmid"] = selected_pmid
         st.rerun()
 
 
@@ -312,7 +331,7 @@ def _render_evidence_similarity(pmid: str, model: str) -> None:
     selected_pmid = evidence_similarity_table(similar_studies)
 
     if selected_pmid:
-        st.query_params["pmid"] = selected_pmid
+        st.session_state["selected_pmid"] = selected_pmid
         st.rerun()
 
 

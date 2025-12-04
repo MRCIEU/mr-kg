@@ -186,20 +186,24 @@ def get_similar_by_evidence(
 
 
 @st.cache_data(ttl=300)
-def autocomplete_traits(q: str, limit: int = 20) -> list[str]:
+def autocomplete_traits(
+    q: str, model: str = "gpt-5", limit: int = 20
+) -> list[str]:
     """Get trait autocomplete suggestions.
 
     Args:
         q: Search term (prefix match)
+        model: Extraction model filter
         limit: Maximum suggestions to return
 
     Returns:
-        List of trait labels matching the search term
+        List of trait labels matching the search term that have
+        extraction results for the specified model
     """
     if len(q) < 2:
         return []
 
-    params = {"q": q, "limit": limit}
+    params = {"q": q, "model": model, "limit": limit}
     result = _make_request("GET", "/api/traits/autocomplete", params=params)
     if result is None:
         return []
@@ -207,20 +211,24 @@ def autocomplete_traits(q: str, limit: int = 20) -> list[str]:
 
 
 @st.cache_data(ttl=300)
-def autocomplete_studies(q: str, limit: int = 20) -> list[dict]:
+def autocomplete_studies(
+    q: str, model: str = "gpt-5", limit: int = 20
+) -> list[dict]:
     """Get study autocomplete suggestions.
 
     Args:
         q: Search term (substring match in title)
+        model: Extraction model filter
         limit: Maximum suggestions to return
 
     Returns:
-        List of dicts with pmid and title
+        List of dicts with pmid and title for studies that have
+        extraction results for the specified model
     """
     if len(q) < 2:
         return []
 
-    params = {"q": q, "limit": limit}
+    params = {"q": q, "model": model, "limit": limit}
     result = _make_request("GET", "/api/studies/autocomplete", params=params)
     if result is None:
         return []
@@ -228,7 +236,7 @@ def autocomplete_studies(q: str, limit: int = 20) -> list[dict]:
 
 
 def autocomplete_traits_with_status(
-    q: str, limit: int = 20
+    q: str, model: str = "gpt-5", limit: int = 20
 ) -> AutocompleteResult:
     """Get trait autocomplete suggestions with error status.
 
@@ -237,6 +245,7 @@ def autocomplete_traits_with_status(
 
     Args:
         q: Search term (prefix match)
+        model: Extraction model filter
         limit: Maximum suggestions to return
 
     Returns:
@@ -245,7 +254,7 @@ def autocomplete_traits_with_status(
     if len(q) < 2:
         return AutocompleteResult.success_result([])
 
-    params = {"q": q, "limit": limit}
+    params = {"q": q, "model": model, "limit": limit}
     try:
         result = _make_request(
             "GET", "/api/traits/autocomplete", params=params
@@ -262,7 +271,7 @@ def autocomplete_traits_with_status(
 
 
 def autocomplete_studies_with_status(
-    q: str, limit: int = 20
+    q: str, model: str = "gpt-5", limit: int = 20
 ) -> AutocompleteResult:
     """Get study autocomplete suggestions with error status.
 
@@ -271,6 +280,7 @@ def autocomplete_studies_with_status(
 
     Args:
         q: Search term (substring match in title)
+        model: Extraction model filter
         limit: Maximum suggestions to return
 
     Returns:
@@ -279,7 +289,7 @@ def autocomplete_studies_with_status(
     if len(q) < 2:
         return AutocompleteResult.success_result([])
 
-    params = {"q": q, "limit": limit}
+    params = {"q": q, "model": model, "limit": limit}
     try:
         result = _make_request(
             "GET", "/api/studies/autocomplete", params=params

@@ -25,7 +25,7 @@ def main() -> None:
     )
 
     # ---- Fetch statistics ----
-    with st.spinner("Loading statistics..."):
+    with st.spinner("Fetching resource statistics from database..."):
         stats = get_statistics()
 
     if stats is None:

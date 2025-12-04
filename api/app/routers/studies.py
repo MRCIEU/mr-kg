@@ -163,6 +163,10 @@ async def autocomplete_traits(
         description="Search term for trait autocomplete (prefix match)",
         min_length=2,
     ),
+    model: str | None = Query(
+        default=None,
+        description="Filter by extraction model (default: gpt-5)",
+    ),
     limit: int = Query(
         default=20,
         le=50,
@@ -173,10 +177,16 @@ async def autocomplete_traits(
     """Get trait autocomplete suggestions.
 
     Returns a list of trait labels that match the search term prefix.
+    Only returns traits that have extraction results for the specified model.
     Minimum 2 characters required for search.
     """
+    settings = get_settings()
+    model_name = model if model else settings.default_model
+
     try:
-        traits = vs_repo.search_traits(search_term=q, limit=limit)
+        traits = vs_repo.search_traits(
+            search_term=q, model=model_name, limit=limit
+        )
     except DatabaseError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
@@ -190,6 +200,10 @@ async def autocomplete_studies(
         description="Search term for study autocomplete (substring match)",
         min_length=2,
     ),
+    model: str | None = Query(
+        default=None,
+        description="Filter by extraction model (default: gpt-5)",
+    ),
     limit: int = Query(
         default=20,
         le=50,
@@ -200,10 +214,16 @@ async def autocomplete_studies(
     """Get study autocomplete suggestions.
 
     Returns a list of studies (pmid and title) where the title contains
-    the search term. Minimum 2 characters required for search.
+    the search term. Only returns studies that have extraction results
+    for the specified model. Minimum 2 characters required for search.
     """
+    settings = get_settings()
+    model_name = model if model else settings.default_model
+
     try:
-        studies = vs_repo.search_studies(search_term=q, limit=limit)
+        studies = vs_repo.search_studies(
+            search_term=q, model=model_name, limit=limit
+        )
     except DatabaseError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
