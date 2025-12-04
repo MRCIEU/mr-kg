@@ -20,13 +20,7 @@ RUN uv sync --frozen --no-dev
 COPY . .
 
 # Expose port
-EXPOSE 8501
+EXPOSE 8000
 
-# Set Streamlit environment variables
-ENV STREAMLIT_SERVER_PORT=8501
-ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
-ENV STREAMLIT_SERVER_HEADLESS=true
-ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
-
-# Run streamlit server
-CMD ["uv", "run", "streamlit", "run", "app.py"]
+# Run uvicorn server
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

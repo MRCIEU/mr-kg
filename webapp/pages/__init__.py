@@ -1,1 +1,1 @@
-"""Pages module for the MR-KG web app."""
+"""Streamlit webapp pages for MR-KG."""

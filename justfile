@@ -21,7 +21,13 @@ dev-detached:
 [group('development')]
 webapp-dev:
     @echo "Starting webapp development server..."
-    cd webapp && just local-run
+    cd webapp && just dev
+
+# Start API development server locally without Docker
+[group('development')]
+api-dev:
+    @echo "Starting API development server..."
+    cd api && just dev
 
 # Stop development environment
 [group('development')]
@@ -103,6 +109,8 @@ build service:
 [group('health')]
 health:
     @echo "Checking service health..."
+    @echo "\n=== API Health ==="
+    @curl -s http://localhost:8000/api/health > /dev/null && echo "API is healthy" || echo "API not accessible"
     @echo "\n=== Webapp Health ==="
     @curl -s http://localhost:8501/_stcore/health > /dev/null && echo "Webapp is healthy" || echo "Webapp not accessible"
 
