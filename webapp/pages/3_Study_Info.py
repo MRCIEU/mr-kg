@@ -300,6 +300,10 @@ def _render_trait_similarity(pmid: str, model: str) -> None:
         st.session_state["selected_pmid"] = selected_pmid
         st.rerun()
 
+    # ---- Show raw data (collapsed) ----
+    with st.expander("Raw Data (JSON)", expanded=False):
+        st.json(data)
+
 
 def _render_evidence_similarity(pmid: str, model: str) -> None:
     """Render the evidence similarity panel with lazy loading.
@@ -336,6 +340,10 @@ def _render_evidence_similarity(pmid: str, model: str) -> None:
     if selected_pmid:
         st.session_state["selected_pmid"] = selected_pmid
         st.rerun()
+
+    # ---- Show raw data (collapsed) ----
+    with st.expander("Raw Data (JSON)", expanded=False):
+        st.json(data)
 
 
 if __name__ == "__main__":
