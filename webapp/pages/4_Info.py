@@ -6,7 +6,7 @@ Display overarching resource statistics and documentation.
 import streamlit as st
 
 from components.model_selector import AVAILABLE_MODELS
-from services.api_client import get_statistics
+from services.db_client import get_statistics
 
 st.set_page_config(
     page_title="Resource Info - MR-KG",
@@ -30,7 +30,8 @@ def main() -> None:
 
     if stats is None:
         st.error(
-            "Unable to load statistics. Please ensure the API is running."
+            "Unable to load statistics. "
+            "Please ensure the databases are accessible."
         )
         return
 

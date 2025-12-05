@@ -11,8 +11,13 @@ MR-KG consists of three main components:
 
 - **API (FastAPI)**: RESTful backend providing programmatic access to MR data
 - **Webapp (Streamlit)**: User-facing interface for interactive exploration
+  (standalone, accesses DuckDB databases directly)
 - **Processing pipeline**: ETL pipeline that creates DuckDB databases from raw
   LLM results and EFO ontology data
+
+The webapp and API are independent services.
+Both access the same DuckDB databases through a shared repository layer
+(`src/common_funcs/common_funcs/repositories/`).
 
 ## Quick start
 
@@ -97,12 +102,14 @@ LOG_LEVEL=DEBUG
 Webapp (.env in webapp/ directory):
 
 ```env
-API_URL=http://localhost:8000
+VECTOR_STORE_PATH=../data/db/vector_store.db
+TRAIT_PROFILE_PATH=../data/db/trait_profile_db.db
+EVIDENCE_PROFILE_PATH=../data/db/evidence_profile_db.db
 DEFAULT_MODEL=gpt-5
 ```
 
-Note: The database paths in the API .env use `../` to reference the project
-root from the api/ directory.
+Note: The database paths in the .env files use `../` to reference the project
+root from the api/ or webapp/ directories.
 
 ### Data prerequisites
 
@@ -147,12 +154,10 @@ Services are accessible at:
 
 ### Local development (without Docker)
 
-For local development, you need to run both the API and webapp separately.
-This requires two terminal sessions and manual dependency management.
+For local development, you can run the API and webapp independently.
+The webapp accesses DuckDB databases directly and does not require the API.
 
-Important: The webapp depends on the API, so you must start the API first.
-
-Terminal 1 (API):
+API (for programmatic access):
 
 ```bash
 cd api
@@ -160,7 +165,7 @@ uv sync
 just dev
 ```
 
-Terminal 2 (Webapp):
+Webapp (standalone):
 
 ```bash
 cd webapp
@@ -168,8 +173,8 @@ uv sync
 just dev
 ```
 
-The API must be running before starting the webapp, otherwise the webapp will
-fail with a connection error.
+Ensure the DuckDB databases exist at the expected paths before starting either
+service.
 
 ### API development
 
@@ -192,7 +197,8 @@ Key files:
 
 ### Webapp development
 
-The webapp is built with Streamlit and communicates with the API backend.
+The webapp is built with Streamlit and accesses DuckDB databases directly
+through the shared repository layer.
 
 Running webapp tests:
 
@@ -205,7 +211,7 @@ Key files:
 
 - `webapp/app.py`: Main application entry point
 - `webapp/pages/`: Streamlit page definitions
-- `webapp/services/api_client.py`: API client
+- `webapp/services/db_client.py`: Database client using common_funcs
 - `webapp/components/`: Reusable UI components
 
 ### Processing pipeline
@@ -355,7 +361,9 @@ Performance targets:
 
 ### Webapp variables
 
-- `API_URL`: API backend URL (default: http://localhost:8000)
+- `VECTOR_STORE_PATH`: Path to vector store database
+- `TRAIT_PROFILE_PATH`: Path to trait profile database
+- `EVIDENCE_PROFILE_PATH`: Path to evidence profile database
 - `DEFAULT_MODEL`: Default extraction model (default: gpt-5)
 
 ### Development variables
@@ -446,7 +454,7 @@ mr-kg/
 +-- webapp/                    # Streamlit frontend
 |   +-- pages/                 # Page definitions
 |   +-- components/            # UI components
-|   +-- services/              # API client
+|   +-- services/              # Database client
 |   +-- tests/                 # Unit tests
 |   +-- Dockerfile
 |   +-- justfile
@@ -543,23 +551,15 @@ incorrect relative paths.
 
    All databases should show `true`.
 
-### Webapp shows "Connection refused" error
+### Webapp shows "Database not found" error
 
-**Symptom**: Webapp fails with "Connection refused [Errno 61]" or similar
-error.
+**Symptom**: Webapp fails with "Database not found" or similar error.
 
-**Cause**: The API is not running or the webapp is configured with the wrong
-API URL.
+**Cause**: The webapp cannot find the DuckDB databases.
 
 **Solution**:
 
-1. Ensure the API is running:
-
-   ```bash
-   curl http://localhost:8000/api/health
-   ```
-
-2. Check the webapp's .env file:
+1. Ensure you have a .env file in the webapp/ directory:
 
    ```bash
    cd webapp
@@ -569,11 +569,23 @@ API URL.
    It should contain:
 
    ```env
-   API_URL=http://localhost:8000
+   VECTOR_STORE_PATH=../data/db/vector_store.db
+   TRAIT_PROFILE_PATH=../data/db/trait_profile_db.db
+   EVIDENCE_PROFILE_PATH=../data/db/evidence_profile_db.db
    ```
 
-3. For local development, start the API before the webapp (see "Local
-   development" section above).
+2. Verify databases exist at the project root:
+
+   ```bash
+   ls -la data/db/
+   ```
+
+3. If the .env file is missing or incorrect, run:
+
+   ```bash
+   # From project root
+   just setup-dev
+   ```
 
 ### Docker services fail to start
 

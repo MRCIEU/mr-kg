@@ -6,7 +6,7 @@ Find studies by title text search.
 import streamlit as st
 
 from components.model_selector import model_selector
-from services.api_client import autocomplete_studies
+from services.db_client import autocomplete_studies
 
 st.set_page_config(
     page_title="Search by Study - MR-KG",

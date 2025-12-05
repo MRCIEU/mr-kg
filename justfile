@@ -203,9 +203,12 @@ setup-dev:
         echo "LOG_LEVEL=DEBUG" >> api/.env; \
     fi
     @if [ ! -f webapp/.env ]; then \
-        echo "Creating webapp/.env..."; \
+        echo "Creating webapp/.env with database paths..."; \
         echo "# Webapp Development Environment" > webapp/.env; \
-        echo "API_URL=http://localhost:8000" >> webapp/.env; \
+        echo "# Database paths relative to project root (one level up from webapp/)" >> webapp/.env; \
+        echo "VECTOR_STORE_PATH=../data/db/vector_store.db" >> webapp/.env; \
+        echo "TRAIT_PROFILE_PATH=../data/db/trait_profile_db.db" >> webapp/.env; \
+        echo "EVIDENCE_PROFILE_PATH=../data/db/evidence_profile_db.db" >> webapp/.env; \
         echo "DEFAULT_MODEL=gpt-5" >> webapp/.env; \
     fi
     @echo "Development environment configured!"

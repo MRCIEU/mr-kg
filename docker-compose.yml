@@ -5,13 +5,14 @@ services:
   # FastAPI backend
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
       - ./data/db:/app/data/db:ro
-      - ./api/app:/app/app:ro
+      - ./api/app:/app/api/app:ro
+      - ./src/common_funcs:/app/src/common_funcs:ro
     environment:
       - VECTOR_STORE_PATH=/app/data/db/vector_store.db
       - TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
@@ -29,30 +30,30 @@ services:
       retries: 3
       start_period: 30s
 
-  # Streamlit webapp
+  # Streamlit webapp (standalone - direct database access)
   webapp:
     build:
-      context: ./webapp
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: webapp/Dockerfile
     ports:
       - "${WEBAPP_PORT:-8501}:8501"
     volumes:
       - ./data/db:/app/data/db:ro
-      - ./webapp:/app:ro
+      - ./webapp:/app/webapp:ro
+      - ./src/common_funcs:/app/src/common_funcs:ro
     environment:
       - STREAMLIT_SERVER_PORT=8501
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
       - STREAMLIT_SERVER_RUN_ON_SAVE=true
-      - API_URL=http://api:8000
+      - VECTOR_STORE_PATH=/app/data/db/vector_store.db
+      - TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
+      - EVIDENCE_PROFILE_PATH=/app/data/db/evidence_profile_db.db
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-5}
     networks:
       - mr-kg-network
     restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
       interval: 30s

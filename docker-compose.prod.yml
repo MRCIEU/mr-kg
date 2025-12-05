@@ -5,8 +5,8 @@ services:
   # FastAPI backend
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
@@ -41,11 +41,11 @@ services:
         max-size: "100m"
         max-file: "3"
 
-  # Streamlit webapp
+  # Streamlit webapp (standalone - direct database access)
   webapp:
     build:
-      context: ./webapp
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: webapp/Dockerfile
     ports:
       - "${WEBAPP_PORT:-8501}:8501"
     volumes:
@@ -55,14 +55,13 @@ services:
       - STREAMLIT_SERVER_ADDRESS=0.0.0.0
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
-      - API_URL=http://api:8000
+      - VECTOR_STORE_PATH=/app/data/db/vector_store.db
+      - TRAIT_PROFILE_PATH=/app/data/db/trait_profile_db.db
+      - EVIDENCE_PROFILE_PATH=/app/data/db/evidence_profile_db.db
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gpt-5}
     networks:
       - mr-kg-network
     restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
       interval: 30s

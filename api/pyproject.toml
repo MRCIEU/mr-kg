@@ -9,7 +9,11 @@ dependencies = [
     "duckdb>=1.3.2",
     "pydantic>=2.10.0",
     "pydantic-settings>=2.6.0",
+    "common_funcs",
 ]
+
+[tool.uv.sources]
+common_funcs = { path = "../src/common_funcs", editable = true }
 
 [dependency-groups]
 dev = [

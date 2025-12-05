@@ -7,7 +7,7 @@ import streamlit as st
 
 from components.model_selector import model_selector
 from components.study_table import study_table
-from services.api_client import autocomplete_traits, search_studies
+from services.db_client import autocomplete_traits, search_studies
 
 st.set_page_config(
     page_title="Search by Trait - MR-KG",

@@ -5,16 +5,19 @@ build-backend = "hatchling.build"
 [project]
 name = "common_funcs"
 version = "0.1.0"
-description = "Add your description here"
+description = "Common utility functions for MR-KG components"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.3.2",
     "pandas>=2.3.1",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
 ]
 
 [dependency-groups]
 dev = [
+    "pytest>=8.3.0",
     "ruff>=0.12.5",
     "ty>=0.0.1a16",
 ]

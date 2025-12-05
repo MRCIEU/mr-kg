@@ -14,7 +14,7 @@ from components.similarity_display import (
     evidence_similarity_table,
     trait_similarity_table,
 )
-from services.api_client import (
+from services.db_client import (
     get_extraction,
     get_similar_by_evidence,
     get_similar_by_trait,
@@ -133,7 +133,7 @@ def _render_study_info(data: dict) -> None:
     """Render the study information panel.
 
     Args:
-        data: Extraction data from API
+        data: Extraction data from database
     """
     st.subheader("Study Details")
 
@@ -203,7 +203,7 @@ def _render_extraction_results(data: dict) -> None:
     """Render the extraction results panel.
 
     Args:
-        data: Extraction data from API
+        data: Extraction data from database
     """
     results = data.get("results", [])
     traits = data.get("traits", [])

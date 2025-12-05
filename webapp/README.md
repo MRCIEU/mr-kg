@@ -1,13 +1,13 @@
 # MR-KG Webapp
 
 Streamlit-based web interface for exploring Mendelian Randomization studies
-through the MR-KG API.
+with direct DuckDB database access.
 
 ## Quick start
 
 ### Docker (recommended)
 
-Start both API and webapp services from the project root:
+Start the webapp from the project root:
 
 ```bash
 # IMPORTANT: Run from project root, not from webapp/ directory
@@ -17,20 +17,10 @@ just dev
 
 The webapp will be available at http://localhost:8501
 
+Note: The webapp and API services are independent.
+The webapp accesses DuckDB databases directly and does not require the API.
+
 ### Local development
-
-Important: The webapp requires the API to be running first.
-
-Terminal 1 (start API first):
-
-```bash
-# From project root
-cd api
-uv sync
-just dev
-```
-
-Terminal 2 (start webapp):
 
 ```bash
 # From project root
@@ -39,8 +29,11 @@ uv sync
 just dev
 ```
 
-If the API is not running, the webapp will fail with a connection error:
-"Connection refused [Errno 61]"
+Ensure the DuckDB databases exist at the expected paths:
+
+- `data/db/vector_store.db`
+- `data/db/trait_profile_db.db`
+- `data/db/evidence_profile_db.db`
 
 ## Pages
 
@@ -183,25 +176,26 @@ Evidence similarity uses color coding for concordance values:
 - Orange: >= 0
 - Red: < 0
 
-## API client
+## Database client
 
-The webapp communicates with the API backend through `services/api_client.py`.
+The webapp accesses DuckDB databases directly through `services/db_client.py`,
+which uses the shared repository layer from `common_funcs`.
 
 ### Available functions
 
 | Function | Description | Caching |
 |----------|-------------|---------|
-| `search_studies(q, trait, model, limit, offset)` | Search for studies | TTL 300s |
+| `search_studies(q, trait, model, limit, offset)` | Search for studies | None |
 | `get_extraction(pmid, model)` | Get extraction results | None |
 | `get_similar_by_trait(pmid, model, limit)` | Get trait-similar studies | None |
 | `get_similar_by_evidence(pmid, model, limit)` | Get evidence-similar studies | None |
-| `autocomplete_traits(q, limit)` | Get trait suggestions | TTL 300s |
-| `autocomplete_studies(q, limit)` | Get study suggestions | TTL 300s |
-| `get_statistics()` | Get resource statistics | TTL 3600s |
-| `check_health()` | Check API health | None |
+| `autocomplete_traits(q, limit)` | Get trait suggestions | st.cache_data TTL 300s |
+| `autocomplete_studies(q, limit)` | Get study suggestions | st.cache_data TTL 300s |
+| `get_statistics()` | Get resource statistics | st.cache_data TTL 3600s |
+| `check_database_health()` | Check database availability | None |
 
 Similarity functions use session state for caching within the Study Info page
-to avoid redundant API calls when panels are re-rendered.
+to avoid redundant database calls when panels are re-rendered.
 
 ## Configuration
 
@@ -209,7 +203,9 @@ Environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `API_URL` | `http://localhost:8000` | API backend URL |
+| `VECTOR_STORE_PATH` | `data/db/vector_store.db` | Path to vector store database |
+| `TRAIT_PROFILE_PATH` | `data/db/trait_profile_db.db` | Path to trait profile database |
+| `EVIDENCE_PROFILE_PATH` | `data/db/evidence_profile_db.db` | Path to evidence profile database |
 | `DEFAULT_MODEL` | `gpt-5` | Default extraction model |
 
 ## Project structure
@@ -228,10 +224,10 @@ webapp/
 |   +-- similarity_display.py # Similarity results display
 |   +-- study_table.py        # Study list table
 +-- services/
-|   +-- api_client.py         # API client functions
+|   +-- db_client.py          # Database client functions
 +-- tests/
 |   +-- conftest.py           # Test fixtures
-|   +-- test_api_client.py    # API client tests
+|   +-- test_db_client.py     # Database client tests (TODO)
 +-- app.py                    # Main application entry
 +-- config.py                 # Application configuration
 +-- Dockerfile
@@ -264,8 +260,8 @@ just lint
 Key dependencies:
 
 - Streamlit: Web framework
-- httpx: HTTP client for API communication
-- pandas: Data handling for tables
+- DuckDB: Direct database access
+- common_funcs: Shared repository layer (local dependency)
 - pydantic-settings: Configuration management
 
 See `pyproject.toml` for the full dependency list.

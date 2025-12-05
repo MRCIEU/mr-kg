@@ -1,14 +1,13 @@
 """Pytest fixtures for webapp tests."""
 
 from typing import Any
-from unittest.mock import patch
 
 import pytest
 
 
 @pytest.fixture
 def mock_api_response() -> dict[str, Any]:
-    """Sample API response for studies endpoint."""
+    """Sample response for studies search."""
     return {
         "total": 2,
         "limit": 20,
@@ -34,7 +33,7 @@ def mock_api_response() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_extraction_response() -> dict[str, Any]:
-    """Sample API response for extraction endpoint."""
+    """Sample response for extraction endpoint."""
     return {
         "pmid": "12345678",
         "model": "gpt-5",
@@ -76,7 +75,7 @@ def mock_extraction_response() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_trait_similarity_response() -> dict[str, Any]:
-    """Sample API response for trait similarity endpoint."""
+    """Sample response for trait similarity endpoint."""
     return {
         "query_pmid": "12345678",
         "query_model": "gpt-5",
@@ -103,7 +102,7 @@ def mock_trait_similarity_response() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_evidence_similarity_response() -> dict[str, Any]:
-    """Sample API response for evidence similarity endpoint."""
+    """Sample response for evidence similarity endpoint."""
     return {
         "query_pmid": "12345678",
         "query_model": "gpt-5",
@@ -134,7 +133,7 @@ def mock_evidence_similarity_response() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_statistics_response() -> dict[str, Any]:
-    """Sample API response for statistics endpoint."""
+    """Sample response for statistics endpoint."""
     return {
         "overall": {
             "total_papers": 15635,
@@ -175,7 +174,7 @@ def mock_statistics_response() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_health_response() -> dict[str, Any]:
-    """Sample API response for health endpoint."""
+    """Sample response for health endpoint."""
     return {
         "status": "healthy",
         "databases": {
@@ -184,10 +183,3 @@ def mock_health_response() -> dict[str, Any]:
             "evidence_profile": True,
         },
     }
-
-
-@pytest.fixture
-def mock_httpx_client():
-    """Mock httpx client for testing API calls."""
-    with patch("services.api_client.httpx.Client") as mock_client:
-        yield mock_client

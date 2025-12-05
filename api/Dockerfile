@@ -10,14 +10,19 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Copy dependency files
-COPY pyproject.toml uv.lock* ./
+# Copy common_funcs first (dependency)
+COPY src/common_funcs /app/src/common_funcs
+
+# Copy api dependency files and install
+COPY api/pyproject.toml api/uv.lock* /app/api/
+
+WORKDIR /app/api
 
 # Install dependencies
 RUN uv sync --frozen --no-dev
 
-# Copy application code
-COPY . .
+# Copy api application code
+COPY api/ /app/api/
 
 # Expose port
 EXPOSE 8000
