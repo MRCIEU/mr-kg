@@ -7,7 +7,11 @@ import streamlit as st
 
 from components.model_selector import model_selector
 from components.study_table import study_table
-from services.db_client import autocomplete_traits, search_studies
+from services.db_client import (
+    autocomplete_traits,
+    filter_studies_by_similarity,
+    search_studies,
+)
 
 st.set_page_config(
     page_title="Search by Trait - MR-KG",
@@ -30,6 +34,21 @@ def main() -> None:
 
     with col2:
         selected_model = model_selector(key="trait_search_model")
+
+        # ---- Similarity filters ----
+        st.markdown("**Filters**")
+        require_trait_sim = st.checkbox(
+            "Has related studies by trait",
+            value=False,
+            key="trait_search_require_trait_sim",
+            help="Only show studies with related studies by trait similarity",
+        )
+        require_evidence_sim = st.checkbox(
+            "Has related studies by evidence",
+            value=False,
+            key="trait_search_require_evidence_sim",
+            help="Only show studies with related studies by evidence similarity",
+        )
 
     with col1:
         # ---- Trait search with autocomplete ----
@@ -71,17 +90,39 @@ def main() -> None:
             )
 
         if results and results.get("studies"):
-            total = results.get("total", len(results["studies"]))
-            st.write(f"Found {total} studies")
+            studies = results["studies"]
 
-            # Display study table and handle selection
-            selected_pmid = study_table(results["studies"])
+            # ---- Apply similarity filters ----
+            if require_trait_sim or require_evidence_sim:
+                with st.spinner("Filtering by similarity..."):
+                    studies = filter_studies_by_similarity(
+                        studies=studies,
+                        model=selected_model,
+                        require_trait_similarity=require_trait_sim,
+                        require_evidence_similarity=require_evidence_sim,
+                    )
 
-            if selected_pmid:
-                # Store in session state and navigate to study info page
-                st.session_state["selected_pmid"] = selected_pmid
-                st.session_state["selected_model"] = selected_model
-                st.switch_page("pages/3_Study_Info.py")
+            total = len(studies)
+            original_total = results.get("total", len(results["studies"]))
+
+            if require_trait_sim or require_evidence_sim:
+                st.write(
+                    f"Found {total} studies (filtered from {original_total})"
+                )
+            else:
+                st.write(f"Found {total} studies")
+
+            if studies:
+                # Display study table and handle selection
+                selected_pmid = study_table(studies)
+
+                if selected_pmid:
+                    # Store in session state and navigate to study info page
+                    st.session_state["selected_pmid"] = selected_pmid
+                    st.session_state["selected_model"] = selected_model
+                    st.switch_page("pages/3_Study_Info.py")
+            else:
+                st.info("No studies match the selected filters.")
         else:
             st.info(
                 f"No studies found for trait '{selected_trait}' "

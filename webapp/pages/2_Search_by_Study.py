@@ -6,7 +6,10 @@ Find studies by title text search.
 import streamlit as st
 
 from components.model_selector import model_selector
-from services.db_client import autocomplete_studies
+from services.db_client import (
+    autocomplete_studies,
+    filter_studies_by_similarity,
+)
 
 st.set_page_config(
     page_title="Search by Study - MR-KG",
@@ -30,6 +33,21 @@ def main() -> None:
     with col2:
         selected_model = model_selector(key="study_search_model")
 
+        # ---- Similarity filters ----
+        st.markdown("**Filters**")
+        require_trait_sim = st.checkbox(
+            "Has related studies by trait",
+            value=False,
+            key="study_search_require_trait_sim",
+            help="Only show studies with related studies by trait similarity",
+        )
+        require_evidence_sim = st.checkbox(
+            "Has related studies by evidence",
+            value=False,
+            key="study_search_require_evidence_sim",
+            help="Only show studies with related studies by evidence similarity",
+        )
+
     with col1:
         # ---- Study search with autocomplete ----
         search_term = st.text_input(
@@ -47,26 +65,49 @@ def main() -> None:
             )
 
         if suggestions:
+            # ---- Apply similarity filters ----
+            studies = suggestions
+            if require_trait_sim or require_evidence_sim:
+                with st.spinner("Filtering by similarity..."):
+                    studies = filter_studies_by_similarity(
+                        studies=studies,
+                        model=selected_model,
+                        require_trait_similarity=require_trait_sim,
+                        require_evidence_similarity=require_evidence_sim,
+                    )
+
             st.divider()
             st.subheader("Search Results")
-            st.write(f"Found {len(suggestions)} matching studies")
 
-            for i, study in enumerate(suggestions):
-                pmid = study.get("pmid", "")
-                title = study.get("title", "")
+            original_total = len(suggestions)
+            total = len(studies)
 
-                col1, col2 = st.columns([4, 1])
-                with col1:
-                    st.markdown(f"**{pmid}**")
-                    st.write(_truncate_text(title, 100))
-                with col2:
-                    if st.button("View", key=f"study_btn_{i}_{pmid}"):
-                        # Store in session state and navigate to study info page
-                        st.session_state["selected_pmid"] = pmid
-                        st.session_state["selected_model"] = selected_model
-                        st.switch_page("pages/3_Study_Info.py")
+            if require_trait_sim or require_evidence_sim:
+                st.write(
+                    f"Found {total} matching studies (filtered from {original_total})"
+                )
+            else:
+                st.write(f"Found {total} matching studies")
 
-                st.divider()
+            if studies:
+                for i, study in enumerate(studies):
+                    pmid = study.get("pmid", "")
+                    title = study.get("title", "")
+
+                    col1, col2 = st.columns([4, 1])
+                    with col1:
+                        st.markdown(f"**{pmid}**")
+                        st.write(_truncate_text(title, 100))
+                    with col2:
+                        if st.button("View", key=f"study_btn_{i}_{pmid}"):
+                            # Store in session state and navigate to study info page
+                            st.session_state["selected_pmid"] = pmid
+                            st.session_state["selected_model"] = selected_model
+                            st.switch_page("pages/3_Study_Info.py")
+
+                    st.divider()
+            else:
+                st.info("No studies match the selected filters.")
         else:
             st.info(f"No matching studies found for model '{selected_model}'.")
     elif search_term:

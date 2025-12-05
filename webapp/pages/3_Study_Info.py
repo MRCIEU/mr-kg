@@ -255,7 +255,10 @@ def _render_extraction_results(data: dict) -> None:
 
         st.divider()
 
-    # ---- Show raw metadata (collapsed) ----
+    # ---- Show raw data (collapsed) ----
+    with st.expander("Raw Results (JSON)", expanded=False):
+        st.json(results)
+
     with st.expander("Raw Metadata (JSON)", expanded=False):
         metadata = data.get("metadata", {})
         st.json(metadata)

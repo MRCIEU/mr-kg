@@ -161,6 +161,81 @@ def get_similar_by_evidence(
         return None
 
 
+def has_trait_similarity(pmid: str, model: str = "gpt-5") -> bool:
+    """Check if a study has related studies by trait profile similarity.
+
+    Args:
+        pmid: PubMed ID of the study
+        model: Extraction model
+
+    Returns:
+        True if study has at least one related study by trait similarity
+    """
+    result = get_similar_by_trait(pmid=pmid, model=model, limit=1)
+    if result is None:
+        return False
+    return len(result.get("similar_studies", [])) > 0
+
+
+def has_evidence_similarity(pmid: str, model: str = "gpt-5") -> bool:
+    """Check if a study has related studies by evidence profile similarity.
+
+    Args:
+        pmid: PubMed ID of the study
+        model: Extraction model
+
+    Returns:
+        True if study has at least one related study by evidence similarity
+    """
+    result = get_similar_by_evidence(pmid=pmid, model=model, limit=1)
+    if result is None:
+        return False
+    return len(result.get("similar_studies", [])) > 0
+
+
+def filter_studies_by_similarity(
+    studies: list[dict[str, Any]],
+    model: str = "gpt-5",
+    require_trait_similarity: bool = False,
+    require_evidence_similarity: bool = False,
+) -> list[dict[str, Any]]:
+    """Filter studies to only those with related studies.
+
+    Args:
+        studies: List of study dicts (must have 'pmid' key)
+        model: Extraction model
+        require_trait_similarity: If True, only keep studies with trait
+            similarity results
+        require_evidence_similarity: If True, only keep studies with evidence
+            similarity results
+
+    Returns:
+        Filtered list of studies meeting the criteria
+    """
+    if not require_trait_similarity and not require_evidence_similarity:
+        return studies
+
+    filtered = []
+    for study in studies:
+        pmid = study.get("pmid")
+        if not pmid:
+            continue
+
+        # Check trait similarity if required
+        if require_trait_similarity and not has_trait_similarity(pmid, model):
+            continue
+
+        # Check evidence similarity if required
+        if require_evidence_similarity and not has_evidence_similarity(
+            pmid, model
+        ):
+            continue
+
+        filtered.append(study)
+
+    return filtered
+
+
 # ==== Autocomplete functions ====
 
 
