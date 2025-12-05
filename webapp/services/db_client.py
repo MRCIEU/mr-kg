@@ -10,20 +10,6 @@ from typing import Any
 
 import streamlit as st
 
-from common_funcs.repositories import (
-    get_available_models as _get_available_models,
-    get_metric_availability,
-    get_model_evidence_stats,
-    get_model_similarity_stats,
-    get_overall_statistics,
-    get_studies,
-    get_study_extraction,
-    search_studies as _search_studies,
-    search_traits as _search_traits,
-)
-from common_funcs.repositories import get_similar_by_evidence as _get_evidence
-from common_funcs.repositories import get_similar_by_trait as _get_trait
-from common_funcs.repositories.config import get_settings as get_repo_settings
 from config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -34,6 +20,7 @@ def _configure_database_paths() -> None:
 
     Sets environment variables that common_funcs.repositories.config will read.
     This ensures the repository layer uses the webapp's configured paths.
+    Must be called BEFORE importing from common_funcs.repositories.
     """
     settings = get_settings()
     os.environ.setdefault("VECTOR_STORE_PATH", settings.vector_store_path)
@@ -41,12 +28,30 @@ def _configure_database_paths() -> None:
     os.environ.setdefault(
         "EVIDENCE_PROFILE_PATH", settings.evidence_profile_path
     )
-    # Clear the cached settings to pick up new environment variables
-    get_repo_settings.cache_clear()
 
 
-# Configure paths on module import
+# Configure paths BEFORE importing from common_funcs.repositories
+# This ensures the repository settings are loaded with correct paths
 _configure_database_paths()
+
+# Now import from common_funcs.repositories after paths are configured
+from common_funcs.repositories import (  # noqa: E402
+    get_available_models as _get_available_models,
+    get_metric_availability,
+    get_model_evidence_stats,
+    get_model_similarity_stats,
+    get_overall_statistics,
+    get_studies,
+    get_study_extraction,
+    search_studies as _search_studies,
+    search_traits as _search_traits,
+)
+from common_funcs.repositories import (  # noqa: E402
+    get_similar_by_evidence as _get_evidence,
+)
+from common_funcs.repositories import (  # noqa: E402
+    get_similar_by_trait as _get_trait,
+)
 
 
 # ==== Studies functions ====

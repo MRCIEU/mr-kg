@@ -138,39 +138,3 @@ class TestStudyTable:
 
             assert result is None
             mock_st.info.assert_called_once()
-
-
-class TestAutocompleteResult:
-    """Tests for AutocompleteResult dataclass."""
-
-    def test_success_result(self) -> None:
-        """Test creating a successful result."""
-        from services.api_client import AutocompleteResult
-
-        items = ["item1", "item2"]
-        result = AutocompleteResult.success_result(items)
-
-        assert result.success is True
-        assert result.items == items
-        assert result.error_message is None
-
-    def test_error_result(self) -> None:
-        """Test creating an error result."""
-        from services.api_client import AutocompleteResult
-
-        error_msg = "Connection failed"
-        result = AutocompleteResult.error_result(error_msg)
-
-        assert result.success is False
-        assert result.items == []
-        assert result.error_message == error_msg
-
-    def test_success_result_empty(self) -> None:
-        """Test creating a successful result with empty items."""
-        from services.api_client import AutocompleteResult
-
-        result = AutocompleteResult.success_result([])
-
-        assert result.success is True
-        assert result.items == []
-        assert result.error_message is None

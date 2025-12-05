@@ -1,20 +1,16 @@
 """Tests for the database client service."""
 
+import sys
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import pytest
 
-
-# Mock streamlit before importing db_client
-@pytest.fixture(autouse=True)
-def mock_streamlit():
-    """Mock streamlit module for all tests."""
-    mock_st = MagicMock()
-    # Make cache_data a passthrough decorator
-    mock_st.cache_data = lambda **kwargs: lambda f: f
-    with patch.dict("sys.modules", {"streamlit": mock_st}):
-        yield mock_st
+# ==== Module-level streamlit mock ====
+# Mock streamlit at module level before any imports that depend on it.
+# This prevents issues with patch.dict removing the mock between tests.
+_mock_st = MagicMock()
+_mock_st.cache_data = lambda **kwargs: lambda f: f
+sys.modules["streamlit"] = _mock_st
 
 
 class TestSearchStudies:
@@ -228,7 +224,7 @@ class TestDatabaseHealth:
 
     def test_check_database_health_success(self) -> None:
         """Test successful database health check."""
-        with patch("services.db_client.Path") as mock_path:
+        with patch("pathlib.Path") as mock_path:
             mock_path.return_value.exists.return_value = True
 
             from services.db_client import check_database_health
@@ -240,7 +236,7 @@ class TestDatabaseHealth:
 
     def test_check_database_health_unhealthy(self) -> None:
         """Test health check when database missing."""
-        with patch("services.db_client.Path") as mock_path:
+        with patch("pathlib.Path") as mock_path:
             # First database exists, others don't
             mock_path.return_value.exists.side_effect = [True, False, True]
 

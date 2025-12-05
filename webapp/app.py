@@ -6,7 +6,7 @@ to search pages and resource information.
 
 import streamlit as st
 
-from services.api_client import get_statistics
+from services.db_client import get_statistics
 
 # ---- Page configuration ----
 st.set_page_config(

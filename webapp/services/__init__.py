@@ -1,12 +1,10 @@
 """Services package for the webapp."""
 
-from services.api_client import (
-    AutocompleteResult,
+from services.db_client import (
     autocomplete_studies,
-    autocomplete_studies_with_status,
     autocomplete_traits,
-    autocomplete_traits_with_status,
-    check_health,
+    check_database_health,
+    get_available_models,
     get_extraction,
     get_similar_by_evidence,
     get_similar_by_trait,
@@ -15,15 +13,13 @@ from services.api_client import (
 )
 
 __all__ = [
-    "search_studies",
-    "get_extraction",
-    "get_similar_by_trait",
-    "get_similar_by_evidence",
-    "autocomplete_traits",
     "autocomplete_studies",
-    "autocomplete_traits_with_status",
-    "autocomplete_studies_with_status",
-    "AutocompleteResult",
+    "autocomplete_traits",
+    "check_database_health",
+    "get_available_models",
+    "get_extraction",
+    "get_similar_by_evidence",
+    "get_similar_by_trait",
     "get_statistics",
-    "check_health",
+    "search_studies",
 ]
