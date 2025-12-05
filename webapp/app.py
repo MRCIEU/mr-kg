@@ -6,22 +6,27 @@ to search pages and resource information.
 
 import streamlit as st
 
+from components.theme import apply_theme, theme_toggle
 from services.db_client import get_statistics
 
 # ---- Page configuration ----
 st.set_page_config(
-    page_title="MR-KG: Mendelian Randomization Knowledge Graph",
+    page_title="MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ---- Apply theme ----
+apply_theme()
+theme_toggle()
 
 # ---- Page content ----
 
 
 def main() -> None:
     """Render the landing page."""
-    st.title("MR-KG: Mendelian Randomization Knowledge Graph")
+    st.title("MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models")
 
     # ---- Resource description ----
     st.markdown("""

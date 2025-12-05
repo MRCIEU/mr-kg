@@ -6,6 +6,7 @@ Display overarching resource statistics and documentation.
 import streamlit as st
 
 from components.model_selector import AVAILABLE_MODELS
+from components.theme import apply_theme, theme_toggle
 from services.db_client import get_statistics
 
 st.set_page_config(
@@ -13,6 +14,10 @@ st.set_page_config(
     page_icon=None,
     layout="wide",
 )
+
+# ---- Apply theme ----
+apply_theme()
+theme_toggle()
 
 
 def main() -> None:

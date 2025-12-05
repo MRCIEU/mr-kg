@@ -102,23 +102,29 @@ showPyplotGlobalUse = false
 
 [theme]
 
+# Gruvbox dark theme
+# Reference: docs/misc/gruvbox-dark.toml
+
 # The preset Streamlit theme that your custom theme inherits from.
 # One of "light" or "dark".
-base = "light"
+base = "dark"
 
 # Primary accent color for interactive elements.
-primaryColor = "#1f77b4"
+# Gruvbox bright blue
+primaryColor = "#83a598"
 
 # Background color for the main content area.
-backgroundColor = "#ffffff"
+# Gruvbox dark background
+backgroundColor = "#282828"
 
 # Background color used for the sidebar and most interactive widgets.
-secondaryBackgroundColor = "#f0f2f6"
+# Gruvbox slightly lighter background
+secondaryBackgroundColor = "#3c3836"
 
 # Color used for almost all text.
-textColor = "#262730"
+# Gruvbox foreground (bright white)
+textColor = "#ebdbb2"
 
 # Font family for all text in the app, except code blocks. One of "sans serif",
 # "serif", or "monospace".
-# Default: "sans serif"
 font = "sans serif"

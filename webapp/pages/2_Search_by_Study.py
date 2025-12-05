@@ -6,6 +6,7 @@ Find studies by title text search.
 import streamlit as st
 
 from components.model_selector import model_selector
+from components.theme import apply_theme, theme_toggle
 from services.db_client import (
     autocomplete_studies,
     filter_studies_by_similarity,
@@ -16,6 +17,10 @@ st.set_page_config(
     page_icon=None,
     layout="wide",
 )
+
+# ---- Apply theme ----
+apply_theme()
+theme_toggle()
 
 
 def main() -> None:

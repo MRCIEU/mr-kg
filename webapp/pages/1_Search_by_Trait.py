@@ -7,6 +7,7 @@ import streamlit as st
 
 from components.model_selector import model_selector
 from components.study_table import study_table
+from components.theme import apply_theme, theme_toggle
 from services.db_client import (
     autocomplete_traits,
     filter_studies_by_similarity,
@@ -18,6 +19,10 @@ st.set_page_config(
     page_icon=None,
     layout="wide",
 )
+
+# ---- Apply theme ----
+apply_theme()
+theme_toggle()
 
 
 def main() -> None:
