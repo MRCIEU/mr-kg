@@ -26,7 +26,9 @@ theme_toggle()
 
 def main() -> None:
     """Render the landing page."""
-    st.title("MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models")
+    st.title(
+        "MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models"
+    )
 
     # ---- Resource description ----
     st.markdown("""

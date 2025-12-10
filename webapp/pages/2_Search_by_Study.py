@@ -10,6 +10,7 @@ from components.theme import apply_theme, theme_toggle
 from services.db_client import (
     autocomplete_studies,
     filter_studies_by_similarity,
+    search_study_by_pmid,
 )
 
 st.set_page_config(
@@ -54,69 +55,122 @@ def main() -> None:
         )
 
     with col1:
-        # ---- Study search with autocomplete ----
-        search_term = st.text_input(
-            "Enter study title or PMID",
-            placeholder="e.g., Mendelian randomization, body mass index",
-            key="study_search_input",
-            help="Type at least 2 characters to see suggestions",
+        # ---- Search mode toggle ----
+        search_mode = st.radio(
+            "Search by",
+            options=["Study Title", "PMID"],
+            horizontal=True,
+            key="study_search_mode",
+            help="Toggle between fuzzy title search or exact PMID lookup",
         )
 
-    # ---- Display autocomplete results ----
-    if search_term and len(search_term) >= 2:
-        with st.spinner("Searching..."):
-            suggestions = autocomplete_studies(
-                search_term, model=selected_model, limit=20
+        # ---- Study search input ----
+        if search_mode == "Study Title":
+            search_term = st.text_input(
+                "Enter study title",
+                placeholder="e.g., Mendelian randomization, body mass index",
+                key="study_search_input",
+                help="Type at least 2 characters to see suggestions",
+            )
+        else:
+            search_term = st.text_input(
+                "Enter PMID",
+                placeholder="e.g., 12345678",
+                key="study_search_pmid_input",
+                help="Enter the exact PubMed ID",
             )
 
-        if suggestions:
-            # ---- Apply similarity filters ----
-            studies = suggestions
-            if require_trait_sim or require_evidence_sim:
-                with st.spinner("Filtering by similarity..."):
-                    studies = filter_studies_by_similarity(
-                        studies=studies,
-                        model=selected_model,
-                        require_trait_similarity=require_trait_sim,
-                        require_evidence_similarity=require_evidence_sim,
-                    )
-
-            st.divider()
-            st.subheader("Search Results")
-
-            original_total = len(suggestions)
-            total = len(studies)
-
-            if require_trait_sim or require_evidence_sim:
-                st.write(
-                    f"Found {total} matching studies (filtered from {original_total})"
+    # ---- Display search results ----
+    if search_mode == "Study Title":
+        # Fuzzy search mode - requires at least 2 characters
+        if search_term and len(search_term) >= 2:
+            with st.spinner("Searching..."):
+                suggestions = autocomplete_studies(
+                    search_term, model=selected_model, limit=20
                 )
-            else:
-                st.write(f"Found {total} matching studies")
+            _display_results(
+                suggestions,
+                selected_model,
+                require_trait_sim,
+                require_evidence_sim,
+            )
+        elif search_term:
+            st.info("Please enter at least 2 characters to search.")
+    else:
+        # PMID exact match mode
+        if search_term:
+            with st.spinner("Searching..."):
+                suggestions = search_study_by_pmid(
+                    search_term, model=selected_model
+                )
+            _display_results(
+                suggestions,
+                selected_model,
+                require_trait_sim,
+                require_evidence_sim,
+            )
 
-            if studies:
-                for i, study in enumerate(studies):
-                    pmid = study.get("pmid", "")
-                    title = study.get("title", "")
 
-                    col1, col2 = st.columns([4, 1])
-                    with col1:
-                        st.markdown(f"**{pmid}**")
-                        st.write(_truncate_text(title, 100))
-                    with col2:
-                        if st.button("View", key=f"study_btn_{i}_{pmid}"):
-                            # Store in session state and navigate to study info page
-                            st.session_state["selected_pmid"] = pmid
-                            st.session_state["selected_model"] = selected_model
-                            st.switch_page("pages/3_Study_Info.py")
+def _display_results(
+    suggestions: list[dict],
+    selected_model: str,
+    require_trait_sim: bool,
+    require_evidence_sim: bool,
+) -> None:
+    """Display search results with optional filtering.
 
-                    st.divider()
-            else:
-                st.info("No studies match the selected filters.")
+    Args:
+        suggestions: List of study dicts from search
+        selected_model: Selected extraction model
+        require_trait_sim: Filter by trait similarity
+        require_evidence_sim: Filter by evidence similarity
+    """
+    if suggestions:
+        # ---- Apply similarity filters ----
+        studies = suggestions
+        if require_trait_sim or require_evidence_sim:
+            with st.spinner("Filtering by similarity..."):
+                studies = filter_studies_by_similarity(
+                    studies=studies,
+                    model=selected_model,
+                    require_trait_similarity=require_trait_sim,
+                    require_evidence_similarity=require_evidence_sim,
+                )
+
+        st.divider()
+        st.subheader("Search Results")
+
+        original_total = len(suggestions)
+        total = len(studies)
+
+        if require_trait_sim or require_evidence_sim:
+            st.write(
+                f"Found {total} matching studies (filtered from {original_total})"
+            )
         else:
-            st.info(f"No matching studies found for model '{selected_model}'.")
-    elif search_term:
-        st.info("Please enter at least 2 characters to search.")
+            st.write(f"Found {total} matching studies")
+
+        if studies:
+            for i, study in enumerate(studies):
+                pmid = study.get("pmid", "")
+                title = study.get("title", "")
+
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.markdown(f"**{pmid}**")
+                    st.write(_truncate_text(title, 100))
+                with col2:
+                    if st.button("View", key=f"study_btn_{i}_{pmid}"):
+                        # Store in session state and navigate to study info page
+                        st.session_state["selected_pmid"] = pmid
+                        st.session_state["selected_model"] = selected_model
+                        st.switch_page("pages/3_Study_Info.py")
+
+                st.divider()
+        else:
+            st.info("No studies match the selected filters.")
+    else:
+        st.info(f"No matching studies found for model '{selected_model}'.")
 
 
 def _truncate_text(text: str, max_length: int) -> str:

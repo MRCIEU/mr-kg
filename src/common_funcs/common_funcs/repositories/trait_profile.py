@@ -6,7 +6,36 @@ from trait_profile_db.db.
 
 from typing import Any
 
-from common_funcs.repositories.connection import get_trait_profile_connection
+from common_funcs.repositories.connection import (
+    get_trait_profile_connection,
+    get_vector_store_connection,
+)
+
+
+def _get_study_traits(pmid: str, model: str) -> list[dict[str, Any]]:
+    """Get traits for a study from vector store.
+
+    Args:
+        pmid: PubMed ID of the study
+        model: Extraction model name
+
+    Returns:
+        List of trait dicts with trait_index and trait_label
+    """
+    conn = get_vector_store_connection()
+
+    query = """
+        SELECT DISTINCT mrt.trait_index, mrt.trait_label
+        FROM model_result_traits mrt
+        JOIN model_results mr ON mrt.model_result_id = mr.id
+        WHERE mr.pmid = ? AND mr.model = ?
+        ORDER BY mrt.trait_label
+    """
+
+    result = conn.execute(query, [pmid, model]).fetchall()
+
+    res = [{"trait_index": row[0], "trait_label": row[1]} for row in result]
+    return res
 
 
 def get_similar_by_trait(
@@ -69,16 +98,24 @@ def get_similar_by_trait(
 
     # ---- Build response from first row for query info ----
     first_row = result[0]
-    similar_studies = [
-        {
-            "pmid": row[3],
-            "title": row[4],
-            "trait_profile_similarity": row[5],
-            "trait_jaccard_similarity": row[6],
-            "trait_count": row[7],
-        }
-        for row in result
-    ]
+
+    similar_studies = []
+    for row in result:
+        similar_pmid = row[3]
+
+        # ---- Get similar study traits ----
+        involved_traits = _get_study_traits(similar_pmid, model)
+
+        similar_studies.append(
+            {
+                "pmid": similar_pmid,
+                "title": row[4],
+                "trait_profile_similarity": row[5],
+                "trait_jaccard_similarity": row[6],
+                "trait_count": row[7],
+                "involved_traits": involved_traits,
+            }
+        )
 
     res = {
         "query_pmid": first_row[0],

@@ -287,6 +287,42 @@ def autocomplete_studies(
         return []
 
 
+@st.cache_data(ttl=300)
+def search_study_by_pmid(
+    pmid: str, model: str = "gpt-5"
+) -> list[dict[str, Any]]:
+    """Search for a study by exact PMID match.
+
+    Args:
+        pmid: PubMed ID to search for (exact match)
+        model: Extraction model filter
+
+    Returns:
+        List with single dict (pmid and title) if found, empty list otherwise
+    """
+    from common_funcs.repositories.connection import (
+        get_vector_store_connection,
+    )
+
+    try:
+        conn = get_vector_store_connection()
+
+        query = """
+            SELECT DISTINCT mr.pmid, mpd.title
+            FROM model_results mr
+            JOIN mr_pubmed_data mpd ON mr.pmid = mpd.pmid
+            WHERE mr.pmid = ?
+                AND mr.model = ?
+        """
+
+        result = conn.execute(query, [pmid, model]).fetchall()
+        res = [{"pmid": row[0], "title": row[1]} for row in result]
+        return res
+    except Exception as e:
+        logger.error(f"Error in PMID search: {e}")
+        return []
+
+
 # ==== Statistics functions ====
 
 
