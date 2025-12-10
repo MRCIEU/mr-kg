@@ -5,10 +5,11 @@ temporal evolution analysis. All figures are exported as PNG for manuscript
 inclusion.
 
 Figures generated:
-- Faceted time series plot with three subplots:
-  1. Trait Diversity Over Time
-  2. Reporting Completeness Over Time
-  3. Reporting Completeness by Field Type
+- Faceted time series plot with four subplots:
+  A. MR Papers by Publication Year (log scale)
+  B. Trait Diversity Over Time
+  C. Reporting Completeness Over Time
+  D. Reporting Completeness by Field Type
 
 All subplots use year range 2003-2025 with era boundary markers.
 
@@ -133,6 +134,66 @@ def get_era_transitions(era_defs: Dict[str, List[int]]) -> List[Dict]:
 
 
 # ==== Data loading ====
+
+
+def load_temporal_stats(data_dir: Path) -> pd.DataFrame:
+    """Load temporal statistics from CSV.
+
+    Args:
+        data_dir: Data directory path
+
+    Returns:
+        DataFrame with publication year statistics
+    """
+    temporal_stats_file = (
+        data_dir / "processed" / "overall-stats" / "temporal-statistics.csv"
+    )
+
+    if not temporal_stats_file.exists():
+        msg = (
+            f"Temporal statistics file not found: {temporal_stats_file}\n"
+            "Run summary statistics pipeline first."
+        )
+        raise FileNotFoundError(msg)
+
+    logger.info(f"Loading temporal statistics from: {temporal_stats_file}")
+    df = pd.read_csv(temporal_stats_file)
+
+    # ---- Remove outlier years ----
+    df = df[df["publication_year"] <= 2025].copy()
+
+    # ---- Sort and filter for log scale ----
+    df = df.sort_values("publication_year")
+    df = df[df["paper_count"] > 0].copy()
+
+    logger.info(f"Loaded {len(df)} years of temporal data")
+
+    res = df
+    return res
+
+
+def calculate_log_ticks(ymax: float) -> List[int]:
+    """Calculate logarithmic tick values for y-axis.
+
+    Generates ticks like 1, 3, 10, 30, 100, 300, etc.
+
+    Args:
+        ymax: Maximum y value
+
+    Returns:
+        List of tick values
+    """
+    log_ticks = []
+    k = 0
+    while (10**k) <= ymax * 1.2:
+        base = 10**k
+        for m in (1, 3):
+            val = base * m
+            if val >= 1:
+                log_ticks.append(val)
+        k += 1
+    res = log_ticks
+    return res
 
 
 def load_diversity_data(cs5_output_dir: Path) -> pd.DataFrame:
@@ -278,6 +339,78 @@ def create_era_markers(
     return res
 
 
+def create_temporal_distribution_subplot(
+    temporal_df: pd.DataFrame,
+    era_transitions: List[Dict],
+) -> alt.Chart:
+    """Create MR papers by publication year subplot with log scale.
+
+    Args:
+        temporal_df: DataFrame with publication_year and paper_count columns
+        era_transitions: List of era transition dicts
+
+    Returns:
+        Altair chart for temporal distribution subplot
+    """
+    logger.info("Creating temporal distribution subplot...")
+
+    ymax = float(temporal_df["paper_count"].max())
+    log_ticks = calculate_log_ticks(ymax)
+
+    # ---- Line chart with points ----
+    line = (
+        alt.Chart(temporal_df)
+        .mark_line(point=True, color=GRUVBOX_DARK["blue"])
+        .encode(
+            x=alt.X(
+                "publication_year:Q",
+                title="Publication Year",
+                scale=alt.Scale(domain=[YEAR_MIN, YEAR_MAX]),
+                axis=alt.Axis(format="d", labelAngle=0),
+            ),
+            y=alt.Y(
+                "paper_count:Q",
+                title="Number of Papers (log scale)",
+                scale=alt.Scale(type="log", base=10, nice=False, domainMin=1),
+                axis=alt.Axis(values=log_ticks, format=","),
+            ),
+            tooltip=[
+                alt.Tooltip("publication_year:Q", title="Year", format="d"),
+                alt.Tooltip("paper_count:Q", title="Papers", format=","),
+            ],
+        )
+    )
+
+    # ---- Text labels for all points ----
+    labels = (
+        alt.Chart(temporal_df)
+        .mark_text(
+            align="center",
+            dy=26,
+            stroke="black",
+            strokeWidth=1,
+            fontSize=10,
+        )
+        .encode(
+            x=alt.X("publication_year:Q"),
+            y=alt.Y("paper_count:Q"),
+            text=alt.Text("paper_count:Q", format=","),
+        )
+    )
+
+    # ---- Era markers ----
+    era_markers = create_era_markers(era_transitions)
+
+    # ---- Combine layers ----
+    combined = (line + labels + era_markers).properties(
+        width=PLOT_WIDTH,
+        height=PLOT_HEIGHT,
+        title="A. MR Papers by Publication Year",
+    )
+
+    return combined
+
+
 def create_diversity_subplot(
     diversity_df: pd.DataFrame,
     era_transitions: List[Dict],
@@ -348,7 +481,7 @@ def create_diversity_subplot(
     combined = (error_band + line + points + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="A. Trait Diversity Over Time",
+        title="B. Trait Diversity Over Time",
     )
 
     return combined
@@ -440,7 +573,7 @@ def create_completeness_subplot(
     combined = (line + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="B. Overall Reporting Completeness Over Time",
+        title="C. Overall Reporting Completeness Over Time",
     )
 
     return combined
@@ -508,7 +641,7 @@ def create_field_type_subplot(
     combined = (line + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="C. Reporting Completeness Over Time by Field Type",
+        title="D. Reporting Completeness Over Time by Field Type",
     )
 
     return combined
@@ -518,15 +651,17 @@ def create_field_type_subplot(
 
 
 def create_faceted_figure(
+    temporal_df: pd.DataFrame,
     diversity_df: pd.DataFrame,
     completeness_df: pd.DataFrame,
     era_defs: Dict[str, List[int]],
     output_dir: Path,
     dry_run: bool = False,
 ):
-    """Create faceted time series figure with three subplots.
+    """Create faceted time series figure with four subplots.
 
     Args:
+        temporal_df: DataFrame with publication year statistics
         diversity_df: DataFrame with trait diversity data
         completeness_df: DataFrame with completeness data
         era_defs: Dictionary of era definitions
@@ -546,16 +681,20 @@ def create_faceted_figure(
     field_type_df = prepare_field_type_yearly_data(completeness_df)
 
     # ---- Create subplots ----
-    subplot1 = create_diversity_subplot(diversity_df, era_transitions)
-    subplot2 = create_completeness_subplot(completeness_df, era_transitions)
-    subplot3 = create_field_type_subplot(field_type_df, era_transitions)
+    subplot_a = create_temporal_distribution_subplot(
+        temporal_df, era_transitions
+    )
+    subplot_b = create_diversity_subplot(diversity_df, era_transitions)
+    subplot_c = create_completeness_subplot(completeness_df, era_transitions)
+    subplot_d = create_field_type_subplot(field_type_df, era_transitions)
 
     # ---- Combine vertically ----
     combined = (
         alt.vconcat(
-            subplot1,
-            subplot2,
-            subplot3,
+            subplot_a,
+            subplot_b,
+            subplot_c,
+            subplot_d,
             spacing=40,
         )
         .resolve_scale(color="independent")
@@ -610,6 +749,8 @@ def main():
     logger.info("Output directory: {}", output_dir)
 
     # ---- Load data ----
+    data_dir = PROJECT_ROOT / "data"
+    temporal_df = load_temporal_stats(data_dir)
     diversity_df = load_diversity_data(cs5_output_dir)
     completeness_df = load_completeness_data(cs5_output_dir)
 
@@ -618,6 +759,7 @@ def main():
 
     # ---- Generate figure ----
     create_faceted_figure(
+        temporal_df,
         diversity_df,
         completeness_df,
         era_defs,
