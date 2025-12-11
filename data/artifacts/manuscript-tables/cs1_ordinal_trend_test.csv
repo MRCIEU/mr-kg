@@ -1,0 +1,5 @@
+test,coefficient,std_error,statistic,p_value,ci_lower,ci_upper,interpretation
+Ordinal trend (unadjusted),-0.056,0.024,-2.31,0.021,-0.104,-0.008,Per-band change in concordance
+Ordinal trend (adjusted),-0.092,0.024,-3.80,<0.001,-0.140,-0.045,Per-band change (controlling for match type)
+Spearman correlation,-0.190,,,<0.001,,,Monotonic trend test
+Kruskal-Wallis H,80.86,,,<0.001,,,Group differences test
