@@ -511,8 +511,11 @@ flowchart TD
     B --> C[Group by extraction model]
     C --> D[For each query study]
     D --> E{Filter to same model}
-    E --> F[Match exposure-outcome pairs]
-    F --> G{Sufficient matched pairs?}
+    E --> F[Hierarchical pair matching]
+    F --> F1[Tier 1: Exact trait index match]
+    F1 --> F2[Tier 2: Fuzzy embedding match<br/>unmatched pairs only]
+    F2 --> F3[Tier 3: EFO category match<br/>still unmatched pairs only]
+    F3 --> G{Sufficient matched pairs?}
     G -->|Yes| H[Compute effect size correlation]
     G -->|No| I[Skip pair]
     H --> J[Compute direction concordance]
@@ -567,7 +570,7 @@ For each query PMID-model combination:
 
 1. Filter comparison candidates to same model only
 2. For each candidate (excluding self):
-   - Match exposure-outcome pairs by trait indices
+   - Match exposure-outcome pairs using hierarchical fallback (see below)
    - Skip if fewer than 2 matched pairs (insufficient for correlation)
    - Compute all four similarity metrics on matched pairs
    - Calculate summary statistics:
@@ -575,6 +578,37 @@ For each query PMID-model combination:
      - Number of matched pairs
      - Matched pair fraction (matched / min(query_pairs, candidate_pairs))
 3. Store all results (no filtering by similarity score)
+
+### Exposure-outcome pair matching
+
+Exposure-outcome pairs are matched between studies using a **hierarchical
+fallback scheme** with three tiers, processed in order of decreasing precision.
+Each pair is matched at most once; pairs matched at a higher-precision tier are
+excluded from lower-precision tiers.
+
+**Tier 1 - Exact matching:**
+Pairs with identical trait indices (same exposure_trait_index AND same
+outcome_trait_index).
+This is the highest-confidence match.
+
+**Tier 2 - Fuzzy matching (fallback):**
+For pairs unmatched by Tier 1, compute cosine similarity between
+200-dimensional ScispaCy trait embeddings.
+Both exposure AND outcome traits must exceed the similarity threshold
+(default: 0.70) for a match.
+When multiple candidates exist, selects the best match using combined score
+`(exp_sim + out_sim) / 2`.
+
+**Tier 3 - EFO matching (fallback):**
+For pairs still unmatched after Tiers 1-2, match by shared EFO ontology term
+mappings.
+This is category-level matching (lowest precision).
+
+The algorithm is greedy: each similar result can only be matched once per tier.
+Match types are tracked via boolean flags (`match_type_exact`, `match_type_fuzzy`,
+`match_type_efo`) enabling downstream analysis of match quality effects.
+
+See @docs/GLOSSARY.md (Match type) for detailed definitions and examples.
 
 ### Parallel processing
 

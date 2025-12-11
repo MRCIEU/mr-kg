@@ -84,9 +84,9 @@ quality affects concordance distributions.
 
 **Match type definitions**:
 
-- **Exact**: Identical trait descriptions across studies (highest confidence)
-- **Fuzzy**: Similar trait descriptions via fuzzy string matching (moderate
-  confidence)
+- **Exact**: Identical trait indices across studies (highest confidence)
+- **Fuzzy**: Similar traits matched via embedding-based semantic similarity
+  (moderate confidence)
 
 **Table organization**:
 - First two rows show overall statistics ("All" category) corresponding to

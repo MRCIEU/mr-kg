@@ -10,37 +10,57 @@ throughout the MR-KG project documentation and codebase.
 Classification of how exposure-outcome trait pairs are matched between studies
 when computing evidence profile similarities and reproducibility metrics.
 
-There are three match types:
+#### Hierarchical fallback design
 
-1. **Exact match**: Trait labels are identical strings after normalization
-   (case-insensitive, whitespace-normalized). This represents the highest
-   confidence that studies are investigating the same exposure-outcome
-   relationship.
+The three match types form a **hierarchical fallback scheme**, not independent
+parallel methods.
+The algorithm processes tiers in order of precision, and each trait pair is
+matched at most once:
+
+1. **Tier 1 (Exact)**: Attempt exact trait index matching first
+2. **Tier 2 (Fuzzy)**: For pairs unmatched by Tier 1, attempt embedding-based
+   fuzzy matching
+3. **Tier 3 (EFO)**: For pairs still unmatched, attempt EFO ontology matching
+
+This means fuzzy matching only considers pairs that failed exact matching, and
+EFO matching only considers pairs that failed both exact and fuzzy matching.
+The tiers do not overlap - a pair matched at a higher-precision tier will not
+be re-evaluated at lower-precision tiers.
+
+#### Match type definitions
+
+1. **Exact match**: Trait pairs have identical trait indices, meaning they
+   were assigned the same unique identifier during preprocessing.
+   This represents the highest confidence that studies are investigating the
+   same exposure-outcome relationship.
 
    Example: Study A reports "body mass index" -> "type 2 diabetes" and Study B
-   reports "Body Mass Index" -> "Type 2 Diabetes". After normalization, these
-   are exact matches.
+   reports "Body Mass Index" -> "Type 2 Diabetes".
+   After normalization during preprocessing, both receive the same trait
+   indices.
 
-2. **Fuzzy match**: Trait labels are similar but not identical, matched using
-   string similarity algorithms (e.g., Levenshtein distance, trigram
-   similarity). This captures trait pairs that likely refer to the same
-   concept despite spelling variations or minor wording differences.
+2. **Fuzzy match**: Trait pairs have different trait indices but high semantic
+   similarity based on embedding vectors.
+   Matching uses cosine similarity between 200-dimensional ScispaCy embeddings.
+   Both exposure AND outcome traits must exceed the similarity threshold
+   (default: 0.70) for a pair to match.
 
-   Example: "body mass index" vs "body-mass index" or "type 2 diabetes" vs
-   "type II diabetes". These would be fuzzy matches.
+   Example: "body mass index" (trait_index=42) vs "BMI" (trait_index=107) may
+   have cosine similarity of 0.85, exceeding the threshold.
 
-3. **EFO match**: Traits are mapped to the same Experimental Factor Ontology
+3. **EFO match**: Trait pairs map to the same Experimental Factor Ontology
    (EFO) term, establishing semantic equivalence through standardized
-   biomedical ontology. This provides the most robust matching for traits
-   expressed with different terminology but referring to the same biomedical
-   concept.
+   biomedical ontology.
+   This is the lowest-precision tier, matching at the category level rather
+   than the specific trait level.
 
-   Example: "BMI" and "body mass index" both map to EFO:0004340, or
-   "myocardial infarction" and "heart attack" both map to the same EFO term.
+   Example: "myocardial infarction" and "heart attack" both map to the same
+   EFO term.
 
 Match type is tracked for each trait pair comparison using boolean indicators:
-`has_exact_match`, `has_fuzzy_match`, `has_efo_match`. A single study pair may
-have different match types for different trait pairs.
+`has_exact_match`, `has_fuzzy_match`, `has_efo_match`.
+A single study pair may have different match types for different trait pairs
+(e.g., some pairs matched exactly, others via fuzzy matching).
 
 Match type sensitivity varies by disease category. Case Study 1 analysis
 revealed a significant Category x Match type interaction (p = 0.025), showing:
@@ -62,28 +82,43 @@ research.
 
 The three-tier matching algorithm is implemented in
 `processing/scripts/evidence-profile/compute-evidence-similarity.py`
-(function `match_exposure_outcome_pairs_with_type`). The matching proceeds in
-order of precision, with each trait pair matched at most once:
+(function `match_exposure_outcome_pairs_tiered`).
 
-1. **Exact matching**: Direct comparison of trait indices
-   (`compute-evidence-similarity.py`)
+**Algorithm flow:**
 
-2. **Fuzzy matching**: Semantic similarity using cosine distance between
-   200-dimensional trait embeddings (`compute-evidence-similarity.py`).
-   Both exposure AND outcome traits must have cosine similarity >= threshold
-   (default: 0.70, defined in `compute-evidence-similarity.py`). When
-   multiple candidates exist, selects the best match using combined score
-   `(exp_sim + out_sim) / 2`. The threshold is configurable via the
-   `--fuzzy-threshold` parameter.
+```
+For each query-similar study pair:
+  1. Run exact matching on all query results
+     -> Add matches to results with type="exact"
+     -> Track matched query indices
 
-3. **EFO matching**: Ontology-based matching through shared EFO term mappings
-   (`compute-evidence-similarity.py`)
+  2. Filter to unmatched query results (not matched in step 1)
+     Run fuzzy matching on unmatched results
+     -> Add matches to results with type="fuzzy"
+     -> Track matched query indices
 
-Cosine similarity computation: `compute-evidence-similarity.py`
+  3. Filter to still-unmatched query results (not matched in steps 1-2)
+     Run EFO matching on unmatched results
+     -> Add matches to results with type="efo"
+```
 
-The matching algorithm is greedy: each query result is matched to at most one
-similar result, and previously matched pairs are excluded from subsequent
-matching rounds.
+**Tier details:**
+
+1. **Exact matching** (`match_exposure_outcome_pairs`): Direct comparison of
+   trait indices.
+   O(n) complexity using dictionary lookup.
+
+2. **Fuzzy matching** (`match_exposure_outcome_pairs_fuzzy`): Cosine similarity
+   between 200-dimensional ScispaCy embeddings.
+   Both exposure AND outcome traits must have similarity >= threshold
+   (default: 0.70, configurable via `--fuzzy-threshold`).
+   When multiple candidates exist, selects the best match using combined score
+   `(exp_sim + out_sim) / 2`.
+   Greedy algorithm: each similar result can only be matched once.
+
+3. **EFO matching** (`match_exposure_outcome_pairs_efo`): Ontology-based
+   matching through shared EFO term mappings.
+   Category-level matching (lowest precision).
 
 See @docs/processing/evidence-profile-similarity.md for how match types are
 used in similarity computation.
@@ -403,8 +438,9 @@ EFO provides hierarchical relationships and semantic mappings for experimental
 variables, diseases, and phenotypes.
 
 MR-KG uses EFO v3.80 (~67K terms) for trait harmonization and semantic
-matching. Traits are mapped to EFO terms using fuzzy string matching and
-embedding similarity.
+matching.
+Traits are mapped to EFO terms using cosine similarity between their
+200-dimensional ScispaCy embeddings.
 
 EFO mappings enable robust cross-study trait matching when researchers use
 different terminology for the same biomedical concept.
