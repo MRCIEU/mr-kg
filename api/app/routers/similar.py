@@ -10,6 +10,7 @@ from app.config import get_settings
 from app.database import DatabaseError
 from app.models import (
     EvidenceSimilarityResponse,
+    MatchedEvidencePair,
     SimilarStudyEvidence,
     SimilarStudyTrait,
     TraitSimilarityResponse,
@@ -98,6 +99,13 @@ async def get_similar_by_evidence(
         ge=1,
         description="Maximum similar studies to return (max 50)",
     ),
+    include_matched_pairs: bool = Query(
+        default=False,
+        description=(
+            "Include detailed matched evidence pairs (computationally "
+            "expensive). When false, matched_evidence_pairs will be null."
+        ),
+    ),
 ) -> EvidenceSimilarityResponse:
     """Get similar studies by evidence profile similarity.
 
@@ -113,6 +121,7 @@ async def get_similar_by_evidence(
             pmid=pmid,
             model=model_name,
             limit=limit,
+            compute_matched_pairs=include_matched_pairs,
         )
     except DatabaseError as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -123,18 +132,37 @@ async def get_similar_by_evidence(
             detail=f"Study {pmid} not found for model {model_name}",
         )
 
-    similar_studies = [
-        SimilarStudyEvidence(
-            pmid=s["pmid"],
-            title=s["title"],
-            direction_concordance=s["direction_concordance"],
-            matched_pairs=s["matched_pairs"],
-            match_type_exact=s["match_type_exact"],
-            match_type_fuzzy=s["match_type_fuzzy"],
-            match_type_efo=s["match_type_efo"],
+    similar_studies = []
+    for s in data.get("similar_studies", []):
+        # ---- Build matched_evidence_pairs (None if not computed) ----
+        matched_evidence_pairs = None
+        raw_pairs = s.get("matched_evidence_pairs")
+        if raw_pairs is not None:
+            matched_evidence_pairs = [
+                MatchedEvidencePair(
+                    query_exposure=ep["query_exposure"],
+                    query_outcome=ep["query_outcome"],
+                    query_direction=ep["query_direction"],
+                    similar_exposure=ep["similar_exposure"],
+                    similar_outcome=ep["similar_outcome"],
+                    similar_direction=ep["similar_direction"],
+                    match_type=ep["match_type"],
+                )
+                for ep in raw_pairs
+            ]
+
+        similar_studies.append(
+            SimilarStudyEvidence(
+                pmid=s["pmid"],
+                title=s["title"],
+                direction_concordance=s["direction_concordance"],
+                matched_pairs=s["matched_pairs"],
+                match_type_exact=s["match_type_exact"],
+                match_type_fuzzy=s["match_type_fuzzy"],
+                match_type_efo=s["match_type_efo"],
+                matched_evidence_pairs=matched_evidence_pairs,
+            )
         )
-        for s in data.get("similar_studies", [])
-    ]
 
     res = EvidenceSimilarityResponse(
         query_pmid=data["query_pmid"],

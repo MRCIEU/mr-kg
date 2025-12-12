@@ -57,11 +57,17 @@ def trait_similarity_table(similar_studies: list[dict]) -> str | None:
     return selected_pmid
 
 
-def evidence_similarity_table(similar_studies: list[dict]) -> str | None:
+def evidence_similarity_table(
+    similar_studies: list[dict],
+    show_matched_pairs: bool = False,
+) -> str | None:
     """Display evidence similarity results in a table format.
 
     Args:
         similar_studies: List of similar study dicts from API
+        show_matched_pairs: If True, show matched evidence pairs in expandable
+            sections for each study (requires matched_evidence_pairs to be
+            populated in the data)
 
     Returns:
         Selected PMID if a study is clicked, None otherwise
@@ -115,7 +121,56 @@ def evidence_similarity_table(similar_studies: list[dict]) -> str | None:
             )
             st.write(match_type_str)
 
+        # ---- Show matched evidence pairs if available and requested ----
+        if show_matched_pairs:
+            matched_evidence_pairs = study.get("matched_evidence_pairs")
+            if matched_evidence_pairs is not None:
+                _render_matched_evidence_pairs(matched_evidence_pairs, pmid, i)
+
     return selected_pmid
+
+
+def _render_matched_evidence_pairs(
+    pairs: list[dict], pmid: str, study_index: int
+) -> None:
+    """Render matched evidence pairs in an expander.
+
+    Args:
+        pairs: List of matched evidence pair dicts
+        pmid: PMID of the similar study (for unique key)
+        study_index: Index of the study in the list (for unique key)
+    """
+    if not pairs:
+        st.caption("No matched pairs found")
+        return
+
+    with st.expander(f"Matched pairs ({len(pairs)})", expanded=False):
+        for j, pair in enumerate(pairs):
+            query_exp = pair.get("query_exposure", "")
+            query_out = pair.get("query_outcome", "")
+            query_dir = pair.get("query_direction", "")
+            similar_exp = pair.get("similar_exposure", "")
+            similar_out = pair.get("similar_outcome", "")
+            similar_dir = pair.get("similar_direction", "")
+            match_type = pair.get("match_type", "")
+
+            # ---- Format the match display ----
+            st.markdown(f"**Match {j + 1}** ({match_type})")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.caption("Query study:")
+                st.write(f"{query_exp} -> {query_out}")
+                if query_dir:
+                    st.caption(f"Direction: {query_dir}")
+            with col2:
+                st.caption("Similar study:")
+                st.write(f"{similar_exp} -> {similar_out}")
+                if similar_dir:
+                    st.caption(f"Direction: {similar_dir}")
+
+            if j < len(pairs) - 1:
+                st.divider()
 
 
 def _truncate_text(text: str, max_length: int) -> str:

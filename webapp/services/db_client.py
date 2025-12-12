@@ -143,6 +143,7 @@ def get_similar_by_evidence(
     pmid: str,
     model: str = "gpt-5",
     limit: int = 10,
+    compute_matched_pairs: bool = False,
 ) -> dict[str, Any] | None:
     """Get similar studies by evidence profile similarity.
 
@@ -150,12 +151,20 @@ def get_similar_by_evidence(
         pmid: PubMed ID of the query study
         model: Extraction model
         limit: Maximum similar studies to return
+        compute_matched_pairs: If True, compute and return the actual matched
+            evidence pairs (computationally expensive). If False, return None
+            for matched_evidence_pairs field.
 
     Returns:
         Similarity data or None if not found
     """
     try:
-        return _get_evidence(pmid=pmid, model=model, limit=limit)
+        return _get_evidence(
+            pmid=pmid,
+            model=model,
+            limit=limit,
+            compute_matched_pairs=compute_matched_pairs,
+        )
     except Exception as e:
         logger.error(f"Error getting evidence similarity for {pmid}: {e}")
         return None

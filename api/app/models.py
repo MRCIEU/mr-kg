@@ -90,6 +90,18 @@ class TraitSimilarityResponse(BaseModel):
 # ==== Evidence similarity models ====
 
 
+class MatchedEvidencePair(BaseModel):
+    """Matched evidence pair between query and similar study."""
+
+    query_exposure: str
+    query_outcome: str
+    query_direction: str
+    similar_exposure: str
+    similar_outcome: str
+    similar_direction: str
+    match_type: str  # "exact", "fuzzy", or "efo"
+
+
 class SimilarStudyEvidence(BaseModel):
     """Similar study by evidence profile."""
 
@@ -100,6 +112,7 @@ class SimilarStudyEvidence(BaseModel):
     match_type_exact: bool
     match_type_fuzzy: bool
     match_type_efo: bool
+    matched_evidence_pairs: list[MatchedEvidencePair] | None
 
 
 class EvidenceSimilarityResponse(BaseModel):

@@ -117,6 +117,17 @@ def mock_evidence_similarity_response() -> dict[str, Any]:
                 "match_type_exact": True,
                 "match_type_fuzzy": False,
                 "match_type_efo": False,
+                "matched_evidence_pairs": [
+                    {
+                        "query_exposure": "body mass index",
+                        "query_outcome": "type 2 diabetes",
+                        "query_direction": "increases",
+                        "similar_exposure": "body mass index",
+                        "similar_outcome": "type 2 diabetes",
+                        "similar_direction": "increases",
+                        "match_type": "exact",
+                    },
+                ],
             },
             {
                 "pmid": "34567890",
@@ -126,6 +137,17 @@ def mock_evidence_similarity_response() -> dict[str, Any]:
                 "match_type_exact": False,
                 "match_type_fuzzy": True,
                 "match_type_efo": False,
+                "matched_evidence_pairs": [
+                    {
+                        "query_exposure": "BMI",
+                        "query_outcome": "diabetes mellitus",
+                        "query_direction": "increases",
+                        "similar_exposure": "body mass index",
+                        "similar_outcome": "type 2 diabetes",
+                        "similar_direction": "increases",
+                        "match_type": "fuzzy",
+                    },
+                ],
             },
         ],
     }

@@ -317,12 +317,29 @@ def _render_evidence_similarity(pmid: str, model: str) -> None:
         pmid: PubMed ID of the study
         model: Extraction model
     """
+    # ---- Toggle for showing matched pairs ----
+    show_matched_pairs = st.checkbox(
+        "Show matched evidence pair details",
+        value=False,
+        help=(
+            "When enabled, shows the actual exposure-outcome pairs that "
+            "matched between studies. This requires additional computation."
+        ),
+        key=f"show_matched_pairs_{pmid}_{model}",
+    )
+
     # Use session state to cache loaded data
-    cache_key = f"evidence_sim_{pmid}_{model}"
+    # Cache key includes show_matched_pairs to reload when toggled
+    cache_key = f"evidence_sim_{pmid}_{model}_{show_matched_pairs}"
 
     if cache_key not in st.session_state:
         with st.spinner("Loading evidence similarity data..."):
-            data = get_similar_by_evidence(pmid, model, limit=10)
+            data = get_similar_by_evidence(
+                pmid,
+                model,
+                limit=10,
+                compute_matched_pairs=show_matched_pairs,
+            )
             st.session_state[cache_key] = data
 
     data = st.session_state[cache_key]
@@ -340,7 +357,10 @@ def _render_evidence_similarity(pmid: str, model: str) -> None:
 
     # ---- Display similar studies ----
     similar_studies = data.get("similar_studies", [])
-    selected_pmid = evidence_similarity_table(similar_studies)
+    selected_pmid = evidence_similarity_table(
+        similar_studies,
+        show_matched_pairs=show_matched_pairs,
+    )
 
     if selected_pmid:
         st.session_state["selected_pmid"] = selected_pmid
