@@ -9,13 +9,13 @@ default:
 [group('development')]
 dev:
     @echo "Starting development environment..."
-    docker-compose --env-file .env.development up --build
+    docker compose --env-file .env.development up --build
 
 # Start development environment in background
 [group('development')]
 dev-detached:
     @echo "Starting development environment in background..."
-    docker-compose --env-file .env.development up --build -d
+    docker compose --env-file .env.development up --build -d
 
 # Start webapp development server locally without Docker
 [group('development')]
@@ -33,24 +33,24 @@ api-dev:
 [group('development')]
 dev-down:
     @echo "Stopping development environment..."
-    docker-compose down
+    docker compose down
 
 # View development logs (optionally for specific service)
 [group('development')]
 dev-logs service="":
     @if [ "{{service}}" = "" ]; then \
-        docker-compose logs -f; \
+        docker compose logs -f; \
     else \
-        docker-compose logs -f {{service}}; \
+        docker compose logs -f {{service}}; \
     fi
 
 # Restart development services (optionally specific service)
 [group('development')]
 dev-restart service="":
     @if [ "{{service}}" = "" ]; then \
-        docker-compose restart; \
+        docker compose restart; \
     else \
-        docker-compose restart {{service}}; \
+        docker compose restart {{service}}; \
     fi
 
 # ==== Production Commands ====
@@ -59,37 +59,37 @@ dev-restart service="":
 [group('production')]
 prod:
     @echo "Deploying production environment..."
-    docker-compose -f docker-compose.prod.yml --env-file .env.production up --build -d
+    docker compose -f docker-compose.prod.yml --env-file .env.production up --build -d
 
 # Stop production environment
 [group('production')]
 prod-down:
     @echo "Stopping production environment..."
-    docker-compose -f docker-compose.prod.yml down
+    docker compose -f docker-compose.prod.yml down
 
 # View production logs (optionally for specific service)
 [group('production')]
 prod-logs service="":
     @if [ "{{service}}" = "" ]; then \
-        docker-compose -f docker-compose.prod.yml logs -f; \
+        docker compose -f docker-compose.prod.yml logs -f; \
     else \
-        docker-compose -f docker-compose.prod.yml logs -f {{service}}; \
+        docker compose -f docker-compose.prod.yml logs -f {{service}}; \
     fi
 
 # Update production deployment with latest images
 [group('production')]
 prod-update:
     @echo "Updating production deployment..."
-    docker-compose -f docker-compose.prod.yml --env-file .env.production pull
-    docker-compose -f docker-compose.prod.yml --env-file .env.production up --build -d
+    docker compose -f docker-compose.prod.yml --env-file .env.production pull
+    docker compose -f docker-compose.prod.yml --env-file .env.production up --build -d
 
 # Restart production services (optionally specific service)
 [group('production')]
 prod-restart service="":
     @if [ "{{service}}" = "" ]; then \
-        docker-compose -f docker-compose.prod.yml restart; \
+        docker compose -f docker-compose.prod.yml restart; \
     else \
-        docker-compose -f docker-compose.prod.yml restart {{service}}; \
+        docker compose -f docker-compose.prod.yml restart {{service}}; \
     fi
 
 # ==== Build Commands ====
@@ -98,19 +98,19 @@ prod-restart service="":
 [group('build')]
 build-dev:
     @echo "Building development images..."
-    docker-compose build
+    docker compose build
 
 # Build production Docker images
 [group('build')]
 build-prod:
     @echo "Building production images..."
-    docker-compose -f docker-compose.prod.yml build
+    docker compose -f docker-compose.prod.yml build
 
 # Build specific Docker service
 [group('build')]
 build service:
     @echo "Building {{service}}..."
-    docker-compose build {{service}}
+    docker compose build {{service}}
 
 # ==== Health Checks ====
 
@@ -134,9 +134,9 @@ health:
 [group('health')]
 status:
     @echo "Docker container status:"
-    docker-compose ps
+    docker compose ps
     @echo ""
-    docker-compose -f docker-compose.prod.yml ps 2>/dev/null || true
+    docker compose -f docker-compose.prod.yml ps 2>/dev/null || true
 
 # ==== Maintenance Commands ====
 
@@ -144,8 +144,8 @@ status:
 [group('maintenance')]
 pull:
     @echo "Pulling latest images..."
-    docker-compose pull
-    docker-compose -f docker-compose.prod.yml pull
+    docker compose pull
+    docker compose -f docker-compose.prod.yml pull
 
 # Clean up unused Docker resources
 [group('maintenance')]
@@ -160,8 +160,8 @@ clean:
 clean-all:
     @echo "WARNING: This will remove all Docker resources including volumes!"
     @read -p "Are you sure? (y/N): " confirm && [ "$$confirm" = "y" ] || exit 1
-    docker-compose down -v
-    docker-compose -f docker-compose.prod.yml down -v
+    docker compose down -v
+    docker compose -f docker-compose.prod.yml down -v
     docker system prune -a -f
     docker volume prune -f
 
@@ -229,8 +229,8 @@ start: setup-dev dev
 # Stop all Docker Compose environments
 [group('quickstart')]
 stop:
-    docker-compose down
-    docker-compose -f docker-compose.prod.yml down
+    docker compose down
+    docker compose -f docker-compose.prod.yml down
 
 # Reset: stop, clean, and restart development environment
 [group('quickstart')]

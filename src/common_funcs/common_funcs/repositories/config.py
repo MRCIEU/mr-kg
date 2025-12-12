@@ -15,6 +15,7 @@ class RepositorySettings(BaseSettings):
         env_prefix="",
         env_file=".env",
         env_file_encoding="utf-8",
+        extra="ignore",
     )
 
     vector_store_path: str = "data/db/vector_store.db"
