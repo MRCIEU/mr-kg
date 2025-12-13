@@ -31,7 +31,7 @@ just dev
 Access the services:
 
 - Webapp: http://localhost:8501
-- API documentation: http://localhost:8000/api/docs
+- API documentation: http://localhost:8000/docs
 
 For detailed development instructions including local development without
 Docker, see @DEV.md
@@ -50,16 +50,16 @@ MR-KG provides web services for:
 
 | Endpoint                          | Description                           |
 |-----------------------------------|---------------------------------------|
-| GET /api/studies                  | Search and list studies               |
-| GET /api/studies/{pmid}/extraction| Get extraction results for a study    |
-| GET /api/studies/{pmid}/similar/trait | Find similar studies by trait     |
-| GET /api/studies/{pmid}/similar/evidence | Find similar studies by evidence |
-| GET /api/traits/autocomplete      | Trait name suggestions                |
-| GET /api/studies/autocomplete     | Study title suggestions               |
-| GET /api/statistics               | Resource-wide statistics              |
-| GET /api/health                   | Service health check                  |
+| GET /studies                  | Search and list studies               |
+| GET /studies/{pmid}/extraction| Get extraction results for a study    |
+| GET /studies/{pmid}/similar/trait | Find similar studies by trait     |
+| GET /studies/{pmid}/similar/evidence | Find similar studies by evidence |
+| GET /traits/autocomplete      | Trait name suggestions                |
+| GET /studies/autocomplete     | Study title suggestions               |
+| GET /statistics               | Resource-wide statistics              |
+| GET /health                   | Service health check                  |
 
-Full API documentation available at `/api/docs` when the service is running.
+Full API documentation available at `/docs` when the service is running.
 
 ### Webapp pages
 

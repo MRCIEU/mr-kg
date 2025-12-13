@@ -25,7 +25,7 @@ class TestTraitAutocomplete:
         """Test that trait autocomplete returns suggestions."""
         response = make_api_request(
             api_client,
-            "/api/traits/autocomplete",
+            "/traits/autocomplete",
             params={"q": "body", "limit": 10},
         )
 
@@ -43,7 +43,7 @@ class TestTraitAutocomplete:
         """Test that autocomplete respects the limit parameter."""
         response = make_api_request(
             api_client,
-            "/api/traits/autocomplete",
+            "/traits/autocomplete",
             params={"q": "blood", "limit": 5},
         )
 
@@ -59,7 +59,7 @@ class TestTraitAutocomplete:
         """Test that autocomplete requires minimum query length."""
         response = make_api_request(
             api_client,
-            "/api/traits/autocomplete",
+            "/traits/autocomplete",
             params={"q": "b"},
         )
 
@@ -81,7 +81,7 @@ class TestStudyAutocomplete:
         """Test that study autocomplete returns suggestions."""
         response = make_api_request(
             api_client,
-            "/api/studies/autocomplete",
+            "/studies/autocomplete",
             params={"q": "mendelian", "limit": 10},
         )
 
@@ -98,7 +98,7 @@ class TestStudyAutocomplete:
         """Test that autocomplete results include pmid and title."""
         response = make_api_request(
             api_client,
-            "/api/studies/autocomplete",
+            "/studies/autocomplete",
             params={"q": "randomization", "limit": 5},
         )
 
@@ -125,7 +125,7 @@ class TestStudySearch:
         # First get a valid trait from autocomplete
         autocomplete_response = make_api_request(
             api_client,
-            "/api/traits/autocomplete",
+            "/traits/autocomplete",
             params={"q": "body", "limit": 1},
         )
 
@@ -141,7 +141,7 @@ class TestStudySearch:
         # Search with the trait
         response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"trait": trait, "model": "gpt-5", "limit": 10},
         )
 
@@ -160,7 +160,7 @@ class TestStudySearch:
         """Test that search with text query returns results."""
         response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"q": "diabetes", "model": "gpt-5", "limit": 10},
         )
 
@@ -179,7 +179,7 @@ class TestStudySearch:
         # Get first page
         response1 = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 5, "offset": 0},
         )
 
@@ -189,7 +189,7 @@ class TestStudySearch:
         # Get second page
         response2 = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 5, "offset": 5},
         )
 
@@ -209,7 +209,7 @@ class TestStudySearch:
         """Test that search validates limit parameter."""
         response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"limit": 200},  # Exceeds max of 100
         )
 
@@ -231,7 +231,7 @@ class TestCompleteSearchFlow:
         # Step 1: Get trait suggestions
         autocomplete_response = make_api_request(
             api_client,
-            "/api/traits/autocomplete",
+            "/traits/autocomplete",
             params={"q": "body", "limit": 5},
         )
 
@@ -245,7 +245,7 @@ class TestCompleteSearchFlow:
         # Step 2: Search studies by trait
         search_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"trait": traits[0], "model": "gpt-5", "limit": 5},
         )
 
@@ -259,7 +259,7 @@ class TestCompleteSearchFlow:
         pmid = studies[0]["pmid"]
         extraction_response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/extraction",
+            f"/studies/{pmid}/extraction",
             params={"model": "gpt-5"},
         )
 
@@ -278,7 +278,7 @@ class TestCompleteSearchFlow:
         # Step 1: Search for studies by title
         autocomplete_response = make_api_request(
             api_client,
-            "/api/studies/autocomplete",
+            "/studies/autocomplete",
             params={"q": "mendelian", "limit": 5},
         )
 
@@ -293,7 +293,7 @@ class TestCompleteSearchFlow:
         pmid = studies[0]["pmid"]
         extraction_response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/extraction",
+            f"/studies/{pmid}/extraction",
             params={"model": "gpt-5"},
         )
 

@@ -122,7 +122,7 @@ health:
     echo "Checking service health..."
     echo ""
     echo "=== API Health ==="
-    api_response=$(curl -sf http://localhost:8000/api/health 2>/dev/null) && {
+    api_response=$(curl -sf http://localhost:8000/health 2>/dev/null) && {
         echo "API is healthy"
         echo "Response: $api_response"
     } || echo "API not accessible"

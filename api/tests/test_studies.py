@@ -4,7 +4,7 @@ import pytest
 from httpx import AsyncClient
 
 
-# ==== GET /api/studies tests ====
+# ==== GET /studies tests ====
 
 
 @pytest.mark.asyncio
@@ -13,7 +13,7 @@ async def test_list_studies_success(
     mock_vector_store,
 ):
     """Test successful study list retrieval."""
-    response = await client.get("/api/studies")
+    response = await client.get("/studies")
 
     assert response.status_code == 200
     data = response.json()
@@ -34,7 +34,7 @@ async def test_list_studies_with_query(
     mock_vector_store,
 ):
     """Test study list with search query."""
-    response = await client.get("/api/studies?q=diabetes")
+    response = await client.get("/studies?q=diabetes")
 
     assert response.status_code == 200
 
@@ -49,7 +49,7 @@ async def test_list_studies_with_trait_filter(
     mock_vector_store,
 ):
     """Test study list filtered by trait."""
-    response = await client.get("/api/studies?trait=body%20mass%20index")
+    response = await client.get("/studies?trait=body%20mass%20index")
 
     assert response.status_code == 200
 
@@ -64,7 +64,7 @@ async def test_list_studies_with_model_filter(
     mock_vector_store,
 ):
     """Test study list filtered by model."""
-    response = await client.get("/api/studies?model=gpt-4o")
+    response = await client.get("/studies?model=gpt-4o")
 
     assert response.status_code == 200
 
@@ -79,7 +79,7 @@ async def test_list_studies_pagination(
     mock_vector_store,
 ):
     """Test study list pagination."""
-    response = await client.get("/api/studies?limit=50&offset=100")
+    response = await client.get("/studies?limit=50&offset=100")
 
     assert response.status_code == 200
     data = response.json()
@@ -99,12 +99,12 @@ async def test_list_studies_limit_validation(
     mock_vector_store,
 ):
     """Test study list limit validation (max 100)."""
-    response = await client.get("/api/studies?limit=150")
+    response = await client.get("/studies?limit=150")
 
     assert response.status_code == 422  # Validation error
 
 
-# ==== GET /api/studies/{pmid}/extraction tests ====
+# ==== GET /studies/{pmid}/extraction tests ====
 
 
 @pytest.mark.asyncio
@@ -113,7 +113,7 @@ async def test_get_extraction_success(
     mock_vector_store,
 ):
     """Test successful extraction retrieval."""
-    response = await client.get("/api/studies/12345678/extraction")
+    response = await client.get("/studies/12345678/extraction")
 
     assert response.status_code == 200
     data = response.json()
@@ -136,9 +136,7 @@ async def test_get_extraction_with_model(
     mock_vector_store,
 ):
     """Test extraction retrieval with specific model."""
-    response = await client.get(
-        "/api/studies/12345678/extraction?model=gpt-4o"
-    )
+    response = await client.get("/studies/12345678/extraction?model=gpt-4o")
 
     assert response.status_code == 200
 
@@ -156,14 +154,14 @@ async def test_get_extraction_not_found(
     """Test extraction retrieval for non-existent study."""
     mock_vector_store.get_study_extraction.return_value = None
 
-    response = await client.get("/api/studies/99999999/extraction")
+    response = await client.get("/studies/99999999/extraction")
 
     assert response.status_code == 404
     data = response.json()
     assert "not found" in data["detail"].lower()
 
 
-# ==== GET /api/traits/autocomplete tests ====
+# ==== GET /traits/autocomplete tests ====
 
 
 @pytest.mark.asyncio
@@ -172,7 +170,7 @@ async def test_autocomplete_traits_success(
     mock_vector_store,
 ):
     """Test successful trait autocomplete."""
-    response = await client.get("/api/traits/autocomplete?q=body")
+    response = await client.get("/traits/autocomplete?q=body")
 
     assert response.status_code == 200
     data = response.json()
@@ -189,7 +187,7 @@ async def test_autocomplete_traits_min_length(
     mock_vector_store,
 ):
     """Test trait autocomplete minimum length validation."""
-    response = await client.get("/api/traits/autocomplete?q=b")
+    response = await client.get("/traits/autocomplete?q=b")
 
     assert response.status_code == 422  # Validation error - min_length=2
 
@@ -200,7 +198,7 @@ async def test_autocomplete_traits_custom_limit(
     mock_vector_store,
 ):
     """Test trait autocomplete with custom limit."""
-    response = await client.get("/api/traits/autocomplete?q=body&limit=5")
+    response = await client.get("/traits/autocomplete?q=body&limit=5")
 
     assert response.status_code == 200
 
@@ -209,7 +207,7 @@ async def test_autocomplete_traits_custom_limit(
     assert call_args.kwargs["limit"] == 5
 
 
-# ==== GET /api/studies/autocomplete tests ====
+# ==== GET /studies/autocomplete tests ====
 
 
 @pytest.mark.asyncio
@@ -218,7 +216,7 @@ async def test_autocomplete_studies_success(
     mock_vector_store,
 ):
     """Test successful study autocomplete."""
-    response = await client.get("/api/studies/autocomplete?q=diabetes")
+    response = await client.get("/studies/autocomplete?q=diabetes")
 
     assert response.status_code == 200
     data = response.json()
@@ -235,12 +233,12 @@ async def test_autocomplete_studies_min_length(
     mock_vector_store,
 ):
     """Test study autocomplete minimum length validation."""
-    response = await client.get("/api/studies/autocomplete?q=d")
+    response = await client.get("/studies/autocomplete?q=d")
 
     assert response.status_code == 422  # Validation error - min_length=2
 
 
-# ==== GET /api/statistics tests ====
+# ==== GET /statistics tests ====
 
 
 @pytest.mark.asyncio
@@ -249,7 +247,7 @@ async def test_get_statistics_success(
     mock_statistics,
 ):
     """Test successful statistics retrieval."""
-    response = await client.get("/api/statistics")
+    response = await client.get("/statistics")
 
     assert response.status_code == 200
     data = response.json()

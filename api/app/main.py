@@ -49,9 +49,9 @@ app = FastAPI(
     title="MR-KG API",
     description="API for Mendelian Randomization Knowledge Graph",
     version="0.1.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
-    openapi_url="/api/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
 
 # ---- Configure CORS ----
@@ -64,8 +64,8 @@ app.add_middleware(
 )
 
 # ---- Include routers ----
-app.include_router(studies.router, prefix="/api")
-app.include_router(similar.router, prefix="/api")
+app.include_router(studies.router)
+app.include_router(similar.router)
 
 
 # ==== Exception handlers ====
@@ -113,7 +113,7 @@ async def database_error_handler(
 # ==== Health check endpoint ====
 
 
-@app.get("/api/health", response_model=HealthResponse, tags=["health"])
+@app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check() -> HealthResponse:
     """Health check endpoint.
 

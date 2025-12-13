@@ -104,19 +104,19 @@ echo ""
 
 # ---- Check API health ----
 log_info "Checking API health..."
-check_endpoint "API health endpoint" "$API_URL/api/health"
+check_endpoint "API health endpoint" "$API_URL/health"
 
 # ---- Check API documentation ----
 log_info "Checking API documentation..."
-check_endpoint "API OpenAPI docs" "$API_URL/api/docs"
+check_endpoint "API OpenAPI docs" "$API_URL/docs"
 
 # ---- Check database connectivity via health endpoint ----
 log_info "Checking database connectivity..."
-check_json_response "Database status in health" "$API_URL/api/health" "databases"
+check_json_response "Database status in health" "$API_URL/health" "databases"
 
 # ---- Check API endpoints ----
 log_info "Checking API endpoints..."
-check_endpoint "Studies endpoint" "$API_URL/api/studies"
+check_endpoint "Studies endpoint" "$API_URL/studies"
 
 # ---- Check webapp health ----
 log_info "Checking webapp health..."

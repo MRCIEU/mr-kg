@@ -41,7 +41,7 @@ This starts both the API and webapp services in Docker containers.
 Access the services:
 
 - Webapp: http://localhost:8501
-- API docs: http://localhost:8000/api/docs
+- API docs: http://localhost:8000/docs
 
 Note: The `just dev` command behavior depends on your current directory:
 
@@ -150,7 +150,7 @@ Services are accessible at:
 
 - Webapp: http://localhost:8501
 - API: http://localhost:8000
-- API docs: http://localhost:8000/api/docs
+- API docs: http://localhost:8000/docs
 
 ### Local development (without Docker)
 
@@ -484,7 +484,7 @@ incorrect relative paths.
 4. Check API health:
 
    ```bash
-   curl http://localhost:8000/api/health
+   curl http://localhost:8000/health
    ```
 
    All databases should show `true`.

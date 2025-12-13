@@ -35,9 +35,9 @@ will need to connect to it separately.
 
 Interactive API documentation is available at:
 
-- Swagger UI: http://localhost:8000/api/docs
-- ReDoc: http://localhost:8000/api/redoc
-- OpenAPI spec: http://localhost:8000/api/openapi.json
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+- OpenAPI spec: http://localhost:8000/openapi.json
 
 ## Endpoints overview
 
@@ -45,28 +45,28 @@ Interactive API documentation is available at:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/studies` | GET | Search and list studies with optional filtering |
-| `/api/studies/{pmid}/extraction` | GET | Get extraction results for a specific study |
-| `/api/studies/autocomplete` | GET | Get study autocomplete suggestions |
-| `/api/traits/autocomplete` | GET | Get trait autocomplete suggestions |
-| `/api/statistics` | GET | Get resource-wide statistics |
+| `/studies` | GET | Search and list studies with optional filtering |
+| `/studies/{pmid}/extraction` | GET | Get extraction results for a specific study |
+| `/studies/autocomplete` | GET | Get study autocomplete suggestions |
+| `/traits/autocomplete` | GET | Get trait autocomplete suggestions |
+| `/statistics` | GET | Get resource-wide statistics |
 
 ### Similarity
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/studies/{pmid}/similar/trait` | GET | Get similar studies by trait profile |
-| `/api/studies/{pmid}/similar/evidence` | GET | Get similar studies by evidence profile |
+| `/studies/{pmid}/similar/trait` | GET | Get similar studies by trait profile |
+| `/studies/{pmid}/similar/evidence` | GET | Get similar studies by evidence profile |
 
 ### Health
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/health` | GET | Health check with database status |
+| `/health` | GET | Health check with database status |
 
 ## Endpoint reference
 
-### GET /api/studies
+### GET /studies
 
 Search and list studies with optional filtering.
 
@@ -78,7 +78,7 @@ Search and list studies with optional filtering.
 | `limit` | int | No | 20 | 1-100 | Maximum results to return |
 | `offset` | int | No | 0 | >= 0 | Pagination offset |
 
-### GET /api/studies/{pmid}/extraction
+### GET /studies/{pmid}/extraction
 
 Get extraction results for a specific study.
 Returns 404 if the study is not found for the specified model.
@@ -88,7 +88,7 @@ Returns 404 if the study is not found for the specified model.
 | `pmid` | string | Yes | - | PubMed ID (path parameter) |
 | `model` | string | No | gpt-5 | Extraction model |
 
-### GET /api/studies/{pmid}/similar/trait
+### GET /studies/{pmid}/similar/trait
 
 Get similar studies by trait profile similarity.
 Returns studies ranked by semantic similarity of trait embeddings.
@@ -99,7 +99,7 @@ Returns studies ranked by semantic similarity of trait embeddings.
 | `model` | string | No | gpt-5 | - | Extraction model |
 | `limit` | int | No | 10 | 1-50 | Maximum similar studies |
 
-### GET /api/studies/{pmid}/similar/evidence
+### GET /studies/{pmid}/similar/evidence
 
 Get similar studies by evidence profile similarity.
 Returns studies ranked by direction concordance of matched exposure-outcome pairs.
@@ -110,7 +110,7 @@ Returns studies ranked by direction concordance of matched exposure-outcome pair
 | `model` | string | No | gpt-5 | - | Extraction model |
 | `limit` | int | No | 10 | 1-50 | Maximum similar studies |
 
-### GET /api/traits/autocomplete
+### GET /traits/autocomplete
 
 Get trait autocomplete suggestions using prefix matching.
 
@@ -119,7 +119,7 @@ Get trait autocomplete suggestions using prefix matching.
 | `q` | string | Yes | - | min 2 chars | Search term for prefix match |
 | `limit` | int | No | 20 | 1-50 | Maximum suggestions |
 
-### GET /api/studies/autocomplete
+### GET /studies/autocomplete
 
 Get study autocomplete suggestions using substring matching in titles.
 
@@ -128,12 +128,12 @@ Get study autocomplete suggestions using substring matching in titles.
 | `q` | string | Yes | - | min 2 chars | Search term for substring match |
 | `limit` | int | No | 20 | 1-50 | Maximum suggestions |
 
-### GET /api/statistics
+### GET /statistics
 
 Get resource-wide statistics.
 No parameters required.
 
-### GET /api/health
+### GET /health
 
 Health check endpoint returning database connectivity status.
 No parameters required.

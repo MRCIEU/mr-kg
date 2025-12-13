@@ -51,7 +51,7 @@ Adjust these as needed for your workload.
 
 Both services include health check endpoints:
 
-- API: http://localhost:8000/api/health
+- API: http://localhost:8000/health
 - Webapp: http://localhost:8501/_stcore/health
 
 Check service health:

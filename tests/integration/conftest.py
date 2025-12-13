@@ -35,7 +35,7 @@ def is_api_available() -> bool:
     base_url = get_api_base_url()
     try:
         with httpx.Client(timeout=5.0) as client:
-            response = client.get(f"{base_url}/api/health")
+            response = client.get(f"{base_url}/health")
             if response.status_code == 200:
                 data = response.json()
                 return data.get("status") in ("healthy", "degraded")

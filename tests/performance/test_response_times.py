@@ -105,26 +105,26 @@ def run_autocomplete_tests(tester: ResponseTimeTest) -> None:
     # ---- Trait autocomplete ----
     tester.measure(
         "Trait autocomplete (short)",
-        "/api/traits/autocomplete",
+        "/traits/autocomplete",
         params={"q": "body", "limit": 20},
     )
 
     tester.measure(
         "Trait autocomplete (longer)",
-        "/api/traits/autocomplete",
+        "/traits/autocomplete",
         params={"q": "blood pressure", "limit": 20},
     )
 
     # ---- Study autocomplete ----
     tester.measure(
         "Study autocomplete (short)",
-        "/api/studies/autocomplete",
+        "/studies/autocomplete",
         params={"q": "diabetes", "limit": 20},
     )
 
     tester.measure(
         "Study autocomplete (longer)",
-        "/api/studies/autocomplete",
+        "/studies/autocomplete",
         params={"q": "mendelian randomization", "limit": 20},
     )
 
@@ -136,21 +136,21 @@ def run_search_tests(tester: ResponseTimeTest) -> None:
     # ---- Basic search ----
     tester.measure(
         "Study search (no filter)",
-        "/api/studies",
+        "/studies",
         params={"model": "gpt-5", "limit": 20},
     )
 
     # ---- Text query search ----
     tester.measure(
         "Study search (text query)",
-        "/api/studies",
+        "/studies",
         params={"q": "diabetes", "model": "gpt-5", "limit": 20},
     )
 
     # ---- Trait filter search ----
     tester.measure(
         "Study search (trait filter)",
-        "/api/studies",
+        "/studies",
         params={"trait": "body mass index", "model": "gpt-5", "limit": 20},
     )
 
@@ -165,7 +165,7 @@ def run_extraction_tests(tester: ResponseTimeTest, pmid: str | None) -> None:
 
     tester.measure(
         "Get extraction",
-        f"/api/studies/{pmid}/extraction",
+        f"/studies/{pmid}/extraction",
         params={"model": "gpt-5"},
     )
 
@@ -181,26 +181,26 @@ def run_similarity_tests(tester: ResponseTimeTest, pmid: str | None) -> None:
     # ---- Trait similarity ----
     tester.measure(
         "Trait similarity (limit 10)",
-        f"/api/studies/{pmid}/similar/trait",
+        f"/studies/{pmid}/similar/trait",
         params={"model": "gpt-5", "limit": 10},
     )
 
     tester.measure(
         "Trait similarity (limit 50)",
-        f"/api/studies/{pmid}/similar/trait",
+        f"/studies/{pmid}/similar/trait",
         params={"model": "gpt-5", "limit": 50},
     )
 
     # ---- Evidence similarity ----
     tester.measure(
         "Evidence similarity (limit 10)",
-        f"/api/studies/{pmid}/similar/evidence",
+        f"/studies/{pmid}/similar/evidence",
         params={"model": "gpt-5", "limit": 10},
     )
 
     tester.measure(
         "Evidence similarity (limit 50)",
-        f"/api/studies/{pmid}/similar/evidence",
+        f"/studies/{pmid}/similar/evidence",
         params={"model": "gpt-5", "limit": 50},
     )
 
@@ -211,7 +211,7 @@ def run_statistics_tests(tester: ResponseTimeTest) -> None:
 
     tester.measure(
         "Get statistics",
-        "/api/statistics",
+        "/statistics",
     )
 
 
@@ -230,7 +230,7 @@ def get_sample_pmid(base_url: str) -> str | None:
     try:
         with httpx.Client(base_url=base_url, timeout=10.0) as client:
             response = client.get(
-                "/api/studies",
+                "/studies",
                 params={"model": "gpt-5", "limit": 1},
             )
             if response.status_code == 200:
@@ -254,7 +254,7 @@ def check_api_available(base_url: str) -> bool:
     """
     try:
         with httpx.Client(base_url=base_url, timeout=5.0) as client:
-            response = client.get("/api/health")
+            response = client.get("/health")
             return response.status_code == 200
     except Exception:
         return False

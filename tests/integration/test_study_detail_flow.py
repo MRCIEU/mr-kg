@@ -25,7 +25,7 @@ class TestGetExtraction:
         # First, get a valid PMID from the studies list
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 1},
         )
 
@@ -41,7 +41,7 @@ class TestGetExtraction:
         # Get extraction
         response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/extraction",
+            f"/studies/{pmid}/extraction",
             params={"model": "gpt-5"},
         )
 
@@ -65,7 +65,7 @@ class TestGetExtraction:
         """Test extraction returns 404 for invalid PMID."""
         response = make_api_request(
             api_client,
-            "/api/studies/00000000/extraction",
+            "/studies/00000000/extraction",
             params={"model": "gpt-5"},
         )
 
@@ -82,7 +82,7 @@ class TestGetExtraction:
         # Get a valid PMID first
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 1},
         )
 
@@ -98,7 +98,7 @@ class TestGetExtraction:
         # Test with default model
         response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/extraction",
+            f"/studies/{pmid}/extraction",
         )
 
         assert response.status_code == 200
@@ -119,7 +119,7 @@ class TestTraitSimilarity:
         # Get a valid PMID
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 1},
         )
 
@@ -135,7 +135,7 @@ class TestTraitSimilarity:
         # Get trait similarity
         response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/similar/trait",
+            f"/studies/{pmid}/similar/trait",
             params={"model": "gpt-5", "limit": 10},
         )
 
@@ -171,7 +171,7 @@ class TestTraitSimilarity:
         """Test that trait similarity respects limit parameter."""
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 1},
         )
 
@@ -186,7 +186,7 @@ class TestTraitSimilarity:
 
         response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/similar/trait",
+            f"/studies/{pmid}/similar/trait",
             params={"model": "gpt-5", "limit": 3},
         )
 
@@ -213,7 +213,7 @@ class TestEvidenceSimilarity:
         # Get a valid PMID
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 1},
         )
 
@@ -229,7 +229,7 @@ class TestEvidenceSimilarity:
         # Get evidence similarity
         response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/similar/evidence",
+            f"/studies/{pmid}/similar/evidence",
             params={"model": "gpt-5", "limit": 10},
         )
 
@@ -277,7 +277,7 @@ class TestCompleteStudyDetailFlow:
         # Step 1: Get a study
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 5},
         )
 
@@ -293,7 +293,7 @@ class TestCompleteStudyDetailFlow:
         # Step 2: Get extraction
         extraction_response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/extraction",
+            f"/studies/{pmid}/extraction",
             params={"model": "gpt-5"},
         )
 
@@ -304,7 +304,7 @@ class TestCompleteStudyDetailFlow:
         # Step 3: Get trait similarity
         trait_sim_response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/similar/trait",
+            f"/studies/{pmid}/similar/trait",
             params={"model": "gpt-5"},
         )
 
@@ -314,7 +314,7 @@ class TestCompleteStudyDetailFlow:
         # Step 4: Get evidence similarity
         evidence_sim_response = make_api_request(
             api_client,
-            f"/api/studies/{pmid}/similar/evidence",
+            f"/studies/{pmid}/similar/evidence",
             params={"model": "gpt-5"},
         )
 
@@ -329,7 +329,7 @@ class TestCompleteStudyDetailFlow:
         # Get a study with trait similarities
         list_response = make_api_request(
             api_client,
-            "/api/studies",
+            "/studies",
             params={"model": "gpt-5", "limit": 10},
         )
 
@@ -343,7 +343,7 @@ class TestCompleteStudyDetailFlow:
         for study in studies:
             sim_response = make_api_request(
                 api_client,
-                f"/api/studies/{study['pmid']}/similar/trait",
+                f"/studies/{study['pmid']}/similar/trait",
                 params={"model": "gpt-5", "limit": 1},
             )
 
@@ -359,7 +359,7 @@ class TestCompleteStudyDetailFlow:
         # Navigate to the similar study
         extraction_response = make_api_request(
             api_client,
-            f"/api/studies/{similar_pmid}/extraction",
+            f"/studies/{similar_pmid}/extraction",
             params={"model": "gpt-5"},
         )
 
@@ -382,7 +382,7 @@ class TestStatistics:
         """Test that statistics endpoint returns data."""
         response = make_api_request(
             api_client,
-            "/api/statistics",
+            "/statistics",
         )
 
         assert response.status_code == 200

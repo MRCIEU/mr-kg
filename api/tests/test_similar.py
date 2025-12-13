@@ -4,7 +4,7 @@ import pytest
 from httpx import AsyncClient
 
 
-# ==== GET /api/studies/{pmid}/similar/trait tests ====
+# ==== GET /studies/{pmid}/similar/trait tests ====
 
 
 @pytest.mark.asyncio
@@ -13,7 +13,7 @@ async def test_get_similar_by_trait_success(
     mock_trait_profile,
 ):
     """Test successful trait similarity retrieval."""
-    response = await client.get("/api/studies/12345678/similar/trait")
+    response = await client.get("/studies/12345678/similar/trait")
 
     assert response.status_code == 200
     data = response.json()
@@ -34,9 +34,7 @@ async def test_get_similar_by_trait_with_model(
     mock_trait_profile,
 ):
     """Test trait similarity with specific model."""
-    response = await client.get(
-        "/api/studies/12345678/similar/trait?model=gpt-4o"
-    )
+    response = await client.get("/studies/12345678/similar/trait?model=gpt-4o")
 
     assert response.status_code == 200
 
@@ -51,7 +49,7 @@ async def test_get_similar_by_trait_with_limit(
     mock_trait_profile,
 ):
     """Test trait similarity with custom limit."""
-    response = await client.get("/api/studies/12345678/similar/trait?limit=5")
+    response = await client.get("/studies/12345678/similar/trait?limit=5")
 
     assert response.status_code == 200
 
@@ -66,9 +64,7 @@ async def test_get_similar_by_trait_limit_validation(
     mock_trait_profile,
 ):
     """Test trait similarity limit validation (max 50)."""
-    response = await client.get(
-        "/api/studies/12345678/similar/trait?limit=100"
-    )
+    response = await client.get("/studies/12345678/similar/trait?limit=100")
 
     assert response.status_code == 422  # Validation error
 
@@ -81,7 +77,7 @@ async def test_get_similar_by_trait_not_found(
     """Test trait similarity for non-existent study."""
     mock_trait_profile.get_similar_by_trait.return_value = None
 
-    response = await client.get("/api/studies/99999999/similar/trait")
+    response = await client.get("/studies/99999999/similar/trait")
 
     assert response.status_code == 404
     data = response.json()
@@ -102,7 +98,7 @@ async def test_get_similar_by_trait_empty_results(
         "similar_studies": [],
     }
 
-    response = await client.get("/api/studies/12345678/similar/trait")
+    response = await client.get("/studies/12345678/similar/trait")
 
     assert response.status_code == 200
     data = response.json()
@@ -115,7 +111,7 @@ async def test_get_similar_by_trait_response_structure(
     mock_trait_profile,
 ):
     """Test trait similarity response structure."""
-    response = await client.get("/api/studies/12345678/similar/trait")
+    response = await client.get("/studies/12345678/similar/trait")
 
     assert response.status_code == 200
     data = response.json()
@@ -132,7 +128,7 @@ async def test_get_similar_by_trait_response_structure(
         assert isinstance(study["trait_count"], int)
 
 
-# ==== GET /api/studies/{pmid}/similar/evidence tests ====
+# ==== GET /studies/{pmid}/similar/evidence tests ====
 
 
 @pytest.mark.asyncio
@@ -141,7 +137,7 @@ async def test_get_similar_by_evidence_success(
     mock_evidence_profile,
 ):
     """Test successful evidence similarity retrieval."""
-    response = await client.get("/api/studies/12345678/similar/evidence")
+    response = await client.get("/studies/12345678/similar/evidence")
 
     assert response.status_code == 200
     data = response.json()
@@ -163,7 +159,7 @@ async def test_get_similar_by_evidence_with_model(
 ):
     """Test evidence similarity with specific model."""
     response = await client.get(
-        "/api/studies/12345678/similar/evidence?model=gpt-4o"
+        "/studies/12345678/similar/evidence?model=gpt-4o"
     )
 
     assert response.status_code == 200
@@ -179,9 +175,7 @@ async def test_get_similar_by_evidence_with_limit(
     mock_evidence_profile,
 ):
     """Test evidence similarity with custom limit."""
-    response = await client.get(
-        "/api/studies/12345678/similar/evidence?limit=5"
-    )
+    response = await client.get("/studies/12345678/similar/evidence?limit=5")
 
     assert response.status_code == 200
 
@@ -196,9 +190,7 @@ async def test_get_similar_by_evidence_limit_validation(
     mock_evidence_profile,
 ):
     """Test evidence similarity limit validation (max 50)."""
-    response = await client.get(
-        "/api/studies/12345678/similar/evidence?limit=100"
-    )
+    response = await client.get("/studies/12345678/similar/evidence?limit=100")
 
     assert response.status_code == 422  # Validation error
 
@@ -211,7 +203,7 @@ async def test_get_similar_by_evidence_not_found(
     """Test evidence similarity for non-existent study."""
     mock_evidence_profile.get_similar_by_evidence.return_value = None
 
-    response = await client.get("/api/studies/99999999/similar/evidence")
+    response = await client.get("/studies/99999999/similar/evidence")
 
     assert response.status_code == 404
     data = response.json()
@@ -232,7 +224,7 @@ async def test_get_similar_by_evidence_empty_results(
         "similar_studies": [],
     }
 
-    response = await client.get("/api/studies/12345678/similar/evidence")
+    response = await client.get("/studies/12345678/similar/evidence")
 
     assert response.status_code == 200
     data = response.json()
@@ -245,7 +237,7 @@ async def test_get_similar_by_evidence_response_structure(
     mock_evidence_profile,
 ):
     """Test evidence similarity response structure."""
-    response = await client.get("/api/studies/12345678/similar/evidence")
+    response = await client.get("/studies/12345678/similar/evidence")
 
     assert response.status_code == 200
     data = response.json()
@@ -275,7 +267,7 @@ async def test_health_check_all_healthy(
     mock_database_connections,
 ):
     """Test health check when all databases are healthy."""
-    response = await client.get("/api/health")
+    response = await client.get("/health")
 
     assert response.status_code == 200
     data = response.json()
@@ -297,7 +289,7 @@ async def test_health_check_degraded(
         "Connection failed"
     )
 
-    response = await client.get("/api/health")
+    response = await client.get("/health")
 
     assert response.status_code == 200
     data = response.json()
