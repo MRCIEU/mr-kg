@@ -19,7 +19,7 @@ def get_api_base_url() -> str:
     Returns:
         API base URL string
     """
-    res = os.environ.get("API_URL", "http://localhost:8000")
+    res = os.environ.get("API_URL", "http://localhost:8000/mr-kg/api")
     return res
 
 

@@ -122,13 +122,13 @@ health:
     echo "Checking service health..."
     echo ""
     echo "=== API Health ==="
-    api_response=$(curl -sf http://localhost:8000/health 2>/dev/null) && {
+    api_response=$(curl -sf http://localhost:8000/mr-kg/api/health 2>/dev/null) && {
         echo "API is healthy"
         echo "Response: $api_response"
     } || echo "API not accessible"
     echo ""
     echo "=== Webapp Health ==="
-    curl -sf http://localhost:8501/_stcore/health > /dev/null 2>&1 && echo "Webapp is healthy" || echo "Webapp not accessible"
+    curl -sf http://localhost:8501/mr-kg/_stcore/health > /dev/null 2>&1 && echo "Webapp is healthy" || echo "Webapp not accessible"
 
 # View status of Docker containers
 [group('health')]

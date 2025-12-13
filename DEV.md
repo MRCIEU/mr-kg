@@ -40,8 +40,8 @@ This starts both the API and webapp services in Docker containers.
 
 Access the services:
 
-- Webapp: http://localhost:8501
-- API docs: http://localhost:8000/docs
+- Webapp: http://localhost:8501/mr-kg
+- API docs: http://localhost:8000/mr-kg/api/docs
 
 Note: The `just dev` command behavior depends on your current directory:
 
@@ -148,9 +148,9 @@ just dev-down
 
 Services are accessible at:
 
-- Webapp: http://localhost:8501
-- API: http://localhost:8000
-- API docs: http://localhost:8000/docs
+- Webapp: http://localhost:8501/mr-kg
+- API: http://localhost:8000/mr-kg/api
+- API docs: http://localhost:8000/mr-kg/api/docs
 
 ### Local development (without Docker)
 
@@ -321,7 +321,7 @@ They require the API service to be running:
 just dev
 
 # Run integration tests (from project root)
-API_URL=http://localhost:8000 python -m pytest tests/integration -v
+API_URL=http://localhost:8000/mr-kg/api python -m pytest tests/integration -v
 ```
 
 Integration tests are automatically skipped if the API is unavailable.
@@ -484,7 +484,7 @@ incorrect relative paths.
 4. Check API health:
 
    ```bash
-   curl http://localhost:8000/health
+   curl http://localhost:8000/mr-kg/api/health
    ```
 
    All databases should show `true`.

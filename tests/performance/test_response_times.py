@@ -24,7 +24,7 @@ import httpx
 
 def get_api_base_url() -> str:
     """Get API base URL from environment or default."""
-    return os.environ.get("API_URL", "http://localhost:8000")
+    return os.environ.get("API_URL", "http://localhost:8000/mr-kg/api")
 
 
 # ==== Test runner ====

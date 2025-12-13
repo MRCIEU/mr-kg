@@ -45,7 +45,7 @@ address = "0.0.0.0"
 port = 8501
 
 # The base path for the URL where Streamlit should be reachable.
-baseUrlPath = ""
+baseUrlPath = "/mr-kg"
 
 # Enables support for Cross-Origin Resource Sharing (CORS) protection, for
 # added security.

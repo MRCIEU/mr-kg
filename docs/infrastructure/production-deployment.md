@@ -28,8 +28,8 @@ just prod-down
 
 Access the services:
 
-- Webapp: http://localhost:8501
-- API: http://localhost:8000
+- Webapp: http://localhost:8501/mr-kg
+- API: http://localhost:8000/mr-kg/api
 
 ### Resource limits
 
@@ -51,8 +51,8 @@ Adjust these as needed for your workload.
 
 Both services include health check endpoints:
 
-- API: http://localhost:8000/health
-- Webapp: http://localhost:8501/_stcore/health
+- API: http://localhost:8000/mr-kg/api/health
+- Webapp: http://localhost:8501/mr-kg/_stcore/health
 
 Check service health:
 

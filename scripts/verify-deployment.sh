@@ -15,8 +15,8 @@ set -euo pipefail
 
 # ==== Configuration ====
 
-API_URL="${API_URL:-http://localhost:8000}"
-WEBAPP_URL="${WEBAPP_URL:-http://localhost:8501}"
+API_URL="${API_URL:-http://localhost:8000/mr-kg/api}"
+WEBAPP_URL="${WEBAPP_URL:-http://localhost:8501/mr-kg}"
 TIMEOUT=10
 PASSED=0
 FAILED=0
