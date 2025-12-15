@@ -50,7 +50,7 @@ app = FastAPI(
     description="API for Mendelian Randomization Knowledge Graph",
     version="0.1.0",
     root_path="/mr-kg/api",
-    docs_url="/docs",
+    docs_url="/",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
 )
