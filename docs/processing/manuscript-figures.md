@@ -324,7 +324,7 @@ When updating figures:
 
 ## Related documentation
 
-- Pipeline overview: @pipeline.md
-- Database schema: @db-schema.md
-- Case studies configuration: @../processing/config/case_studies.yml
-- Summary statistics: @summary-statistics.md
+- Pipeline overview: pipeline.md
+- Database schema: db-schema.md
+- Case studies configuration: ../processing/config/case_studies.yml
+- Summary statistics: summary-statistics.md

@@ -7,6 +7,8 @@ information and vector similarity search.
 
 ## Project overview
 
+See README.md for system architecture diagram and component overview.
+
 MR-KG consists of three main components:
 
 - **API (FastAPI)**: RESTful backend providing programmatic access to MR data
@@ -122,8 +124,8 @@ MR-KG services expect local DuckDB databases:
 You can produce these via the processing pipeline.
 See:
 
-- Processing pipeline documentation: @docs/processing/pipeline.md
-- Data structures and schema details: @docs/DATA.md
+- Processing pipeline documentation: docs/processing/pipeline.md
+- Data structures and schema details: docs/DATA.md
 
 ## Development workflows
 
@@ -217,7 +219,7 @@ Key files:
 ### Processing pipeline
 
 The processing pipeline runs data transformations to create the databases.
-See @docs/processing/pipeline.md for detailed documentation.
+See docs/processing/pipeline.md for detailed documentation.
 
 Key commands:
 
@@ -240,13 +242,13 @@ uv run python scripts/main-processing/<script_name>.py
 For HPC batch jobs and embedding generation:
 
 - See scripts/bc4/ for SLURM batch job templates
-- See @docs/processing/trait-profile-similarity.md for trait similarity
+- See docs/processing/trait-profile-similarity.md for trait similarity
 
 ### Common utilities
 
 The src/common_funcs/ directory contains shared utilities used across
 components.
-See @src/common_funcs/README.md for details.
+See src/common_funcs/README.md for details.
 
 ## Docker commands
 
@@ -423,23 +425,23 @@ mr-kg/
 
 ## Component documentation
 
-- API: @api/README.md
-- Webapp: @webapp/README.md
-- Processing pipeline: @docs/processing/pipeline.md
-- Common utilities: @src/common_funcs/README.md
-- Data structure: @docs/DATA.md
-- Key terms and concepts: @docs/GLOSSARY.md
+- API: api/README.md
+- Webapp: webapp/README.md
+- Processing pipeline: docs/processing/pipeline.md
+- Common utilities: src/common_funcs/README.md
+- Data structure: docs/DATA.md
+- Key terms and concepts: docs/GLOSSARY.md
 
 ## Data documentation
 
 For detailed information about the data structure, database schema, and data
 processing:
 
-- Data overview: @docs/DATA.md
-- Vector stores: @docs/processing/databases.md
-- Database schema: @docs/processing/db-schema.md
-- Trait profile similarity: @docs/processing/trait-profile-similarity.md
-- Evidence profile similarity: @docs/processing/evidence-profile-similarity.md
+- Data overview: docs/DATA.md
+- Vector stores: docs/processing/databases.md
+- Database schema: docs/processing/db-schema.md
+- Trait profile similarity: docs/processing/trait-profile-similarity.md
+- Evidence profile similarity: docs/processing/evidence-profile-similarity.md
 
 ## Troubleshooting
 

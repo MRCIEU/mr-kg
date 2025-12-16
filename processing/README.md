@@ -3,7 +3,10 @@
 ETL processing pipeline that creates MR-KG databases from raw LLM results and
 EFO ontology data.
 
-For complete pipeline documentation, see @docs/processing/pipeline.md.
+For project overview and setup instructions, see ../README.md and ../DEV.md.
+
+For complete pipeline documentation, see docs/processing/pipeline.md.
+For data structure information, see docs/DATA.md.
 
 ## Overview
 
@@ -92,7 +95,7 @@ just generate-all-summary-stats
 
 Consolidates statistics from all three databases (vector_store,
 trait_profile, evidence_profile) into CSV files and LaTeX-formatted tables.
-See @docs/processing/summary-statistics.md for complete documentation.
+See docs/processing/summary-statistics.md for complete documentation.
 
 Individual steps:
 
@@ -103,7 +106,7 @@ just generate-manuscript-tables       # LaTeX table generation
 ```
 
 For manual step-by-step execution and detailed documentation, see
-@docs/processing/pipeline.md.
+docs/processing/pipeline.md.
 
 ## Notebooks
 

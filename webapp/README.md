@@ -3,6 +3,8 @@
 Streamlit-based web interface for exploring Mendelian Randomization studies
 with direct DuckDB database access.
 
+For project overview and setup instructions, see @../README.md and @../DEV.md.
+
 ## Quick start
 
 ### Docker (recommended)

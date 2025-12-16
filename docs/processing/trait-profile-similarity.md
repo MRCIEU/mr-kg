@@ -1,6 +1,6 @@
 # Trait profile similarity
 
-See @processing/README.md for complete processing pipeline workflow.
+See processing/README.md for complete processing pipeline workflow.
 
 ## Overview
 
@@ -151,6 +151,6 @@ Each query produces a record containing:
 
 ## See also
 
-- Key terms and concepts: @docs/GLOSSARY.md
-- Evidence profile similarity: @docs/processing/evidence-profile-similarity.md
-- Processing pipeline: @docs/processing/pipeline.md
+- Key terms and concepts: docs/GLOSSARY.md
+- Evidence profile similarity: docs/processing/evidence-profile-similarity.md
+- Processing pipeline: docs/processing/pipeline.md

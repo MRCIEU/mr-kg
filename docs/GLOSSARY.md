@@ -120,7 +120,7 @@ For each query-similar study pair:
    matching through shared EFO term mappings.
    Category-level matching (lowest precision).
 
-See @docs/processing/evidence-profile-similarity.md for how match types are
+See docs/processing/evidence-profile-similarity.md for how match types are
 used in similarity computation.
 
 ### Direction concordance
@@ -172,7 +172,7 @@ The concordance calculation:
    (opposite directions)
 4. Returns `(concordant - discordant) / (concordant + discordant)`
 
-See @docs/processing/evidence-profile-similarity.md for detailed computation
+See docs/processing/evidence-profile-similarity.md for detailed computation
 methodology.
 
 ### Reproducibility tier
@@ -211,7 +211,7 @@ scripts. The tier assignment logic:
 
 Threshold values are configurable in `processing/config/case_studies.yml`.
 
-See @docs/processing/case-studies.md (Case Study 1) for reproducibility
+See docs/processing/case-studies.md (Case Study 1) for reproducibility
 analysis methodology.
 
 ### Trait profile
@@ -234,7 +234,7 @@ compares trait profiles using:
 
 Results are stored in `data/db/trait_profile_db.db`.
 
-See @docs/processing/trait-profile-similarity.md for trait profile similarity
+See docs/processing/trait-profile-similarity.md for trait profile similarity
 methodology.
 
 ### Evidence profile
@@ -252,7 +252,7 @@ Evidence profile similarity differs from trait profile similarity:
 - Evidence profile similarity: How trait relationships behave statistically
   (finding consistency)
 
-See @docs/processing/evidence-profile-similarity.md for evidence profile
+See docs/processing/evidence-profile-similarity.md for evidence profile
 similarity methodology.
 
 ### Evidence profile similarity
@@ -282,7 +282,7 @@ functions:
 
 Results are stored in `data/db/evidence_profile_db.db`.
 
-See @docs/processing/evidence-profile-similarity.md for detailed methodology.
+See docs/processing/evidence-profile-similarity.md for detailed methodology.
 
 ### Trait profile similarity
 
@@ -290,7 +290,7 @@ A quantitative measure of research focus overlap between two studies, computed
 using both semantic similarity (embedding-based) and Jaccard similarity
 (set-based) of their trait profiles.
 
-See @docs/processing/trait-profile-similarity.md for detailed methodology.
+See docs/processing/trait-profile-similarity.md for detailed methodology.
 
 ### Temporal era
 
@@ -323,7 +323,7 @@ across eras (p > 0.5 for all era effects), suggesting methodological
 innovations have enhanced analytical rigor but not addressed root causes of
 discordance (weak instruments, phenotype misalignment).
 
-See @docs/processing/case-studies.md for temporal era usage in case studies.
+See docs/processing/case-studies.md for temporal era usage in case studies.
 
 ### Harmonized effect size
 
@@ -476,9 +476,9 @@ The vector store is constructed by:
 3. Similarity computation scripts: Precompute cosine similarities between all
    trait-EFO pairs above a threshold
 
-The database schema is documented in @docs/processing/db-schema.md.
+The database schema is documented in docs/processing/db-schema.md.
 
-See @docs/processing/databases.md for database schema and @docs/DATA.md for
+See docs/processing/databases.md for database schema and docs/DATA.md for
 data structure details.
 
 ## Analysis-specific terms
@@ -529,9 +529,9 @@ sophistication.
 
 ## See also
 
-- Data structure: @docs/DATA.md
-- Processing pipeline: @docs/processing/pipeline.md
-- Case study analyses: @docs/processing/case-studies.md
-- Database schema: @docs/processing/db-schema.md
-- Trait profile similarity: @docs/processing/trait-profile-similarity.md
-- Evidence profile similarity: @docs/processing/evidence-profile-similarity.md
+- Data structure: docs/DATA.md
+- Processing pipeline: docs/processing/pipeline.md
+- Case study analyses: docs/processing/case-studies.md
+- Database schema: docs/processing/db-schema.md
+- Trait profile similarity: docs/processing/trait-profile-similarity.md
+- Evidence profile similarity: docs/processing/evidence-profile-similarity.md

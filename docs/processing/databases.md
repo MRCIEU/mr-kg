@@ -1,6 +1,6 @@
 # Vector stores and database architecture
 
-See @processing/README.md for complete pipeline overview and workflow.
+See processing/README.md for complete pipeline overview and workflow.
 
 ## Overview
 
@@ -25,7 +25,7 @@ search.
 - Model result querying by PMID and extraction model
 - Cosine similarity computation using DuckDB's built-in functions
 
-**Schema reference**: See @docs/processing/db-schema.md for complete
+**Schema reference**: See docs/processing/db-schema.md for complete
 table definitions, indexes, and views.
 
 #### Tables
@@ -272,10 +272,10 @@ study similarity profiles for network analysis.
 - Both semantic and Jaccard similarity metrics
 - Support for study network construction
 
-**Concepts**: See @docs/processing/trait-profile-similarity.md for details on
+**Concepts**: See docs/processing/trait-profile-similarity.md for details on
 trait profile similarity methodology.
 
-**Schema reference**: See @docs/processing/db-schema.md for complete
+**Schema reference**: See docs/processing/db-schema.md for complete
 table definitions, indexes, and views.
 
 #### Tables
@@ -448,10 +448,10 @@ quantitative causal evidence patterns across MR studies.
 - Quality-weighted composite scores
 - Support for temporal and data quality analysis
 
-**Concepts**: See @docs/processing/evidence-profile-similarity.md for details on
+**Concepts**: See docs/processing/evidence-profile-similarity.md for details on
 evidence profile similarity methodology and metrics.
 
-**Schema reference**: See @docs/processing/db-schema.md for complete
+**Schema reference**: See docs/processing/db-schema.md for complete
 table definitions, indexes, and views.
 
 #### Tables
@@ -675,7 +675,7 @@ just build-trait-profile-db
 just build-evidence-profile-db
 ```
 
-See @processing/README.md for complete build workflow and prerequisites.
+See processing/README.md for complete build workflow and prerequisites.
 
 ### Querying databases
 
@@ -709,4 +709,4 @@ just generate-schema-docs
 
 ## Data sources
 
-See @docs/DATA.md for complete data structure documentation.
+See docs/DATA.md for complete data structure documentation.

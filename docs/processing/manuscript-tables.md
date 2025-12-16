@@ -371,8 +371,8 @@ LaTeX tables include header comments with customization suggestions:
 
 ## Related documentation
 
-- Pipeline overview: @pipeline.md
-- Database schema: @db-schema.md
-- Manuscript figures: @manuscript-figures.md
-- Case studies configuration: @../processing/config/case_studies.yml
-- Summary statistics: @summary-statistics.md
+- Pipeline overview: pipeline.md
+- Database schema: db-schema.md
+- Manuscript figures: manuscript-figures.md
+- Case studies configuration: ../processing/config/case_studies.yml
+- Summary statistics: summary-statistics.md

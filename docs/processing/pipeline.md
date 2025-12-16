@@ -727,7 +727,7 @@ DuckDB limitations), creates views, and validates database.
 Build database of evidence-based similarities between studies using quantitative
 causal evidence patterns.
 
-See @docs/processing/evidence-profile-similarity.md for detailed methodology
+See docs/processing/evidence-profile-similarity.md for detailed methodology
 and conceptual framework.
 
 ### Evidence profile preprocessing
@@ -1069,7 +1069,7 @@ database structure and content.
 Analytical tools for understanding statistical evidence patterns in MR studies
 through seven complementary analysis scripts.
 
-See @docs/processing/evidence-profile-similarity.md for detailed methodology.
+See docs/processing/evidence-profile-similarity.md for detailed methodology.
 
 ### Summary statistics analysis
 
@@ -1715,8 +1715,8 @@ sbatch scripts/bc4/compute-evidence-similarity.sbatch
 
 ## Output databases
 
-See @docs/processing/databases.md for architecture details and
-@docs/processing/db-schema.md for schema reference.
+See docs/processing/databases.md for architecture details and
+docs/processing/db-schema.md for schema reference.
 
 ### Vector store database
 
@@ -1730,7 +1730,7 @@ extraction results with optimized views for similarity search.
 Path: `data/db/trait_profile_db.db`
 
 Precomputed trait-to-trait similarities for study network analysis.
-See @docs/processing/trait-profile-similarity.md for similarity methodology.
+See docs/processing/trait-profile-similarity.md for similarity methodology.
 
 ### Evidence profile database
 
@@ -1738,7 +1738,7 @@ Path: `data/db/evidence_profile_db.db`
 
 Precomputed evidence-based similarities comparing statistical evidence
 patterns across MR studies.
-See @docs/processing/evidence-profile-similarity.md for methodology and
+See docs/processing/evidence-profile-similarity.md for methodology and
 metrics.
 
 ## Data flow
@@ -1788,7 +1788,7 @@ Directories:
 - `data/output/`: HPC job results
 - `data/db/`: Final database files
 
-See @docs/DATA.md for complete data structure.
+See docs/DATA.md for complete data structure.
 
 ## Stage 9: Visualization and exploratory analysis
 
@@ -1829,4 +1829,4 @@ jupyter notebook notebooks/
 All visualizations use Altair for publication-quality interactive plots. Plots
 can be exported as JSON, PNG, or SVG for manuscript inclusion.
 
-See @docs/processing/visualization.md for detailed visualization guide.
+See docs/processing/visualization.md for detailed visualization guide.

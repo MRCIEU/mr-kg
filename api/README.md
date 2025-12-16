@@ -3,6 +3,8 @@
 FastAPI backend service providing RESTful endpoints for accessing Mendelian
 Randomization study data, extraction results, and similarity metrics.
 
+For project overview and setup instructions, see @../README.md and @../DEV.md.
+
 ## Quick start
 
 ### Docker (recommended)

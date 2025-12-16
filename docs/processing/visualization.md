@@ -891,16 +891,16 @@ When sharing notebooks:
 
 ### MR-KG documentation
 
-- Processing pipeline: @docs/processing/pipeline.md
-- Summary statistics: @docs/processing/summary-statistics.md
-- Database schema: @docs/processing/db-schema.md
-- Trait similarity: @docs/processing/trait-profile-similarity.md
-- Evidence similarity: @docs/processing/evidence-profile-similarity.md
+- Processing pipeline: docs/processing/pipeline.md
+- Summary statistics: docs/processing/summary-statistics.md
+- Database schema: docs/processing/db-schema.md
+- Trait similarity: docs/processing/trait-profile-similarity.md
+- Evidence similarity: docs/processing/evidence-profile-similarity.md
 
 ### Support
 
 For issues with:
 - **Notebooks**: Check this guide's troubleshooting section
-- **Data processing**: See @docs/processing/pipeline.md
-- **Database queries**: See @docs/processing/db-schema.md
+- **Data processing**: See docs/processing/pipeline.md
+- **Database queries**: See docs/processing/db-schema.md
 - **Analysis scripts**: See script docstrings and help messages

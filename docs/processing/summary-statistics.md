@@ -56,7 +56,7 @@ jupyter notebook notebooks/
 All plots are created using Altair and can be exported for manuscript
 inclusion.
 
-See @docs/processing/visualization.md for detailed visualization
+See docs/processing/visualization.md for detailed visualization
 documentation.
 
 ## Three-step workflow
@@ -602,9 +602,9 @@ GROUP BY era
 
 ## Related documentation
 
-- Pipeline overview: @docs/processing/pipeline.md
-- Database schema: @docs/processing/db-schema.md
-- Trait similarity methodology: @docs/processing/trait-profile-similarity.md
+- Pipeline overview: docs/processing/pipeline.md
+- Database schema: docs/processing/db-schema.md
+- Trait similarity methodology: docs/processing/trait-profile-similarity.md
 - Evidence similarity methodology:
-  @docs/processing/evidence-profile-similarity.md
-- Data structure: @docs/DATA.md
+  docs/processing/evidence-profile-similarity.md
+- Data structure: docs/DATA.md

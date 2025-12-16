@@ -87,7 +87,7 @@ Key metrics computed per pair:
   (mathematically: study_count choose 2)
 - `mean_direction_concordance`: Average pairwise direction agreement across all
   study combinations for this trait pair (see direction concordance calculation
-  in @docs/processing/evidence-profile-similarity.md)
+  in docs/processing/evidence-profile-similarity.md)
 - `trait_pairs_json`: JSON array of matched trait pairs with match types
 - Match indicators: Boolean flags for exact/fuzzy/EFO matches
 
@@ -889,60 +889,6 @@ cd processing
 uv add --dev statsmodels scikit-learn matplotlib seaborn
 ```
 
-## Case study 2: Pleiotropic trait networks
-
-Case study 2 builds trait co-occurrence artefacts, community annotated networks, hotspot rankings, and concordance overlays using the configuration in @processing/config/case_studies.yml.
-All scripts accept `--dry-run` to verify paths and thresholds, mirror the output directories under `data/processed/case-study-cs2/`, and register recipes in the `processing/justfile`.
-
-### Trait profile preparation
-
-Command: `just case-study-cs2-prepare`.
-Script: `processing/scripts/analysis/case_study_2_prepare_profiles.py`.
-Inputs: `data/db/trait_profile_db.db`, `data/db/vector_store.db` (read-only).
-Outputs (stored in `data/processed/case-study-cs2/cooccurrence/`):
-- `trait_profiles.csv` and `trait_profiles.json` summarising trait lists per study
-- `trait_pair_metrics.csv` and JSON companion with association statistics
-- `trait_frequency.csv` with study counts per trait
-- Optional `trait_cooccurrence_matrix.npz` sparse adjacency snapshot
-- `trait_cooccurrence_summary.json` capturing thresholds and sample fraction
-
-### Network construction and community detection
-
-Command: `just case-study-cs2-network`.
-Script: `processing/scripts/analysis/case_study_2_network_analysis.py`.
-Consumes co-occurrence metrics, filters edges using `edge_weight_threshold`, `semantic_similarity_threshold`, and `jaccard_threshold`, and attaches the vector store for EFO annotations.
-Outputs (stored in `data/processed/case-study-cs2/network/`):
-- `trait_network_nodes.csv` with node metrics and community assignments
-- `trait_network_clusters.csv` summarising Louvain clusters (size, density, domain diversity)
-- `trait_network.json` for lightweight sharing and `trait_network.graphml` for Gephi or Cytoscape
-- `trait_network_metadata.json` containing parameter snapshot, modularity, and file references
-
-### Evidence concordance overlay
-
-Command: `just case-study-cs2-overlay`.
-Script: `processing/scripts/analysis/case_study_2_concordance_overlay.py`.
-Joins `trait_profile_similarity` with `direction_concordance`, computes correlation statistics, classifies quadrant flags, and renders scatter plots. The script now records both study-level summaries and normalized trait pair rows so downstream components can analyse concordance per trait.
-Outputs (stored in `data/processed/case-study-cs2/overlays/` and `figures/`):
-- `trait_similarity_concordance.csv` with study pair metrics, quadrant labels, and aggregated trait lists
-- `trait_similarity_concordance_pairs.csv` containing one row per matched trait pair (`trait_a`, `trait_b`, match type, direction agreement)
-- `trait_similarity_concordance_summary.json` (correlation scores, match type counts, trait pair totals)
-- `figures/trait_similarity_vs_concordance.(png|svg)` annotated with threshold lines
-
-### Hotspot profiling and briefs
-
-Command: `just case-study-cs2-hotspots`.
-Script: `processing/scripts/analysis/case_study_2_hotspot_profiles.py`.
-Ranks hub traits by z-scored degree, strength, betweenness, and eigenvector centralities, evaluates ego network diversity, and writes Markdown briefs. Concordance statistics (`mean`, `std`, counts, positive/negative direction balance) are computed per trait from the normalized overlay file and embedded in the ranking table and briefs.
-Outputs (stored in `data/processed/case-study-cs2/hotspots/` and `.notes/analysis-notes/case-study-analysis/cs2-hotspots/`):
-- `hotspot_rankings.csv` with hub scores, diversity metrics, concordance aggregates, and cluster context
-- `hotspot_summary.json` referencing ranking table and generated notes
-- Trait briefs `hotspot-*.md` summarising network metrics, concordance stability, and top neighbours for manual review
-
-### End-to-end workflow
-
-Command: `just case-study-cs2-all` to execute the four scripts sequentially and refresh the network, overlay, and hotspot artefacts.
-Document deviations (e.g. sampling fractions, override thresholds) in `.notes/analysis-notes/case-study-analysis/` for reproducibility.
-
 ## Case study 5: Temporal trends in MR research
 
 Examines how Mendelian Randomization research has evolved over time across
@@ -1613,14 +1559,8 @@ P-value may be present but improperly calculated. Future work could examine
 statistical coherence (e.g., do reported P-values match computed values from
 effect sizes and SEs?).
 
-## Future case studies
-
-### Case study 3: Statistical patterns
-
-Planned investigation of effect size distributions and p-value patterns.
-
 ## See also
 
-- Evidence profile methodology: @docs/processing/evidence-profile-similarity.md
-- Database schema: @docs/processing/db-schema.md
-- Processing pipeline: @docs/processing/pipeline.md
+- Evidence profile methodology: docs/processing/evidence-profile-similarity.md
+- Database schema: docs/processing/db-schema.md
+- Processing pipeline: docs/processing/pipeline.md

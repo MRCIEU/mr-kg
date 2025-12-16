@@ -1,6 +1,6 @@
 # Evidence profile similarity
 
-See @processing/README.md for complete processing pipeline workflow.
+See processing/README.md for complete processing pipeline workflow.
 
 ## Overview
 
@@ -608,7 +608,7 @@ The algorithm is greedy: each similar result can only be matched once per tier.
 Match types are tracked via boolean flags (`match_type_exact`, `match_type_fuzzy`,
 `match_type_efo`) enabling downstream analysis of match quality effects.
 
-See @docs/GLOSSARY.md (Match type) for detailed definitions and examples.
+See docs/GLOSSARY.md (Match type) for detailed definitions and examples.
 
 ### Parallel processing
 
@@ -1095,7 +1095,7 @@ power issues rather than evidence consistency.
 
 ## See also
 
-- Key terms and concepts: @docs/GLOSSARY.md
-- Trait profile similarity: @docs/processing/trait-profile-similarity.md
-- Database schema: @docs/processing/db-schema.md
-- Processing pipeline: @docs/processing/pipeline.md
+- Key terms and concepts: docs/GLOSSARY.md
+- Trait profile similarity: docs/processing/trait-profile-similarity.md
+- Database schema: docs/processing/db-schema.md
+- Processing pipeline: docs/processing/pipeline.md

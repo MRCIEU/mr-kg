@@ -782,7 +782,6 @@ with a {abs(presso_test["percentage_point_change"]):.1f} percentage point {"decr
 - **Model filter**: gpt-5
 - **MR-PRESSO breakpoint**: {config["case_study_5"]["pleiotropy"]["mr_presso_breakpoint"]}
 - **Canonical pairs**: {len(config["case_study_5"]["pleiotropy"]["canonical_pairs"])}
-- **CS2 hotspots**: {len(config["case_study_5"]["pleiotropy"]["cs2_hotspots"])}
 """
 
     res = summary
@@ -816,7 +815,6 @@ def save_metadata(
         "canonical_pairs": config["case_study_5"]["pleiotropy"][
             "canonical_pairs"
         ],
-        "cs2_hotspots": config["case_study_5"]["pleiotropy"]["cs2_hotspots"],
         "mr_presso_breakpoint": config["case_study_5"]["pleiotropy"][
             "mr_presso_breakpoint"
         ],

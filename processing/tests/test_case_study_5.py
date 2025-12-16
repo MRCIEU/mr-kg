@@ -179,7 +179,6 @@ def test_pleiotropy_config(config):
     p_config = config["case_study_5"]["pleiotropy"]
 
     assert "canonical_pairs" in p_config
-    assert "cs2_hotspots" in p_config
     assert "mr_presso_breakpoint" in p_config
 
     assert isinstance(p_config["canonical_pairs"], list)

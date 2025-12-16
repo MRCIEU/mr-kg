@@ -2,13 +2,18 @@
 
 Shared utility functions and data access layer for the MR-KG project.
 
+For project overview, see @../../README.md and @../../DEV.md.
+
 ## Overview
 
 This package provides:
 
-- **Repositories**: Database access layer for DuckDB databases
+- **Repositories**: Database access layer for DuckDB databases (vector_store.db, trait_profile_db.db, evidence_profile_db.db)
 - **Schema**: Shared Pydantic models for data structures
 - **Database utilities**: Connection management and helpers
+
+The repositories provide a unified interface for both the API and webapp to access the three MR-KG databases.
+See @../../docs/processing/databases.md for database architecture and @../../docs/processing/db-schema.md for schema details.
 
 ## Installation
 
