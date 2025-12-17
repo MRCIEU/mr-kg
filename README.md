@@ -1,8 +1,11 @@
 # MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models
 
-This repository implements MR-KG (Mendelian Randomization Knowledge Graph), a
-system for processing and exploring Mendelian Randomization studies through
-large language model-extracted trait information and vector similarity search.
+This is the project repository for MR-KG ([medRxiv print](http://dx.doi.org/10.64898/2025.12.14.25342218)), a synthesised knowledge graph resource for Mendelian randomization extracted from literature by large language models (LLMs).
+
+The live service is deployed here:
+
+- the web application https://epigraphdb.org/mr-kg
+- the API https://epigraphdb.org/mr-kg/api
 
 ## Architecture
 
@@ -14,31 +17,31 @@ flowchart TB
         API[API<br/>FastAPI REST backend]
         Webapp[Webapp<br/>Streamlit interface]
     end
-    
+
     subgraph Data["Data Layer"]
         VS[(Vector Store DB<br/>Traits + EFO)]
         TP[(Trait Profile DB<br/>Study similarities)]
         EP[(Evidence Profile DB<br/>Evidence similarities)]
     end
-    
+
     subgraph Pipeline["Processing Pipeline"]
         Raw[Raw LLM Results<br/>+ EFO Ontology]
         Process[ETL Processing<br/>Embedding + Analysis]
     end
-    
+
     Raw --> Process
     Process --> VS
     Process --> TP
     Process --> EP
-    
+
     API --> VS
     API --> TP
     API --> EP
-    
+
     Webapp --> VS
     Webapp --> TP
     Webapp --> EP
-    
+
     style API fill:#e3f2fd
     style Webapp fill:#e3f2fd
     style VS fill:#fff4e6

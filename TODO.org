@@ -1,6 +1,3 @@
-#filetags: :work:
-* implement frontend testing
-* Simplify docs and merge duplicated information, keep single source of truth and reference them
-- DEV.md should just be an index
-* verify how planned things in architecture will be implemented
-* store actual pair-to-pair mappings in the database as part of the preprocessing pipeline
+#+filetags: :mr-kg:work:
+
+* evidence profile: store actual pair-to-pair mappings in the database as part of the preprocessing pipeline

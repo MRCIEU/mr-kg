@@ -6,7 +6,7 @@ to search pages and resource information.
 
 import streamlit as st
 
-from components.theme import apply_theme, theme_toggle
+from components.theme import apply_theme
 from services.db_client import get_statistics
 
 # ---- Page configuration ----
@@ -19,7 +19,6 @@ st.set_page_config(
 
 # ---- Apply theme ----
 apply_theme()
-theme_toggle()
 
 # ---- Page content ----
 
@@ -105,6 +104,19 @@ enabling comparison of trait profiles and evidence patterns across studies.
         st.markdown("View statistics, available models, and documentation.")
         if st.button("Resource Info", key="nav_info"):
             st.switch_page("pages/4_Info.py")
+
+    st.divider()
+
+    # ---- API access ----
+    st.subheader("API Access")
+
+    col1, _ = st.columns(2)
+    with col1:
+        st.markdown("#### REST API")
+        st.markdown(
+            "Access the data programmatically via the REST API."
+        )
+        st.markdown("[View API Documentation](/mr-kg/api/docs)")
 
     st.divider()
 

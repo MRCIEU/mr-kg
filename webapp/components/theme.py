@@ -1,6 +1,6 @@
-"""Theme configuration and toggle component for the webapp.
+"""Theme configuration for the webapp.
 
-Provides Gruvbox light and dark theme support with a sidebar toggle.
+Provides Gruvbox dark theme support.
 """
 
 from dataclasses import dataclass
@@ -37,27 +37,10 @@ GRUVBOX_DARK = ThemeColors(
     accent_blue="#83a598",
 )
 
-GRUVBOX_LIGHT = ThemeColors(
-    background="#fbf1c7",
-    secondary_background="#ebdbb2",
-    text="#3c3836",
-    primary="#458588",
-    accent_red="#cc241d",
-    accent_green="#98971a",
-    accent_yellow="#d79921",
-    accent_blue="#458588",
-)
 
-
-def get_current_theme() -> ThemeColors:
-    """Get the current theme colors based on session state."""
-    if st.session_state.get("theme_mode", "dark") == "light":
-        return GRUVBOX_LIGHT
-    return GRUVBOX_DARK
-
-
-def _generate_theme_css(theme: ThemeColors) -> str:
-    """Generate CSS for the given theme."""
+def _generate_theme_css() -> str:
+    """Generate CSS for the Gruvbox dark theme."""
+    theme = GRUVBOX_DARK
     return f"""
     <style>
         /* Main app background */
@@ -165,39 +148,11 @@ def _generate_theme_css(theme: ThemeColors) -> str:
 
 
 def apply_theme() -> None:
-    """Apply the current theme CSS to the page.
+    """Apply the Gruvbox dark theme CSS to the page.
 
     This should be called at the start of every page after set_page_config.
     """
-    theme = get_current_theme()
-    st.markdown(_generate_theme_css(theme), unsafe_allow_html=True)
+    st.markdown(_generate_theme_css(), unsafe_allow_html=True)
 
 
-def theme_toggle() -> None:
-    """Render a theme toggle in the sidebar.
 
-    This should be called in the sidebar of every page.
-    """
-    # Initialize theme in session state if not present
-    if "theme_mode" not in st.session_state:
-        st.session_state.theme_mode = "dark"
-
-    with st.sidebar:
-        st.markdown("---")
-        current_mode = st.session_state.theme_mode
-        toggle_label = "Light mode" if current_mode == "dark" else "Dark mode"
-
-        if st.button(
-            toggle_label,
-            key="theme_toggle_btn",
-            help="Toggle between light and dark theme",
-            use_container_width=True,
-        ):
-            st.session_state.theme_mode = (
-                "light" if current_mode == "dark" else "dark"
-            )
-            st.rerun()
-
-        # Show current mode indicator
-        mode_icon = "Dark" if current_mode == "dark" else "Light"
-        st.caption(f"Current: {mode_icon} mode")

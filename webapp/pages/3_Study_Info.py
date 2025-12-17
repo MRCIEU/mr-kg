@@ -14,7 +14,7 @@ from components.similarity_display import (
     evidence_similarity_table,
     trait_similarity_table,
 )
-from components.theme import apply_theme, theme_toggle
+from components.theme import apply_theme
 from services.db_client import (
     get_extraction,
     get_similar_by_evidence,
@@ -30,7 +30,6 @@ st.set_page_config(
 
 # ---- Apply theme ----
 apply_theme()
-theme_toggle()
 
 # CSS to hide this page from the sidebar navigation
 st.markdown(
