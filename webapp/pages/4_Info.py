@@ -18,6 +18,12 @@ st.set_page_config(
 # ---- Apply theme ----
 apply_theme()
 
+# ---- Sidebar ----
+with st.sidebar:
+    st.markdown("---")
+    st.markdown("### Quick Links")
+    st.markdown("[API Documentation](/mr-kg/api/docs)")
+
 
 def main() -> None:
     """Render the info page."""
