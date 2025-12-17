@@ -35,7 +35,7 @@ apply_theme()
 with st.sidebar:
     st.markdown("---")
     st.markdown("### Quick Links")
-    st.markdown("[API Documentation](/mr-kg/api/docs)")
+    st.markdown("[API](/mr-kg/api)")
 
 # CSS to hide this page from the sidebar navigation
 st.markdown(

@@ -24,7 +24,7 @@ apply_theme()
 with st.sidebar:
     st.markdown("---")
     st.markdown("### Quick Links")
-    st.markdown("[API Documentation](/mr-kg/api/docs)")
+    st.markdown("[API](/mr-kg/api)")
 
 # ---- Page content ----
 
