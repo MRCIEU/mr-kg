@@ -6,7 +6,7 @@ from components.similarity_display import (
     trait_similarity_table,
 )
 from components.study_table import study_table
-from components.theme import apply_theme, theme_toggle
+from components.theme import apply_theme
 
 __all__ = [
     "model_selector",
@@ -14,5 +14,4 @@ __all__ = [
     "trait_similarity_table",
     "evidence_similarity_table",
     "apply_theme",
-    "theme_toggle",
 ]
