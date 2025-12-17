@@ -116,7 +116,7 @@ enabling comparison of trait profiles and evidence patterns across studies.
         st.markdown(
             "Access the data programmatically via the REST API."
         )
-        st.markdown("[View API Documentation](/mr-kg/api/docs)")
+        st.markdown("[View API Documentation](/mr-kg/api)")
 
     st.divider()
 

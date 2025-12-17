@@ -108,7 +108,7 @@ check_endpoint "API health endpoint" "$API_URL/health"
 
 # ---- Check API documentation ----
 log_info "Checking API documentation..."
-check_endpoint "API OpenAPI docs" "$API_URL/docs"
+check_endpoint "API OpenAPI docs" "$API_URL/"
 
 # ---- Check database connectivity via health endpoint ----
 log_info "Checking database connectivity..."

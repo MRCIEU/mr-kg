@@ -43,7 +43,7 @@ This starts both the API and webapp services in Docker containers.
 Access the services:
 
 - Webapp: http://localhost:8501/mr-kg
-- API docs: http://localhost:8000/mr-kg/api/docs
+- API docs: http://localhost:8000/mr-kg/api/
 
 Note: The `just dev` command behavior depends on your current directory:
 
@@ -152,7 +152,7 @@ Services are accessible at:
 
 - Webapp: http://localhost:8501/mr-kg
 - API: http://localhost:8000/mr-kg/api
-- API docs: http://localhost:8000/mr-kg/api/docs
+- API docs: http://localhost:8000/mr-kg/api/
 
 ### Local development (without Docker)
 

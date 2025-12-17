@@ -13,7 +13,7 @@ This package provides:
 - **Database utilities**: Connection management and helpers
 
 The repositories provide a unified interface for both the API and webapp to access the three MR-KG databases.
-See @../../docs/processing/databases.md for database architecture and @../../docs/processing/db-schema.md for schema details.
+See ../../docs/processing/databases.md for database architecture and ../../docs/processing/db-schema.md for schema details.
 
 ## Installation
 

@@ -37,7 +37,7 @@ will need to connect to it separately.
 
 Interactive API documentation is available at:
 
-- Swagger UI: http://localhost:8000/docs
+- Swagger UI: http://localhost:8000/
 - ReDoc: http://localhost:8000/redoc
 - OpenAPI spec: http://localhost:8000/openapi.json
 

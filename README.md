@@ -78,7 +78,7 @@ just dev
 Access the services:
 
 - Webapp: http://localhost:8501/mr-kg
-- API documentation: http://localhost:8000/mr-kg/api/docs
+- API documentation: http://localhost:8000/mr-kg/api/
 
 For detailed development instructions including local development without
 Docker, see DEV.md
@@ -106,7 +106,7 @@ MR-KG provides web services for:
 | GET /mr-kg/api/statistics               | Resource-wide statistics              |
 | GET /mr-kg/api/health                   | Service health check                  |
 
-Full API documentation available at `/mr-kg/api/docs` when the service is running.
+Full API documentation available at `/mr-kg/api/` when the service is running.
 
 ### Webapp pages
 
