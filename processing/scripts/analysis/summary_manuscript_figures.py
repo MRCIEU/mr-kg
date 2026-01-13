@@ -63,8 +63,8 @@ def load_temporal_stats(data_dir: Path) -> pd.DataFrame:
 
     df = pd.read_csv(temporal_stats_file)
 
-    # ---- Remove outlier years ----
-    df = df[df["publication_year"] <= 2025].copy()
+    # ---- Remove incomplete years ----
+    df = df[df["publication_year"] <= 2024].copy()
 
     # ---- Sort and filter for log scale ----
     df = df.sort_values("publication_year")
@@ -121,7 +121,7 @@ def create_temporal_distribution_figure(df: pd.DataFrame) -> alt.LayerChart:
         x=alt.X(
             "publication_year:Q",
             title="Publication Year",
-            scale=alt.Scale(domain=[min_year, 2025]),
+            scale=alt.Scale(domain=[min_year, 2024]),
             axis=alt.Axis(tickMinStep=1, format="d"),
         ),
         y=alt.Y(
@@ -157,6 +157,76 @@ def create_temporal_distribution_figure(df: pd.DataFrame) -> alt.LayerChart:
         .add_params(xzoom)
         .properties(
             title="MR papers by publication year (log scale)",
+        )
+        .configure_axis(gridColor="#e6e6e6", gridOpacity=0.7)
+    )
+
+    return res
+
+
+def create_temporal_distribution_normal_scale(
+    df: pd.DataFrame,
+) -> alt.LayerChart:
+    """Create temporal distribution line chart with normal scale.
+
+    Args:
+        df: DataFrame with publication_year and paper_count columns
+
+    Returns:
+        Altair layered chart with line and text labels
+    """
+    min_year = int(df["publication_year"].min())
+    max_year = int(df["publication_year"].max())
+
+    base_chart = alt.Chart(df).properties(width=800, height=420)
+
+    # ---- Line chart with points ----
+    line_raw = base_chart.mark_line(
+        point=True, color=GRUVBOX_DARK["blue"]
+    ).encode(
+        x=alt.X(
+            "publication_year:Q",
+            title="Publication Year",
+            scale=alt.Scale(domain=[min_year, max_year]),
+            axis=alt.Axis(tickMinStep=1, format="d"),
+        ),
+        y=alt.Y(
+            "paper_count:Q",
+            title="Number of Papers",
+            scale=alt.Scale(zero=True),
+            axis=alt.Axis(format=","),
+        ),
+        tooltip=[
+            alt.Tooltip("publication_year:Q", title="Year", format="d"),
+            alt.Tooltip("paper_count:Q", title="Papers", format=","),
+        ],
+    )
+
+    # ---- Text labels for selected points ----
+    # Only show labels for years after 2015 to avoid clutter
+    df_labeled = df[df["publication_year"] >= 2015].copy()
+    labels_recent = (
+        alt.Chart(df_labeled)
+        .mark_text(
+            align="center",
+            dy=-10,
+            fontSize=10,
+        )
+        .encode(
+            x="publication_year:Q",
+            y="paper_count:Q",
+            text=alt.Text("paper_count:Q", format=","),
+        )
+    )
+
+    # ---- Enable x-axis zoom/pan ----
+    xzoom = alt.selection_interval(bind="scales", encodings=["x"])
+
+    res = (
+        alt.layer(line_raw, labels_recent)
+        .add_params(xzoom)
+        .properties(
+            title="MR papers by publication year",
         )
         .configure_axis(gridColor="#e6e6e6", gridOpacity=0.7)
     )
@@ -218,20 +288,62 @@ def main() -> None:
     # ---- Configure Altair for PNG export ----
     alt.data_transformers.enable("default", max_rows=None)
 
-    # ---- Generate figure ----
+    # ---- Generate figures ----
     print("Generating figures...")
 
-    # ---- Figure: Temporal distribution ----
-    print("  Creating temporal distribution figure...")
-    temporal_fig = create_temporal_distribution_figure(temporal_stats)
+    # ---- Create output directories ----
+    lit_figures_dir = data_dir / "processed" / "figures" / "literature"
+
+    # ---- Figure: Temporal distribution (log scale) ----
+    print("  Creating temporal distribution figure (log scale)...")
+    temporal_fig_log = create_temporal_distribution_figure(temporal_stats)
 
     if not args.dry_run:
         output_dir.mkdir(parents=True, exist_ok=True)
         output_file = output_dir / "summary_temporal_distribution.png"
-        temporal_fig.save(str(output_file), ppi=300)
+        temporal_fig_log.save(str(output_file), ppi=300)
         print(f"    Saved: {output_file}")
+
+        # ---- Save PNG to literature figures directory ----
+        lit_figures_dir.mkdir(parents=True, exist_ok=True)
+        output_png = lit_figures_dir / "temporal_distribution_line.png"
+        temporal_fig_log.save(str(output_png), ppi=300)
+        print(f"    Saved: {output_png}")
     else:
         print("    [DRY RUN] Would save: summary_temporal_distribution.png")
+        print(
+            "    [DRY RUN] Would save: "
+            "temporal_distribution_line.png (log scale)"
+        )
+
+    # ---- Figure: Temporal distribution (normal scale) ----
+    print("  Creating temporal distribution figure (normal scale)...")
+    temporal_fig_normal = create_temporal_distribution_normal_scale(
+        temporal_stats
+    )
+
+    if not args.dry_run:
+        output_file_normal = (
+            output_dir / "summary_temporal_distribution_normal.png"
+        )
+        temporal_fig_normal.save(str(output_file_normal), ppi=300)
+        print(f"    Saved: {output_file_normal}")
+
+        # ---- Save PNG to literature figures directory ----
+        output_png_normal = (
+            lit_figures_dir / "temporal_distribution_line_normal.png"
+        )
+        temporal_fig_normal.save(str(output_png_normal), ppi=300)
+        print(f"    Saved: {output_png_normal}")
+    else:
+        print(
+            "    [DRY RUN] Would save: "
+            "summary_temporal_distribution_normal.png"
+        )
+        print(
+            "    [DRY RUN] Would save: "
+            "temporal_distribution_line_normal.png (normal scale)"
+        )
 
     print()
     print("Summary manuscript figures generation complete!")
