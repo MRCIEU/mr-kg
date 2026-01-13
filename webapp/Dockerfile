@@ -24,6 +24,9 @@ RUN uv sync --frozen --no-dev
 # Copy webapp application code
 COPY webapp/ /app/webapp/
 
+# Copy logo assets
+COPY data/assets/logo /app/data/assets/logo
+
 # Expose port
 EXPOSE 8501
 

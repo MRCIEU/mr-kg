@@ -1,5 +1,7 @@
 # MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models
 
+![logo](data/assets/logo/mr-kg-logo.png)
+
 This is the project repository for MR-KG ([medRxiv preprint](http://dx.doi.org/10.64898/2025.12.14.25342218)), a synthesised knowledge graph resource for Mendelian randomization extracted from literature by large language models (LLMs).
 
 The live service is deployed here:

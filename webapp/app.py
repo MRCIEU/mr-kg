@@ -35,6 +35,14 @@ def main() -> None:
         "MR-KG: A knowledge graph of Mendelian randomization evidence powered by large language models"
     )
 
+    # ---- Display logo ----
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.image(
+            "../data/assets/logo/mr-kg-logo.png",
+            width=400,
+        )
+
     # ---- Resource description ----
     st.markdown("""
 MR-KG is a resource for exploring Mendelian Randomization studies through
@@ -119,9 +127,7 @@ enabling comparison of trait profiles and evidence patterns across studies.
     col1, _ = st.columns(2)
     with col1:
         st.markdown("#### REST API")
-        st.markdown(
-            "Access the data programmatically via the REST API."
-        )
+        st.markdown("Access the data programmatically via the REST API.")
         st.markdown("[View API Documentation](/mr-kg/api)")
 
     st.divider()
