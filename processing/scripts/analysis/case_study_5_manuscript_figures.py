@@ -469,7 +469,10 @@ def create_diversity_subplot(
         .mark_errorband(extent="stderr", opacity=0.3)
         .encode(
             x=alt.X("pub_year:Q"),
-            y=alt.Y("mean_trait_count:Q"),
+            y=alt.Y(
+                "mean_trait_count:Q",
+                title="Mean Traits per Study",
+            ),
             yError=alt.YError("std_trait_count:Q"),
         )
     )
@@ -511,7 +514,7 @@ def create_completeness_subplot(
     field_labels = {
         "p_value_pct": "P-value",
         "confidence_interval_pct": "95% CI",
-        "standard_error_pct": "SE",
+        "standard_error_pct": "Standard error",
     }
 
     plot_data = []
@@ -551,7 +554,11 @@ def create_completeness_subplot(
                 title="Field",
                 scale=alt.Scale(
                     domain=list(field_labels.values()),
-                    range=[field_colors[f] for f in field_labels.values()],
+                    range=[
+                        field_colors["P-value"],
+                        field_colors["95% CI"],
+                        field_colors["SE"],
+                    ],
                 ),
             ),
             tooltip=[
@@ -573,7 +580,7 @@ def create_completeness_subplot(
     combined = (line + era_markers).properties(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        title="C. Overall Reporting Completeness Over Time",
+        title="C. Reporting completeness over time by field",
     )
 
     return combined
