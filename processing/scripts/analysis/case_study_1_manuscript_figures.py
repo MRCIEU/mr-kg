@@ -191,7 +191,7 @@ def create_figure_1(
                     domain=tier_order,
                     range=[tier_colors[t] for t in tier_order],
                 ),
-                title="Reproducibility Tier",
+                title="Reproducibility tier",
                 legend=None,
             ),
             order=alt.Order("tier_index:Q"),
@@ -199,7 +199,7 @@ def create_figure_1(
         .transform_calculate(constant="''")
     )
 
-    # Add text labels showing pair counts
+    # Add text labels showing concordance-summary counts
     text_labels_overall = (
         alt.Chart(tier_dist_df)
         .mark_text(
@@ -225,7 +225,14 @@ def create_figure_1(
     chartA = (bars_overall + text_labels_overall).properties(
         width=400,
         height=80,
-        title=alt.TitleParams("A. Overall Tier Distribution", anchor="end"),
+        title=alt.TitleParams(
+            "A. Reproducibility tiers: all summaries",
+            subtitle=(
+                "Concordance summaries "
+                f"(n={tier_dist_df['Pairs (n)'].sum():,})"
+            ),
+            anchor="end",
+        ),
     )
 
     # ---- Prepare data for tier distribution by category subplot ----
@@ -283,7 +290,7 @@ def create_figure_1(
                         tier_colors[t.capitalize()] for t in tier_order_lower
                     ],
                 ),
-                title="Reproducibility Tier",
+                title="Reproducibility tier",
                 legend=alt.Legend(orient="bottom"),
             ),
             order=alt.Order("tier_order:Q"),
@@ -338,12 +345,14 @@ def create_figure_1(
         width=400,
         height=300,
         title=alt.TitleParams(
-            "B. Tier Distribution by Outcome Category", anchor="end"
+            "B. Reproducibility tiers by outcome category",
+            subtitle=f"Categorised concordance summaries (n={len(df_clean):,})",
+            anchor="end",
         ),
     )
 
     # ---- Prepare data for concordance subplots ----
-    # Extract individual pair concordance values with match type
+    # Use the saved summary means and match-presence groups
     df_concordance = metrics_df[
         (metrics_df["outcome_category"] != "uncategorized")
         & (metrics_df["outcome_category"].notna())
@@ -388,7 +397,7 @@ def create_figure_1(
         .encode(
             x=alt.X(
                 "concordance:Q",
-                title="Direction Concordance",
+                title="Mean direction concordance",
                 scale=alt.Scale(domain=[-1.0, 1.0]),
                 axis=alt.Axis(ticks=False, domain=False, grid=False),
             ),
@@ -436,7 +445,11 @@ def create_figure_1(
     chartC = base_chart_c.properties(
         bounds="flush",
         title=alt.TitleParams(
-            "C. Overall Concordance Distribution by Match Type",
+            "C. Concordance by exact-match presence",
+            subtitle=(
+                "Categorised concordance summaries "
+                f"(n={len(df_concordance):,})"
+            ),
             anchor="end",
         ),
     )
@@ -465,7 +478,7 @@ def create_figure_1(
         .encode(
             x=alt.X(
                 "concordance:Q",
-                title="Direction Concordance",
+                title="Mean direction concordance",
                 scale=alt.Scale(domain=[-1.0, 1.0]),
                 axis=alt.Axis(ticks=False, domain=False, grid=False),
             ),
@@ -484,7 +497,10 @@ def create_figure_1(
                     ],
                 ),
                 legend=alt.Legend(
-                    title="Match Type",
+                    title="Exact-match presence",
+                    labelExpr=(
+                        "datum.label === 'exact' ? 'Any exact' : 'No exact'"
+                    ),
                     orient="bottom",
                     direction="horizontal",
                     symbolType="square",
@@ -514,7 +530,11 @@ def create_figure_1(
     ).properties(
         bounds="flush",
         title=alt.TitleParams(
-            "D. Concordance Distribution by Match Type and Outcome Category",
+            "D. Concordance by category and exact-match presence",
+            subtitle=(
+                "Categorised concordance summaries "
+                f"(n={len(df_concordance):,})"
+            ),
             anchor="end",
         ),
     )
@@ -545,7 +565,7 @@ def create_figure_1(
         .resolve_scale(color="independent")
         .properties(
             title=alt.TitleParams(
-                "Distribution of reproducibility metrics",
+                "Reproducibility",
                 fontSize=16,
                 anchor="middle",
             )
@@ -608,10 +628,10 @@ def create_figure_2(
             x=alt.X(
                 "mean_direction_concordance:Q",
                 bin=alt.Bin(maxbins=20),
-                title="Direction Concordance",
+                title="Mean direction concordance",
                 scale=alt.Scale(domain=[-1, 1]),
             ),
-            y=alt.Y("count():Q", title="Frequency"),
+            y=alt.Y("count():Q", title="Concordance summaries (n)"),
         )
     )
 
@@ -717,8 +737,12 @@ def create_figure_2(
         )
         .properties(
             title=alt.TitleParams(
-                f"Concordance Distribution by Study Count "
-                f"(n={len(df_clean):,} pairs)",
+                "Concordance by number of compared studies",
+                subtitle=[
+                    f"Concordance summaries (n={len(df_clean):,})",
+                    "Focal study plus retained comparisons within the "
+                    "same model",
+                ],
                 fontSize=16,
                 anchor="middle",
             ),
@@ -788,7 +812,7 @@ def main():
     # ---- Load metrics data ----
     logger.info("Loading pair metrics from: {}", input_csv)
     metrics_df = pd.read_csv(input_csv)
-    logger.info("Loaded {} trait pairs", len(metrics_df))
+    logger.info("Loaded {} concordance summaries", len(metrics_df))
 
     # ---- Validate required columns ----
     required_cols = [
