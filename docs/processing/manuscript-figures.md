@@ -12,7 +12,11 @@ These figures are optimized for publication with:
 - Publication-appropriate sizing and formatting
 - Clear legends and axis labels
 
-## Case Study 5: Temporal trends in MR evidence
+## Historical Case Study 5 temporal layout
+
+This section retains the older layout description; the current consolidated Figure 4 and single CI companion are specified below.
+The pre-consolidation asset is archived as `cs5_fig_temporal_trends_pre_consolidation.png`, and its exact plotting specifications are frozen in the presentation baseline record.
+The legacy prose here is not a replacement for those frozen specifications or the current producer source.
 
 **File**: `cs5_fig_temporal_trends.png`
 
@@ -137,6 +141,88 @@ Together, these subplots tell a complete story: subplot 2 shows *whether* key st
 - **Subplot 3** uses: Confidence Interval, Direction, Effect Size, Statistical
 
 Users should reference the subplot titles and line colors to interpret each panel correctly.
+
+## Current consolidated Figure 4 and single CI companion
+
+The current main figure retains panels A and B and replaces the previous overlapping C/D views with one locally taller panel C titled `C. Reporting completeness by Field Type`.
+Its five series and ordered labels are Direction, Effect size, Standard error, 95% CI and P-Value.
+Effect size remains the maximum of the yearly beta, OR and HR percentages; all annual estimates, scientific inputs and era definitions are unchanged.
+The 95% CI label names the original extraction schema field, not independent validation of an extracted interval's level.
+Main C has height 400; the protected A/B helpers, specifications, numerical data, one-SD band and 900x200 plot geometry remain unchanged.
+No reporting-proportion intervals appear in the main figure.
+
+The single companion is `data/artifacts/manuscript-figures/cs5_fig_completeness_by_field_type_combined_ci.png`.
+It uses five facets in the same order and the same five distinct colors as the main figure, arranged in two columns/three rows with the final facet on the left.
+Its intervals reuse the original accepted Wilson and Bonferroni Clopper-Pearson maximum-envelope calculations without a duplicate statistical implementation.
+Its 115 metric/year rows, integer counts and bounds are in `data/artifacts/manuscript-tables/cs5_completeness_combined_annual_ci.csv`.
+The statistical interpretation and limitations described below continue to apply.
+
+Run from the repository root, using installed dependencies without dotenv loading or synchronization:
+
+```bash
+just cs5-consolidated-figures --dry-run
+just cs5-consolidated-check
+just cs5-consolidated-figures
+```
+
+`processing/scripts/analysis/case_study_5_consolidated_figures.py` validates the frozen original scientific audit and historical delivery, exact protected helper ASTs and A/B Vega-Lite/compiled Vega specifications, all five-series estimates against the original C/D plotting datasets, and all interval rows against the previous export.
+Only after these checks pass does it render candidates and publish the main PNG, single companion, CSV and explicit successor presentation provenance.
+An optional `--candidate-dir` retains intermediate rendered candidates for inspection.
+The candidate directory must not be the canonical figure directory.
+
+`cs5_consolidated_presentation_baseline.json` freezes the prior A/B and C/D specifications and original delivery hashes.
+`cs5_consolidated_presentation_provenance.json` records successful invariance checks, source/output hashes and the approved successor main-PNG hash, tied to the unchanged original audit.
+Future consolidated generation accepts only the original main hash or the explicitly recorded successor hash, and still rejects scientific input or historical-delivery drift.
+The original main PNG is preserved as `cs5_fig_temporal_trends_pre_consolidation.png`.
+The original two companions, 161-row CSV, baseline scientific audit and original CI provenance are retained byte-for-byte as historical delivery; their old supplementary-only entry point still requires its original main-PNG baseline and is not the current publication command.
+This is display regrouping of fields within Group B, not a new Group B completeness estimand or proof of historical authorial intent.
+
+## Historical supplementary companions to Figure 4C and 4D
+
+`processing/scripts/analysis/case_study_5_supplementary_completeness_figures.py` generates only the supplementary reporting-completeness companions.
+It never rewrites `cs5_fig_temporal_trends.png`.
+Run from the repository root using the installed processing environment:
+
+```bash
+just cs5-supplementary-completeness --dry-run
+just cs5-supplementary-check
+just cs5-supplementary-completeness
+```
+
+These root recipes explicitly disable dotenv loading and do not synchronize dependencies.
+Do not substitute the processing justfile, which enables dotenv loading.
+
+Outputs in `data/artifacts/manuscript-figures/`:
+
+- `cs5_fig_completeness_by_field_ci.png`: three vertical facets matching Figure 4C (P-value, Confidence interval, Standard error).
+- `cs5_fig_completeness_by_field_type_ci.png`: four facets in a 2x2 layout matching Figure 4D (Confidence Interval, Direction, Effect Size, Statistical).
+
+Each plot retains observed annual percentages, points and connecting lines for available years in 2003-2025, with no smoother, imputation or trend test.
+Shading shows pointwise 95% intervals; common percentage axes span 0-100, and subtitles supply denominators for sparse years with fewer than 20 included publications.
+The Confidence interval facet denotes presence under the original extracted `95% CI` key without validating its level, whereas interval shading concerns the reporting proportion.
+
+The frozen presence predicate marks a field present if any extracted result dictionary has a value other than `None`, empty string or literal `N/A`.
+It does not validate numeric values or determine full-paper reporting.
+Ordinary binary reporting fields use two-sided Wilson score intervals.
+Effect Size remains the maximum of beta, OR and HR marginal percentages, not the proportion with any effect-size field.
+For each component a two-sided exact Clopper-Pearson interval uses alpha=0.05/3 (each tail 0.05/6); the maximum of the three lower bounds and maximum of the three upper bounds form a conservative at-least-95% interval for the maximum reporting probability within each year.
+This construction accommodates correlated components and ties without a bootstrap or selecting a winning field's ordinary interval.
+Statistical remains P-value alone; the era-level type CSV has different union definitions and is not used for these plots.
+
+Under `data/artifacts/manuscript-tables/`, `cs5_completeness_annual_ci.csv` contains all 161 metric/year rows, integer denominators and reported counts, component counts, unchanged observed percentages, interval endpoints and methods.
+For Effect Size, `n_reported` is the maximum component count, not an any-effect-size event count.
+`cs5_completeness_baseline_audit.json` freezes the source/database/config/main-PNG hashes and audited baseline.
+`cs5_completeness_ci_provenance.json` embeds that audit with generator/runtime/output hashes and interpretation limits.
+
+The audit verified 15,606 GPT-5 rows and unique PMIDs, one-to-one temporal joins, seven excluded 2026 publications, and 15,599 included publications.
+All annual and era counts were independently recovered with the original predicate, and the retained inputs/runtime reproduced the installed main PNG byte-for-byte.
+Generation requires a passed audit and unchanged annual CSV, era config and main PNG; changed inputs require baseline reconciliation, not silent deduplication or corpus changes.
+This is current reproducibility evidence, not proof of the original historical invocation.
+The date of corpus collection is not independently established: included 2025 publication dates extend through December, so companions make no May endpoint or partial-month claim.
+
+Intervals assume a binomial reporting process conditional on the selected/extracted corpus and independent publication rows within each year.
+They are pointwise, not simultaneous across years or all metrics, and do not quantify uncertainty in the fixed observed percentages, extraction accuracy, corpus representativeness, full-paper reporting or causal effects of STROBE-MR.
+The repeated P-value/CI series in the two companions intentionally retain the original C/D correspondence.
 
 ## Case Study 1: Reproducibility figures
 

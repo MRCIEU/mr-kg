@@ -5,11 +5,10 @@ temporal evolution analysis. All figures are exported as PNG for manuscript
 inclusion.
 
 Figures generated:
-- Faceted time series plot with four subplots:
+- Faceted time series plot with three subplots:
   A. MR Papers by Publication Year (log scale)
   B. Trait Diversity Over Time
-  C. Reporting Completeness Over Time
-  D. Reporting Completeness by Field Type
+  C. Reporting completeness by Field Type
 
 All subplots use year range 2003-2025 with era boundary markers.
 
@@ -248,49 +247,38 @@ def load_completeness_data(cs5_output_dir: Path) -> pd.DataFrame:
 def prepare_field_type_yearly_data(
     completeness_df: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Prepare yearly field type completeness data.
-
-    Args:
-        completeness_df: DataFrame with yearly completeness statistics
-
-    Returns:
-        Long-format DataFrame with year, field_type, completeness_pct
-    """
-    logger.info("Preparing yearly field type data...")
-
-    # ---- Field type mappings ----
-    field_mapping = {
-        "confidence_interval_pct": "Confidence Interval",
-        "direction_pct": "Direction",
-        "effect_size_beta_pct": "Effect Size",
-        "p_value_pct": "Statistical",
-    }
-
-    # ---- Combine effect size columns ----
-    completeness_df["effect_size_pct"] = completeness_df[
+    """Combine the five displayed fields without changing annual estimates."""
+    frame = completeness_df.copy()
+    frame["effect_size_pct"] = frame[
         ["effect_size_beta_pct", "effect_size_or_pct", "effect_size_hr_pct"]
     ].max(axis=1)
+    mapping = {
+        "direction_pct": "Direction",
+        "effect_size_pct": "Effect size",
+        "standard_error_pct": "Standard error",
+        "confidence_interval_pct": "95% CI",
+        "p_value_pct": "P-Value",
+    }
+    rows = [
+        {"pub_year": row["pub_year"], "field_type": label,
+         "completeness_pct": row[column]}
+        for _, row in frame.iterrows()
+        for column, label in mapping.items()
+    ]
+    res = pd.DataFrame(rows)
+    return res
 
-    # ---- Reshape to long format ----
-    plot_data = []
-    for _, row in completeness_df.iterrows():
-        for field_col, field_label in field_mapping.items():
-            if field_col == "effect_size_beta_pct":
-                # Use combined effect size
-                pct_val = row["effect_size_pct"]
-            else:
-                pct_val = row[field_col]
 
-            plot_data.append(
-                {
-                    "pub_year": row["pub_year"],
-                    "field_type": field_label,
-                    "completeness_pct": pct_val,
-                }
-            )
-
-    res = pd.DataFrame(plot_data)
-    logger.info(f"Prepared {len(res)} field type x year combinations")
+def get_completeness_field_colors() -> Dict[str, str]:
+    """Use the same five distinct existing colors in main and supplement."""
+    original = get_field_type_colors(use_gruvbox=True)
+    res = {
+        "Direction": original["Direction"],
+        "Effect size": original["Effect Size"],
+        "Standard error": original["SE"],
+        "95% CI": original["95% CI"],
+        "P-Value": original["P-value"],
+    }
     return res
 
 
@@ -494,96 +482,11 @@ def create_completeness_subplot(
     completeness_df: pd.DataFrame,
     era_transitions: List[Dict],
 ) -> alt.Chart:
-    """Create completeness over time subplot.
-
-    Args:
-        completeness_df: DataFrame with yearly completeness statistics
-        era_transitions: List of era transition dicts
-
-    Returns:
-        Altair chart for completeness subplot
-    """
-    logger.info("Creating completeness subplot...")
-
-    # ---- Prepare data for key fields ----
-    fields_to_plot = [
-        "p_value_pct",
-        "confidence_interval_pct",
-        "standard_error_pct",
-    ]
-    field_labels = {
-        "p_value_pct": "P-value",
-        "confidence_interval_pct": "95% CI",
-        "standard_error_pct": "Standard error",
-    }
-
-    plot_data = []
-    for _, row in completeness_df.iterrows():
-        for field in fields_to_plot:
-            plot_data.append(
-                {
-                    "pub_year": row["pub_year"],
-                    "field": field_labels[field],
-                    "completeness_pct": row[field],
-                }
-            )
-
-    plot_df = pd.DataFrame(plot_data)
-
-    # ---- Get field type colors ----
-    field_colors = get_field_type_colors(use_gruvbox=True)
-
-    # ---- Main time series ----
-    line = (
-        alt.Chart(plot_df)
-        .mark_line(point=True)
-        .encode(
-            x=alt.X(
-                "pub_year:Q",
-                title="Publication Year",
-                scale=alt.Scale(domain=[YEAR_MIN, YEAR_MAX]),
-                axis=alt.Axis(format="d", labelAngle=0),
-            ),
-            y=alt.Y(
-                "completeness_pct:Q",
-                title="Reporting Completeness (%)",
-                scale=alt.Scale(domain=[0, 100]),
-            ),
-            color=alt.Color(
-                "field:N",
-                title="Field",
-                scale=alt.Scale(
-                    domain=list(field_labels.values()),
-                    range=[
-                        field_colors["P-value"],
-                        field_colors["95% CI"],
-                        field_colors["SE"],
-                    ],
-                ),
-            ),
-            tooltip=[
-                alt.Tooltip("pub_year:Q", title="Year", format="d"),
-                alt.Tooltip("field:N", title="Field"),
-                alt.Tooltip(
-                    "completeness_pct:Q",
-                    title="Completeness (%)",
-                    format=".1f",
-                ),
-            ],
-        )
+    """Create the consolidated five-series C without uncertainty bands."""
+    res = create_field_type_subplot(
+        prepare_field_type_yearly_data(completeness_df), era_transitions
     )
-
-    # ---- Era markers ----
-    era_markers = create_era_markers(era_transitions)
-
-    # ---- Combine layers ----
-    combined = (line + era_markers).properties(
-        width=PLOT_WIDTH,
-        height=PLOT_HEIGHT,
-        title="C. Reporting completeness over time by field",
-    )
-
-    return combined
+    return res
 
 
 def create_field_type_subplot(
@@ -602,13 +505,13 @@ def create_field_type_subplot(
     logger.info("Creating field type subplot...")
 
     # ---- Get field type colors ----
-    field_colors = get_field_type_colors(use_gruvbox=True)
-    field_types = field_type_df["field_type"].unique().tolist()
+    field_colors = get_completeness_field_colors()
+    field_types = list(field_colors)
 
     # ---- Create line chart with year on x-axis ----
     line = (
         alt.Chart(field_type_df)
-        .mark_line(point=True)
+        .mark_line(point=True, interpolate="linear", strokeJoin="round")
         .encode(
             x=alt.X(
                 "pub_year:Q",
@@ -647,8 +550,8 @@ def create_field_type_subplot(
     # ---- Combine layers ----
     combined = (line + era_markers).properties(
         width=PLOT_WIDTH,
-        height=PLOT_HEIGHT,
-        title="D. Reporting Completeness Over Time by Field Type",
+        height=400,
+        title="C. Reporting completeness by Field Type",
     )
 
     return combined
@@ -665,7 +568,7 @@ def create_faceted_figure(
     output_dir: Path,
     dry_run: bool = False,
 ):
-    """Create faceted time series figure with four subplots.
+    """Create faceted time series figure with three subplots.
 
     Args:
         temporal_df: DataFrame with publication year statistics
@@ -684,16 +587,12 @@ def create_faceted_figure(
     # ---- Prepare era transitions ----
     era_transitions = get_era_transitions(era_defs)
 
-    # ---- Prepare field type yearly data ----
-    field_type_df = prepare_field_type_yearly_data(completeness_df)
-
     # ---- Create subplots ----
     subplot_a = create_temporal_distribution_subplot(
         temporal_df, era_transitions
     )
     subplot_b = create_diversity_subplot(diversity_df, era_transitions)
     subplot_c = create_completeness_subplot(completeness_df, era_transitions)
-    subplot_d = create_field_type_subplot(field_type_df, era_transitions)
 
     # ---- Combine vertically ----
     combined = (
@@ -701,7 +600,6 @@ def create_faceted_figure(
             subplot_a,
             subplot_b,
             subplot_c,
-            subplot_d,
             spacing=40,
         )
         .resolve_scale(color="independent")

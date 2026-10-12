@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "audited_at_utc": "2026-10-12T08:05:19.932478+00:00",
+  "producer_commit": "2c8fc188119925795061272745ebf74715ba2d24",
+  "inputs_sha256": {
+    "data/db/vector_store.db": "61e691b7521e83180fab5b2bf631b42305a417ecd1c1e42a58322cb624b71ec3",
+    "data/processed/case-study-cs5/temporal/temporal_metadata.csv": "1bc78205c1a49e23cf5c708c87c6dc934e5ff48e2f5012b2c52ab1d749c524bf",
+    "data/processed/case-study-cs5/completeness/field_completeness_by_year.csv": "d7f9dcbe5051e3aca46a87ffd8ffd336042d7c8bce029857bbeb8c802106e4b8",
+    "data/processed/case-study-cs5/completeness/field_completeness_by_era.csv": "e9c8a47bcf6b302ca2160b439a332ea9d696b54bcf264883680bd702e26b5788",
+    "data/processed/case-study-cs5/completeness/field_type_by_era.csv": "37bfdc0a7eabf27d278ef2024be0be2b6542bb3657a2f278c808c3f24a08b41e",
+    "data/processed/case-study-cs5/diversity/trait_counts_by_year.csv": "2da082d2a8dbbf3f020b98c09aa1cb52a669a1f78010849a2fb1878a709fffa3",
+    "data/processed/overall-stats/temporal-statistics.csv": "71f79257daf0bcd7e91b5978558387de2b5d09809018360468ea4b81a8796adf",
+    "processing/config/case_studies.yml": "3a59612f465a894d7bde5603fb4d111c216d220a06a34c13534fd0a9e1a94cb2",
+    "processing/scripts/analysis/case_study_5_manuscript_figures.py": "484068bab095b05513b8069197dd898ee1f0ee5fc35de1fef15100195e9a3588",
+    "processing/scripts/analysis/case_study_5_reporting_completeness.py": "0cb716b261eda83044cb1c0faf9de6f32e3afbe346792c0e06725e242885241c",
+    "processing/scripts/analysis/case_study_5_temporal_preparation.py": "ed9ce4e2b6e54b4b233efae7341636e4846402e72baed55c4877ff97e89dd1a5",
+    "data/artifacts/manuscript-figures/cs5_fig_temporal_trends.png": "b28ed5efbcf7c190392acb29fb95cd9fbcecb0cf252b0f992bfebcc65eb89fe9"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "duckdb": "1.3.2",
+    "pandas": "2.3.1",
+    "altair": "6.0.0",
+    "vl_convert": "1.8.0",
+    "scipy": "1.16.1"
+  },
+  "checks": {
+    "gpt5_rows": 15606,
+    "gpt5_unique_pmids": 15606,
+    "temporal_rows": 15606,
+    "temporal_unique_pmids": 15606,
+    "join_cardinality": "one_to_one",
+    "date_metadata_matches_database": true,
+    "included_rows": 15599,
+    "excluded_rows": 7,
+    "excluded_pmids": [
+      "40072421",
+      "39993026",
+      "39829373",
+      "39727051",
+      "39718963",
+      "39264867",
+      "40105833"
+    ],
+    "excluded_years": [
+      2026
+    ],
+    "annual_years": [
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025
+    ],
+    "annual_and_era_counts_match_frozen_predicate": true,
+    "percentage_tolerance": 1e-10,
+    "retained_png_reproduced_byte_identically": true,
+    "installed_manuscript_png_matches": true
+  },
+  "presence_predicate": "Any extracted result dictionary has value other than None, empty string or literal N/A; no numeric validation or full-text reporting audit.",
+  "results_shape_counts": {
+    "list": 15606
+  },
+  "qualifying_value_types": {
+    "confidence_interval": {
+      "list": 89280
+    },
+    "direction": {
+      "str": 72647
+    },
+    "effect_size_or": {
+      "float": 27060,
+      "str": 356,
+      "int": 8
+    },
+    "p_value": {
+      "float": 25966,
+      "str": 228,
+      "int": 1
+    },
+    "effect_size_beta": {
+      "float": 6906,
+      "int": 261,
+      "str": 225
+    },
+    "standard_error": {
+      "float": 806,
+      "str": 390,
+      "int": 4
+    },
+    "effect_size_hr": {
+      "float": 1692,
+      "str": 403,
+      "int": 2
+    }
+  },
+  "publication_dates_in_included_corpus": {
+    "min": "2003-04-12",
+    "max": "2025-12-01"
+  },
+  "cutoff_limit": "Collection date not independently established; 2025 publication dates extend through 2025-12-01. Companions assert years 2003-2025 only, not a May or partial-month publication cutoff. Original historical invocation identity is not established.",
+  "baseline_reproduction_command": "processing/.venv/bin/python -B processing/scripts/analysis/case_study_5_manuscript_figures.py --output-dir /tmp/cs5-baseline-audit.Vj2LS1",
+  "installed_main_png_sha256": "b28ed5efbcf7c190392acb29fb95cd9fbcecb0cf252b0f992bfebcc65eb89fe9"
+}

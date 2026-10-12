@@ -1,5 +1,32 @@
 # MR-KG Docker Management Commands
 
+# Root recipes do not read dotenv; processing/justfile opts in separately.
+set dotenv-load := false
+
+# ==== Supplementary manuscript figures ====
+
+# Render, verify and publish consolidated main C and one CI companion
+[group('manuscript')]
+cs5-consolidated-figures *args:
+    processing/.venv/bin/python -B processing/scripts/analysis/case_study_5_consolidated_figures.py {{args}}
+
+# Check consolidated presentation and accepted statistical regression tests
+[group('manuscript')]
+cs5-consolidated-check:
+    processing/.venv/bin/ruff check --no-cache processing/scripts/analysis/case_study_5_manuscript_figures.py processing/scripts/analysis/case_study_5_consolidated_figures.py processing/tests/test_case_study_5_manuscript_figures.py processing/tests/test_case_study_5_consolidated_figures.py
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 processing/.venv/bin/python -B -m pytest -p no:cacheprovider -q processing/tests/test_case_study_5_manuscript_figures.py processing/tests/test_case_study_5_supplementary_completeness_figures.py processing/tests/test_case_study_5_consolidated_figures.py
+
+# Historical two-companion entry point requires its original main PNG baseline
+[group('manuscript')]
+cs5-supplementary-completeness *args:
+    processing/.venv/bin/python -B processing/scripts/analysis/case_study_5_supplementary_completeness_figures.py {{args}}
+
+# Check supplementary code and focused tests without syncing or loading dotenv
+[group('manuscript')]
+cs5-supplementary-check:
+    processing/.venv/bin/ruff check --no-cache processing/scripts/analysis/case_study_5_supplementary_completeness_figures.py processing/tests/test_case_study_5_supplementary_completeness_figures.py
+    PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 processing/.venv/bin/python -B -m pytest -p no:cacheprovider -q processing/tests/test_case_study_5_supplementary_completeness_figures.py processing/tests/test_case_study_5_manuscript_figures.py
+
 default:
     @just --list --unsorted
 

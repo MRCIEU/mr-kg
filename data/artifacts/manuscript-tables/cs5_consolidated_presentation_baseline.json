@@ -1,0 +1,1895 @@
+{
+  "schema_version": 1,
+  "producer_head": "2c8fc188119925795061272745ebf74715ba2d24",
+  "index_sha256": "3564ba444bb49efdfe533068d7ed9eb12d804a6e1ea5b68eae1024535a7925d5",
+  "original_main_sha256": "b28ed5efbcf7c190392acb29fb95cd9fbcecb0cf252b0f992bfebcc65eb89fe9",
+  "original_main_source_sha256": "484068bab095b05513b8069197dd898ee1f0ee5fc35de1fef15100195e9a3588",
+  "preserved_delivery_sha256": {
+    "data/artifacts/manuscript-figures/cs5_fig_temporal_trends_pre_consolidation.png": "b28ed5efbcf7c190392acb29fb95cd9fbcecb0cf252b0f992bfebcc65eb89fe9",
+    "data/artifacts/manuscript-figures/cs5_fig_completeness_by_field_ci.png": "bedd8d38ff3de2b24fa11ca1e40ac9f9c16e08e16571396754b9d4dc928b564a",
+    "data/artifacts/manuscript-figures/cs5_fig_completeness_by_field_type_ci.png": "ad930c7fe2ec6b44684d4bc6e359eda59f02e7d8f2d524697354e428f79bf6c2",
+    "data/artifacts/manuscript-tables/cs5_completeness_annual_ci.csv": "9f015228055d864ee5e375dd3c69591f90183b9555eca0d9ab972fa2e2bf0344",
+    "data/artifacts/manuscript-tables/cs5_completeness_baseline_audit.json": "362e5886ba38a8506441d71646d5aaff0810b981b639bd74f5e7d40b4ef59afd",
+    "data/artifacts/manuscript-tables/cs5_completeness_ci_provenance.json": "07c6c16e4506aacab99226b9d1502b75c78244709c8483fe670d90b7fd39f0bd",
+    "processing/scripts/analysis/case_study_5_supplementary_completeness_figures.py": "1b83f964639a8918c0e48dbfd1c3ee21b77dfdd7dc0be6596e33063ee02cc264"
+  },
+  "subplot_A": {
+    "config": {
+      "view": {
+        "continuousWidth": 300,
+        "continuousHeight": 300
+      }
+    },
+    "layer": [
+      {
+        "mark": {
+          "type": "line",
+          "color": "#83a598",
+          "point": true
+        },
+        "encoding": {
+          "tooltip": [
+            {
+              "field": "publication_year",
+              "format": "d",
+              "title": "Year",
+              "type": "quantitative"
+            },
+            {
+              "field": "paper_count",
+              "format": ",",
+              "title": "Papers",
+              "type": "quantitative"
+            }
+          ],
+          "x": {
+            "axis": {
+              "format": "d",
+              "labelAngle": 0
+            },
+            "field": "publication_year",
+            "scale": {
+              "domain": [
+                2003,
+                2025
+              ]
+            },
+            "title": "Publication Year",
+            "type": "quantitative"
+          },
+          "y": {
+            "axis": {
+              "format": ",",
+              "values": [
+                1,
+                3,
+                10,
+                30,
+                100,
+                300,
+                1000,
+                3000
+              ]
+            },
+            "field": "paper_count",
+            "scale": {
+              "base": 10,
+              "domainMin": 1,
+              "nice": false,
+              "type": "log"
+            },
+            "title": "Number of Papers (log scale)",
+            "type": "quantitative"
+          }
+        }
+      },
+      {
+        "mark": {
+          "type": "text",
+          "align": "center",
+          "dy": 26,
+          "fontSize": 10,
+          "stroke": "black",
+          "strokeWidth": 1
+        },
+        "encoding": {
+          "text": {
+            "field": "paper_count",
+            "format": ",",
+            "type": "quantitative"
+          },
+          "x": {
+            "field": "publication_year",
+            "type": "quantitative"
+          },
+          "y": {
+            "field": "paper_count",
+            "type": "quantitative"
+          }
+        }
+      },
+      {
+        "layer": [
+          {
+            "mark": {
+              "type": "rule",
+              "color": "#fb4934",
+              "strokeWidth": 1
+            },
+            "encoding": {
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              }
+            }
+          },
+          {
+            "mark": {
+              "type": "text",
+              "align": "left",
+              "color": "#fb4934",
+              "dx": 3,
+              "dy": 5,
+              "fontSize": 12,
+              "fontWeight": "bold"
+            },
+            "encoding": {
+              "text": {
+                "field": "era_num",
+                "type": "nominal"
+              },
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              },
+              "y": {
+                "value": 0
+              }
+            }
+          }
+        ],
+        "data": {
+          "name": "data-5fe96cca351ec5c724b7effc36609edd"
+        }
+      }
+    ],
+    "data": {
+      "name": "data-4d2649f3e2264cc371b45e827f5f5aec"
+    },
+    "height": 200,
+    "title": "A. MR Papers by Publication Year",
+    "width": 900,
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json",
+    "datasets": {
+      "data-4d2649f3e2264cc371b45e827f5f5aec": [
+        {
+          "publication_year": 2003,
+          "paper_count": 2,
+          "cumulative_papers": 2.0,
+          "model_results_count": 10,
+          "unique_models_count": 5
+        },
+        {
+          "publication_year": 2004,
+          "paper_count": 1,
+          "cumulative_papers": 3.0,
+          "model_results_count": 5,
+          "unique_models_count": 5
+        },
+        {
+          "publication_year": 2005,
+          "paper_count": 11,
+          "cumulative_papers": 14.0,
+          "model_results_count": 48,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2006,
+          "paper_count": 8,
+          "cumulative_papers": 22.0,
+          "model_results_count": 22,
+          "unique_models_count": 5
+        },
+        {
+          "publication_year": 2007,
+          "paper_count": 16,
+          "cumulative_papers": 38.0,
+          "model_results_count": 60,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2008,
+          "paper_count": 17,
+          "cumulative_papers": 55.0,
+          "model_results_count": 60,
+          "unique_models_count": 5
+        },
+        {
+          "publication_year": 2009,
+          "paper_count": 35,
+          "cumulative_papers": 90.0,
+          "model_results_count": 108,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2010,
+          "paper_count": 34,
+          "cumulative_papers": 124.0,
+          "model_results_count": 117,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2011,
+          "paper_count": 49,
+          "cumulative_papers": 173.0,
+          "model_results_count": 181,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2012,
+          "paper_count": 66,
+          "cumulative_papers": 239.0,
+          "model_results_count": 215,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2013,
+          "paper_count": 78,
+          "cumulative_papers": 317.0,
+          "model_results_count": 268,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2014,
+          "paper_count": 137,
+          "cumulative_papers": 454.0,
+          "model_results_count": 493,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2015,
+          "paper_count": 153,
+          "cumulative_papers": 607.0,
+          "model_results_count": 548,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2016,
+          "paper_count": 221,
+          "cumulative_papers": 828.0,
+          "model_results_count": 784,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2017,
+          "paper_count": 260,
+          "cumulative_papers": 1088.0,
+          "model_results_count": 962,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2018,
+          "paper_count": 369,
+          "cumulative_papers": 1457.0,
+          "model_results_count": 1307,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2019,
+          "paper_count": 545,
+          "cumulative_papers": 2002.0,
+          "model_results_count": 2062,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2020,
+          "paper_count": 823,
+          "cumulative_papers": 2825.0,
+          "model_results_count": 3124,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2021,
+          "paper_count": 1161,
+          "cumulative_papers": 3986.0,
+          "model_results_count": 4386,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2022,
+          "paper_count": 1649,
+          "cumulative_papers": 5635.0,
+          "model_results_count": 6424,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2023,
+          "paper_count": 3653,
+          "cumulative_papers": 9288.0,
+          "model_results_count": 14622,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2024,
+          "paper_count": 5462,
+          "cumulative_papers": 14750.0,
+          "model_results_count": 12821,
+          "unique_models_count": 6
+        },
+        {
+          "publication_year": 2025,
+          "paper_count": 878,
+          "cumulative_papers": 15628.0,
+          "model_results_count": 1761,
+          "unique_models_count": 5
+        }
+      ],
+      "data-5fe96cca351ec5c724b7effc36609edd": [
+        {
+          "year": 2003,
+          "era": "early_mr",
+          "era_num": "1"
+        },
+        {
+          "year": 2015,
+          "era": "mr_egger",
+          "era_num": "2"
+        },
+        {
+          "year": 2018,
+          "era": "mr_presso",
+          "era_num": "3"
+        },
+        {
+          "year": 2020,
+          "era": "within_family",
+          "era_num": "4"
+        },
+        {
+          "year": 2021,
+          "era": "strobe_mr",
+          "era_num": "5"
+        }
+      ]
+    }
+  },
+  "subplot_B": {
+    "config": {
+      "view": {
+        "continuousWidth": 300,
+        "continuousHeight": 300
+      }
+    },
+    "layer": [
+      {
+        "mark": {
+          "type": "errorband",
+          "extent": "stderr",
+          "opacity": 0.3
+        },
+        "encoding": {
+          "x": {
+            "field": "pub_year",
+            "type": "quantitative"
+          },
+          "y": {
+            "field": "mean_trait_count",
+            "title": "Mean Traits per Study",
+            "type": "quantitative"
+          },
+          "yError": {
+            "field": "std_trait_count"
+          }
+        }
+      },
+      {
+        "mark": {
+          "type": "line",
+          "color": "#83a598",
+          "strokeDash": [
+            5,
+            5
+          ]
+        },
+        "encoding": {
+          "x": {
+            "axis": {
+              "format": "d",
+              "labelAngle": 0
+            },
+            "field": "pub_year",
+            "scale": {
+              "domain": [
+                2003,
+                2025
+              ]
+            },
+            "title": "Publication Year",
+            "type": "quantitative"
+          },
+          "y": {
+            "field": "mean_trait_count",
+            "title": "Mean Traits per Study",
+            "type": "quantitative"
+          }
+        }
+      },
+      {
+        "mark": {
+          "type": "point",
+          "color": "#83a598",
+          "filled": true,
+          "size": 60
+        },
+        "encoding": {
+          "tooltip": [
+            {
+              "field": "pub_year",
+              "format": "d",
+              "title": "Year",
+              "type": "quantitative"
+            },
+            {
+              "field": "mean_trait_count",
+              "format": ".2f",
+              "title": "Mean Traits",
+              "type": "quantitative"
+            },
+            {
+              "field": "n_studies",
+              "title": "Studies",
+              "type": "quantitative"
+            }
+          ],
+          "x": {
+            "field": "pub_year",
+            "type": "quantitative"
+          },
+          "y": {
+            "field": "mean_trait_count",
+            "type": "quantitative"
+          }
+        }
+      },
+      {
+        "layer": [
+          {
+            "mark": {
+              "type": "rule",
+              "color": "#fb4934",
+              "strokeWidth": 1
+            },
+            "encoding": {
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              }
+            }
+          },
+          {
+            "mark": {
+              "type": "text",
+              "align": "left",
+              "color": "#fb4934",
+              "dx": 3,
+              "dy": 5,
+              "fontSize": 12,
+              "fontWeight": "bold"
+            },
+            "encoding": {
+              "text": {
+                "field": "era_num",
+                "type": "nominal"
+              },
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              },
+              "y": {
+                "value": 0
+              }
+            }
+          }
+        ],
+        "data": {
+          "name": "data-5fe96cca351ec5c724b7effc36609edd"
+        }
+      }
+    ],
+    "data": {
+      "name": "data-6eea578a4b753d6988e389750e460730"
+    },
+    "height": 200,
+    "title": "B. Trait Diversity Over Time",
+    "width": 900,
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json",
+    "datasets": {
+      "data-6eea578a4b753d6988e389750e460730": [
+        {
+          "pub_year": 2005,
+          "n_studies": 11,
+          "mean_trait_count": 2.4545454545454546,
+          "median_trait_count": 3.0,
+          "std_trait_count": 2.5441555126853532,
+          "min_trait_count": 0,
+          "q25_trait_count": 0.0,
+          "q75_trait_count": 4.0,
+          "max_trait_count": 7
+        },
+        {
+          "pub_year": 2007,
+          "n_studies": 16,
+          "mean_trait_count": 3.9375,
+          "median_trait_count": 4.0,
+          "std_trait_count": 2.644963767867782,
+          "min_trait_count": 0,
+          "q25_trait_count": 1.75,
+          "q75_trait_count": 5.25,
+          "max_trait_count": 9
+        },
+        {
+          "pub_year": 2008,
+          "n_studies": 17,
+          "mean_trait_count": 3.1176470588235294,
+          "median_trait_count": 2.0,
+          "std_trait_count": 3.120143284794315,
+          "min_trait_count": 0,
+          "q25_trait_count": 0.0,
+          "q75_trait_count": 5.0,
+          "max_trait_count": 9
+        },
+        {
+          "pub_year": 2009,
+          "n_studies": 35,
+          "mean_trait_count": 4.514285714285714,
+          "median_trait_count": 4.0,
+          "std_trait_count": 3.398714537027445,
+          "min_trait_count": 0,
+          "q25_trait_count": 3.0,
+          "q75_trait_count": 5.5,
+          "max_trait_count": 15
+        },
+        {
+          "pub_year": 2010,
+          "n_studies": 34,
+          "mean_trait_count": 3.3823529411764706,
+          "median_trait_count": 3.0,
+          "std_trait_count": 3.2475137892011623,
+          "min_trait_count": 0,
+          "q25_trait_count": 1.25,
+          "q75_trait_count": 4.0,
+          "max_trait_count": 13
+        },
+        {
+          "pub_year": 2011,
+          "n_studies": 49,
+          "mean_trait_count": 3.2653061224489797,
+          "median_trait_count": 3.0,
+          "std_trait_count": 2.7896797173098684,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.0,
+          "q75_trait_count": 5.0,
+          "max_trait_count": 12
+        },
+        {
+          "pub_year": 2012,
+          "n_studies": 66,
+          "mean_trait_count": 4.196969696969697,
+          "median_trait_count": 3.0,
+          "std_trait_count": 3.2307165052862716,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.0,
+          "q75_trait_count": 5.75,
+          "max_trait_count": 15
+        },
+        {
+          "pub_year": 2013,
+          "n_studies": 78,
+          "mean_trait_count": 4.653846153846154,
+          "median_trait_count": 4.0,
+          "std_trait_count": 3.6425584097213553,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.0,
+          "q75_trait_count": 6.75,
+          "max_trait_count": 24
+        },
+        {
+          "pub_year": 2014,
+          "n_studies": 137,
+          "mean_trait_count": 4.416058394160584,
+          "median_trait_count": 4.0,
+          "std_trait_count": 3.2395586476955724,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.0,
+          "q75_trait_count": 6.0,
+          "max_trait_count": 20
+        },
+        {
+          "pub_year": 2015,
+          "n_studies": 152,
+          "mean_trait_count": 5.223684210526316,
+          "median_trait_count": 5.0,
+          "std_trait_count": 3.6687283619336446,
+          "min_trait_count": 0,
+          "q25_trait_count": 3.0,
+          "q75_trait_count": 7.0,
+          "max_trait_count": 22
+        },
+        {
+          "pub_year": 2016,
+          "n_studies": 220,
+          "mean_trait_count": 4.836363636363636,
+          "median_trait_count": 4.0,
+          "std_trait_count": 3.5973792406988983,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.0,
+          "q75_trait_count": 6.0,
+          "max_trait_count": 27
+        },
+        {
+          "pub_year": 2017,
+          "n_studies": 259,
+          "mean_trait_count": 4.953667953667954,
+          "median_trait_count": 4.0,
+          "std_trait_count": 3.693407082060413,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.5,
+          "q75_trait_count": 7.0,
+          "max_trait_count": 28
+        },
+        {
+          "pub_year": 2018,
+          "n_studies": 368,
+          "mean_trait_count": 5.032608695652174,
+          "median_trait_count": 4.0,
+          "std_trait_count": 3.616345233683933,
+          "min_trait_count": 0,
+          "q25_trait_count": 2.0,
+          "q75_trait_count": 7.0,
+          "max_trait_count": 24
+        },
+        {
+          "pub_year": 2019,
+          "n_studies": 545,
+          "mean_trait_count": 5.89908256880734,
+          "median_trait_count": 5.0,
+          "std_trait_count": 4.46749895924895,
+          "min_trait_count": 0,
+          "q25_trait_count": 3.0,
+          "q75_trait_count": 8.0,
+          "max_trait_count": 51
+        },
+        {
+          "pub_year": 2020,
+          "n_studies": 821,
+          "mean_trait_count": 6.002436053593179,
+          "median_trait_count": 5.0,
+          "std_trait_count": 4.016428933204099,
+          "min_trait_count": 0,
+          "q25_trait_count": 3.0,
+          "q75_trait_count": 8.0,
+          "max_trait_count": 35
+        },
+        {
+          "pub_year": 2021,
+          "n_studies": 1160,
+          "mean_trait_count": 6.202586206896552,
+          "median_trait_count": 5.0,
+          "std_trait_count": 4.079811217419713,
+          "min_trait_count": 0,
+          "q25_trait_count": 3.0,
+          "q75_trait_count": 8.0,
+          "max_trait_count": 32
+        },
+        {
+          "pub_year": 2022,
+          "n_studies": 1645,
+          "mean_trait_count": 6.7033434650455925,
+          "median_trait_count": 6.0,
+          "std_trait_count": 4.390685757128159,
+          "min_trait_count": 0,
+          "q25_trait_count": 4.0,
+          "q75_trait_count": 9.0,
+          "max_trait_count": 38
+        },
+        {
+          "pub_year": 2023,
+          "n_studies": 3646,
+          "mean_trait_count": 7.292100932528799,
+          "median_trait_count": 6.0,
+          "std_trait_count": 4.570193660875122,
+          "min_trait_count": 0,
+          "q25_trait_count": 4.0,
+          "q75_trait_count": 9.0,
+          "max_trait_count": 52
+        },
+        {
+          "pub_year": 2024,
+          "n_studies": 5454,
+          "mean_trait_count": 7.387972130546388,
+          "median_trait_count": 6.0,
+          "std_trait_count": 4.942193828734181,
+          "min_trait_count": 0,
+          "q25_trait_count": 4.0,
+          "q75_trait_count": 10.0,
+          "max_trait_count": 74
+        },
+        {
+          "pub_year": 2025,
+          "n_studies": 875,
+          "mean_trait_count": 7.094857142857143,
+          "median_trait_count": 6.0,
+          "std_trait_count": 4.271550136521089,
+          "min_trait_count": 0,
+          "q25_trait_count": 4.0,
+          "q75_trait_count": 9.0,
+          "max_trait_count": 30
+        }
+      ],
+      "data-5fe96cca351ec5c724b7effc36609edd": [
+        {
+          "year": 2003,
+          "era": "early_mr",
+          "era_num": "1"
+        },
+        {
+          "year": 2015,
+          "era": "mr_egger",
+          "era_num": "2"
+        },
+        {
+          "year": 2018,
+          "era": "mr_presso",
+          "era_num": "3"
+        },
+        {
+          "year": 2020,
+          "era": "within_family",
+          "era_num": "4"
+        },
+        {
+          "year": 2021,
+          "era": "strobe_mr",
+          "era_num": "5"
+        }
+      ]
+    }
+  },
+  "old_C": {
+    "config": {
+      "view": {
+        "continuousWidth": 300,
+        "continuousHeight": 300
+      }
+    },
+    "layer": [
+      {
+        "data": {
+          "name": "data-510dca2e54551081991fb57d80a73612"
+        },
+        "mark": {
+          "type": "line",
+          "point": true
+        },
+        "encoding": {
+          "color": {
+            "field": "field",
+            "scale": {
+              "domain": [
+                "P-value",
+                "95% CI",
+                "Standard error"
+              ],
+              "range": [
+                "#d3869b",
+                "#83a598",
+                "#d79921"
+              ]
+            },
+            "title": "Field",
+            "type": "nominal"
+          },
+          "tooltip": [
+            {
+              "field": "pub_year",
+              "format": "d",
+              "title": "Year",
+              "type": "quantitative"
+            },
+            {
+              "field": "field",
+              "title": "Field",
+              "type": "nominal"
+            },
+            {
+              "field": "completeness_pct",
+              "format": ".1f",
+              "title": "Completeness (%)",
+              "type": "quantitative"
+            }
+          ],
+          "x": {
+            "axis": {
+              "format": "d",
+              "labelAngle": 0
+            },
+            "field": "pub_year",
+            "scale": {
+              "domain": [
+                2003,
+                2025
+              ]
+            },
+            "title": "Publication Year",
+            "type": "quantitative"
+          },
+          "y": {
+            "field": "completeness_pct",
+            "scale": {
+              "domain": [
+                0,
+                100
+              ]
+            },
+            "title": "Reporting Completeness (%)",
+            "type": "quantitative"
+          }
+        }
+      },
+      {
+        "layer": [
+          {
+            "mark": {
+              "type": "rule",
+              "color": "#fb4934",
+              "strokeWidth": 1
+            },
+            "encoding": {
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              }
+            }
+          },
+          {
+            "mark": {
+              "type": "text",
+              "align": "left",
+              "color": "#fb4934",
+              "dx": 3,
+              "dy": 5,
+              "fontSize": 12,
+              "fontWeight": "bold"
+            },
+            "encoding": {
+              "text": {
+                "field": "era_num",
+                "type": "nominal"
+              },
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              },
+              "y": {
+                "value": 0
+              }
+            }
+          }
+        ],
+        "data": {
+          "name": "data-5fe96cca351ec5c724b7effc36609edd"
+        }
+      }
+    ],
+    "height": 200,
+    "title": "C. Reporting completeness over time by field",
+    "width": 900,
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json",
+    "datasets": {
+      "data-510dca2e54551081991fb57d80a73612": [
+        {
+          "pub_year": 2003.0,
+          "field": "P-value",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2003.0,
+          "field": "95% CI",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2003.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field": "P-value",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field": "95% CI",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2005.0,
+          "field": "P-value",
+          "completeness_pct": 9.090909090909092
+        },
+        {
+          "pub_year": 2005.0,
+          "field": "95% CI",
+          "completeness_pct": 54.54545454545454
+        },
+        {
+          "pub_year": 2005.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2006.0,
+          "field": "P-value",
+          "completeness_pct": 25.0
+        },
+        {
+          "pub_year": 2006.0,
+          "field": "95% CI",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2006.0,
+          "field": "Standard error",
+          "completeness_pct": 12.5
+        },
+        {
+          "pub_year": 2007.0,
+          "field": "P-value",
+          "completeness_pct": 25.0
+        },
+        {
+          "pub_year": 2007.0,
+          "field": "95% CI",
+          "completeness_pct": 62.5
+        },
+        {
+          "pub_year": 2007.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2008.0,
+          "field": "P-value",
+          "completeness_pct": 17.647058823529413
+        },
+        {
+          "pub_year": 2008.0,
+          "field": "95% CI",
+          "completeness_pct": 58.82352941176471
+        },
+        {
+          "pub_year": 2008.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2009.0,
+          "field": "P-value",
+          "completeness_pct": 40.0
+        },
+        {
+          "pub_year": 2009.0,
+          "field": "95% CI",
+          "completeness_pct": 80.0
+        },
+        {
+          "pub_year": 2009.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2010.0,
+          "field": "P-value",
+          "completeness_pct": 20.588235294117645
+        },
+        {
+          "pub_year": 2010.0,
+          "field": "95% CI",
+          "completeness_pct": 64.70588235294117
+        },
+        {
+          "pub_year": 2010.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2011.0,
+          "field": "P-value",
+          "completeness_pct": 22.448979591836736
+        },
+        {
+          "pub_year": 2011.0,
+          "field": "95% CI",
+          "completeness_pct": 79.59183673469387
+        },
+        {
+          "pub_year": 2011.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2012.0,
+          "field": "P-value",
+          "completeness_pct": 36.36363636363637
+        },
+        {
+          "pub_year": 2012.0,
+          "field": "95% CI",
+          "completeness_pct": 84.84848484848484
+        },
+        {
+          "pub_year": 2012.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2013.0,
+          "field": "P-value",
+          "completeness_pct": 38.46153846153847
+        },
+        {
+          "pub_year": 2013.0,
+          "field": "95% CI",
+          "completeness_pct": 84.61538461538461
+        },
+        {
+          "pub_year": 2013.0,
+          "field": "Standard error",
+          "completeness_pct": 1.282051282051282
+        },
+        {
+          "pub_year": 2014.0,
+          "field": "P-value",
+          "completeness_pct": 34.306569343065696
+        },
+        {
+          "pub_year": 2014.0,
+          "field": "95% CI",
+          "completeness_pct": 84.67153284671532
+        },
+        {
+          "pub_year": 2014.0,
+          "field": "Standard error",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2015.0,
+          "field": "P-value",
+          "completeness_pct": 37.5
+        },
+        {
+          "pub_year": 2015.0,
+          "field": "95% CI",
+          "completeness_pct": 88.81578947368422
+        },
+        {
+          "pub_year": 2015.0,
+          "field": "Standard error",
+          "completeness_pct": 3.9473684210526314
+        },
+        {
+          "pub_year": 2016.0,
+          "field": "P-value",
+          "completeness_pct": 32.72727272727273
+        },
+        {
+          "pub_year": 2016.0,
+          "field": "95% CI",
+          "completeness_pct": 85.0
+        },
+        {
+          "pub_year": 2016.0,
+          "field": "Standard error",
+          "completeness_pct": 2.272727272727273
+        },
+        {
+          "pub_year": 2017.0,
+          "field": "P-value",
+          "completeness_pct": 35.521235521235525
+        },
+        {
+          "pub_year": 2017.0,
+          "field": "95% CI",
+          "completeness_pct": 87.25868725868726
+        },
+        {
+          "pub_year": 2017.0,
+          "field": "Standard error",
+          "completeness_pct": 2.702702702702702
+        },
+        {
+          "pub_year": 2018.0,
+          "field": "P-value",
+          "completeness_pct": 41.03260869565217
+        },
+        {
+          "pub_year": 2018.0,
+          "field": "95% CI",
+          "completeness_pct": 88.8586956521739
+        },
+        {
+          "pub_year": 2018.0,
+          "field": "Standard error",
+          "completeness_pct": 5.978260869565218
+        },
+        {
+          "pub_year": 2019.0,
+          "field": "P-value",
+          "completeness_pct": 37.98165137614679
+        },
+        {
+          "pub_year": 2019.0,
+          "field": "95% CI",
+          "completeness_pct": 91.19266055045873
+        },
+        {
+          "pub_year": 2019.0,
+          "field": "Standard error",
+          "completeness_pct": 2.9357798165137616
+        },
+        {
+          "pub_year": 2020.0,
+          "field": "P-value",
+          "completeness_pct": 40.073081607795366
+        },
+        {
+          "pub_year": 2020.0,
+          "field": "95% CI",
+          "completeness_pct": 92.69183922046284
+        },
+        {
+          "pub_year": 2020.0,
+          "field": "Standard error",
+          "completeness_pct": 4.019488428745433
+        },
+        {
+          "pub_year": 2021.0,
+          "field": "P-value",
+          "completeness_pct": 43.96551724137931
+        },
+        {
+          "pub_year": 2021.0,
+          "field": "95% CI",
+          "completeness_pct": 92.8448275862069
+        },
+        {
+          "pub_year": 2021.0,
+          "field": "Standard error",
+          "completeness_pct": 4.051724137931034
+        },
+        {
+          "pub_year": 2022.0,
+          "field": "P-value",
+          "completeness_pct": 52.82674772036474
+        },
+        {
+          "pub_year": 2022.0,
+          "field": "95% CI",
+          "completeness_pct": 94.34650455927051
+        },
+        {
+          "pub_year": 2022.0,
+          "field": "Standard error",
+          "completeness_pct": 2.7963525835866263
+        },
+        {
+          "pub_year": 2023.0,
+          "field": "P-value",
+          "completeness_pct": 55.84201865057597
+        },
+        {
+          "pub_year": 2023.0,
+          "field": "95% CI",
+          "completeness_pct": 96.70872188699946
+        },
+        {
+          "pub_year": 2023.0,
+          "field": "Standard error",
+          "completeness_pct": 2.1941854086670323
+        },
+        {
+          "pub_year": 2024.0,
+          "field": "P-value",
+          "completeness_pct": 47.63476347634763
+        },
+        {
+          "pub_year": 2024.0,
+          "field": "95% CI",
+          "completeness_pct": 96.82801613494682
+        },
+        {
+          "pub_year": 2024.0,
+          "field": "Standard error",
+          "completeness_pct": 1.3751375137513753
+        },
+        {
+          "pub_year": 2025.0,
+          "field": "P-value",
+          "completeness_pct": 46.17142857142857
+        },
+        {
+          "pub_year": 2025.0,
+          "field": "95% CI",
+          "completeness_pct": 96.45714285714286
+        },
+        {
+          "pub_year": 2025.0,
+          "field": "Standard error",
+          "completeness_pct": 1.8285714285714287
+        }
+      ],
+      "data-5fe96cca351ec5c724b7effc36609edd": [
+        {
+          "year": 2003,
+          "era": "early_mr",
+          "era_num": "1"
+        },
+        {
+          "year": 2015,
+          "era": "mr_egger",
+          "era_num": "2"
+        },
+        {
+          "year": 2018,
+          "era": "mr_presso",
+          "era_num": "3"
+        },
+        {
+          "year": 2020,
+          "era": "within_family",
+          "era_num": "4"
+        },
+        {
+          "year": 2021,
+          "era": "strobe_mr",
+          "era_num": "5"
+        }
+      ]
+    }
+  },
+  "old_D": {
+    "config": {
+      "view": {
+        "continuousWidth": 300,
+        "continuousHeight": 300
+      }
+    },
+    "layer": [
+      {
+        "data": {
+          "name": "data-714fc9d19a50a82b3114c8ace2be7706"
+        },
+        "mark": {
+          "type": "line",
+          "point": true
+        },
+        "encoding": {
+          "color": {
+            "field": "field_type",
+            "scale": {
+              "domain": [
+                "Confidence Interval",
+                "Direction",
+                "Effect Size",
+                "Statistical"
+              ],
+              "range": [
+                "#fe8019",
+                "#b8bb26",
+                "#fb4934",
+                "#d3869b"
+              ]
+            },
+            "title": "Field Type",
+            "type": "nominal"
+          },
+          "tooltip": [
+            {
+              "field": "pub_year",
+              "format": "d",
+              "title": "Year",
+              "type": "quantitative"
+            },
+            {
+              "field": "field_type",
+              "title": "Field Type",
+              "type": "nominal"
+            },
+            {
+              "field": "completeness_pct",
+              "format": ".1f",
+              "title": "Completeness (%)",
+              "type": "quantitative"
+            }
+          ],
+          "x": {
+            "axis": {
+              "format": "d",
+              "labelAngle": 0
+            },
+            "field": "pub_year",
+            "scale": {
+              "domain": [
+                2003,
+                2025
+              ]
+            },
+            "title": "Publication Year",
+            "type": "quantitative"
+          },
+          "y": {
+            "field": "completeness_pct",
+            "scale": {
+              "domain": [
+                0,
+                100
+              ]
+            },
+            "title": "Reporting Completeness (%)",
+            "type": "quantitative"
+          }
+        }
+      },
+      {
+        "layer": [
+          {
+            "mark": {
+              "type": "rule",
+              "color": "#fb4934",
+              "strokeWidth": 1
+            },
+            "encoding": {
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              }
+            }
+          },
+          {
+            "mark": {
+              "type": "text",
+              "align": "left",
+              "color": "#fb4934",
+              "dx": 3,
+              "dy": 5,
+              "fontSize": 12,
+              "fontWeight": "bold"
+            },
+            "encoding": {
+              "text": {
+                "field": "era_num",
+                "type": "nominal"
+              },
+              "x": {
+                "field": "year",
+                "type": "quantitative"
+              },
+              "y": {
+                "value": 0
+              }
+            }
+          }
+        ],
+        "data": {
+          "name": "data-5fe96cca351ec5c724b7effc36609edd"
+        }
+      }
+    ],
+    "height": 200,
+    "title": "D. Reporting Completeness Over Time by Field Type",
+    "width": 900,
+    "$schema": "https://vega.github.io/schema/vega-lite/v6.1.0.json",
+    "datasets": {
+      "data-714fc9d19a50a82b3114c8ace2be7706": [
+        {
+          "pub_year": 2003.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2003.0,
+          "field_type": "Direction",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2003.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2003.0,
+          "field_type": "Statistical",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field_type": "Direction",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2004.0,
+          "field_type": "Statistical",
+          "completeness_pct": 0.0
+        },
+        {
+          "pub_year": 2005.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 54.54545454545454
+        },
+        {
+          "pub_year": 2005.0,
+          "field_type": "Direction",
+          "completeness_pct": 54.54545454545454
+        },
+        {
+          "pub_year": 2005.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 27.27272727272727
+        },
+        {
+          "pub_year": 2005.0,
+          "field_type": "Statistical",
+          "completeness_pct": 9.090909090909092
+        },
+        {
+          "pub_year": 2006.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2006.0,
+          "field_type": "Direction",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2006.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 37.5
+        },
+        {
+          "pub_year": 2006.0,
+          "field_type": "Statistical",
+          "completeness_pct": 25.0
+        },
+        {
+          "pub_year": 2007.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 62.5
+        },
+        {
+          "pub_year": 2007.0,
+          "field_type": "Direction",
+          "completeness_pct": 50.0
+        },
+        {
+          "pub_year": 2007.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 12.5
+        },
+        {
+          "pub_year": 2007.0,
+          "field_type": "Statistical",
+          "completeness_pct": 25.0
+        },
+        {
+          "pub_year": 2008.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 58.82352941176471
+        },
+        {
+          "pub_year": 2008.0,
+          "field_type": "Direction",
+          "completeness_pct": 52.94117647058824
+        },
+        {
+          "pub_year": 2008.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 11.76470588235294
+        },
+        {
+          "pub_year": 2008.0,
+          "field_type": "Statistical",
+          "completeness_pct": 17.647058823529413
+        },
+        {
+          "pub_year": 2009.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 80.0
+        },
+        {
+          "pub_year": 2009.0,
+          "field_type": "Direction",
+          "completeness_pct": 80.0
+        },
+        {
+          "pub_year": 2009.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 40.0
+        },
+        {
+          "pub_year": 2009.0,
+          "field_type": "Statistical",
+          "completeness_pct": 40.0
+        },
+        {
+          "pub_year": 2010.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 64.70588235294117
+        },
+        {
+          "pub_year": 2010.0,
+          "field_type": "Direction",
+          "completeness_pct": 52.94117647058824
+        },
+        {
+          "pub_year": 2010.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 17.647058823529413
+        },
+        {
+          "pub_year": 2010.0,
+          "field_type": "Statistical",
+          "completeness_pct": 20.588235294117645
+        },
+        {
+          "pub_year": 2011.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 79.59183673469387
+        },
+        {
+          "pub_year": 2011.0,
+          "field_type": "Direction",
+          "completeness_pct": 77.55102040816327
+        },
+        {
+          "pub_year": 2011.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 32.6530612244898
+        },
+        {
+          "pub_year": 2011.0,
+          "field_type": "Statistical",
+          "completeness_pct": 22.448979591836736
+        },
+        {
+          "pub_year": 2012.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 84.84848484848484
+        },
+        {
+          "pub_year": 2012.0,
+          "field_type": "Direction",
+          "completeness_pct": 80.3030303030303
+        },
+        {
+          "pub_year": 2012.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 33.33333333333333
+        },
+        {
+          "pub_year": 2012.0,
+          "field_type": "Statistical",
+          "completeness_pct": 36.36363636363637
+        },
+        {
+          "pub_year": 2013.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 84.61538461538461
+        },
+        {
+          "pub_year": 2013.0,
+          "field_type": "Direction",
+          "completeness_pct": 80.76923076923077
+        },
+        {
+          "pub_year": 2013.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 33.33333333333333
+        },
+        {
+          "pub_year": 2013.0,
+          "field_type": "Statistical",
+          "completeness_pct": 38.46153846153847
+        },
+        {
+          "pub_year": 2014.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 84.67153284671532
+        },
+        {
+          "pub_year": 2014.0,
+          "field_type": "Direction",
+          "completeness_pct": 78.83211678832117
+        },
+        {
+          "pub_year": 2014.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 35.76642335766424
+        },
+        {
+          "pub_year": 2014.0,
+          "field_type": "Statistical",
+          "completeness_pct": 34.306569343065696
+        },
+        {
+          "pub_year": 2015.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 88.81578947368422
+        },
+        {
+          "pub_year": 2015.0,
+          "field_type": "Direction",
+          "completeness_pct": 83.55263157894737
+        },
+        {
+          "pub_year": 2015.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 36.84210526315789
+        },
+        {
+          "pub_year": 2015.0,
+          "field_type": "Statistical",
+          "completeness_pct": 37.5
+        },
+        {
+          "pub_year": 2016.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 85.0
+        },
+        {
+          "pub_year": 2016.0,
+          "field_type": "Direction",
+          "completeness_pct": 78.63636363636364
+        },
+        {
+          "pub_year": 2016.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 40.45454545454545
+        },
+        {
+          "pub_year": 2016.0,
+          "field_type": "Statistical",
+          "completeness_pct": 32.72727272727273
+        },
+        {
+          "pub_year": 2017.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 87.25868725868726
+        },
+        {
+          "pub_year": 2017.0,
+          "field_type": "Direction",
+          "completeness_pct": 77.99227799227799
+        },
+        {
+          "pub_year": 2017.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 33.204633204633204
+        },
+        {
+          "pub_year": 2017.0,
+          "field_type": "Statistical",
+          "completeness_pct": 35.521235521235525
+        },
+        {
+          "pub_year": 2018.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 88.8586956521739
+        },
+        {
+          "pub_year": 2018.0,
+          "field_type": "Direction",
+          "completeness_pct": 81.25
+        },
+        {
+          "pub_year": 2018.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 37.5
+        },
+        {
+          "pub_year": 2018.0,
+          "field_type": "Statistical",
+          "completeness_pct": 41.03260869565217
+        },
+        {
+          "pub_year": 2019.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 91.19266055045873
+        },
+        {
+          "pub_year": 2019.0,
+          "field_type": "Direction",
+          "completeness_pct": 84.03669724770643
+        },
+        {
+          "pub_year": 2019.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 39.816513761467895
+        },
+        {
+          "pub_year": 2019.0,
+          "field_type": "Statistical",
+          "completeness_pct": 37.98165137614679
+        },
+        {
+          "pub_year": 2020.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 92.69183922046284
+        },
+        {
+          "pub_year": 2020.0,
+          "field_type": "Direction",
+          "completeness_pct": 83.80024360535931
+        },
+        {
+          "pub_year": 2020.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 41.90012180267966
+        },
+        {
+          "pub_year": 2020.0,
+          "field_type": "Statistical",
+          "completeness_pct": 40.073081607795366
+        },
+        {
+          "pub_year": 2021.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 92.8448275862069
+        },
+        {
+          "pub_year": 2021.0,
+          "field_type": "Direction",
+          "completeness_pct": 85.17241379310346
+        },
+        {
+          "pub_year": 2021.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 46.89655172413793
+        },
+        {
+          "pub_year": 2021.0,
+          "field_type": "Statistical",
+          "completeness_pct": 43.96551724137931
+        },
+        {
+          "pub_year": 2022.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 94.34650455927051
+        },
+        {
+          "pub_year": 2022.0,
+          "field_type": "Direction",
+          "completeness_pct": 88.6322188449848
+        },
+        {
+          "pub_year": 2022.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 55.19756838905775
+        },
+        {
+          "pub_year": 2022.0,
+          "field_type": "Statistical",
+          "completeness_pct": 52.82674772036474
+        },
+        {
+          "pub_year": 2023.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 96.70872188699946
+        },
+        {
+          "pub_year": 2023.0,
+          "field_type": "Direction",
+          "completeness_pct": 90.40043883708174
+        },
+        {
+          "pub_year": 2023.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 58.228195282501375
+        },
+        {
+          "pub_year": 2023.0,
+          "field_type": "Statistical",
+          "completeness_pct": 55.84201865057597
+        },
+        {
+          "pub_year": 2024.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 96.82801613494682
+        },
+        {
+          "pub_year": 2024.0,
+          "field_type": "Direction",
+          "completeness_pct": 89.43894389438944
+        },
+        {
+          "pub_year": 2024.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 51.57682434910158
+        },
+        {
+          "pub_year": 2024.0,
+          "field_type": "Statistical",
+          "completeness_pct": 47.63476347634763
+        },
+        {
+          "pub_year": 2025.0,
+          "field_type": "Confidence Interval",
+          "completeness_pct": 96.45714285714286
+        },
+        {
+          "pub_year": 2025.0,
+          "field_type": "Direction",
+          "completeness_pct": 89.25714285714285
+        },
+        {
+          "pub_year": 2025.0,
+          "field_type": "Effect Size",
+          "completeness_pct": 49.94285714285714
+        },
+        {
+          "pub_year": 2025.0,
+          "field_type": "Statistical",
+          "completeness_pct": 46.17142857142857
+        }
+      ],
+      "data-5fe96cca351ec5c724b7effc36609edd": [
+        {
+          "year": 2003,
+          "era": "early_mr",
+          "era_num": "1"
+        },
+        {
+          "year": 2015,
+          "era": "mr_egger",
+          "era_num": "2"
+        },
+        {
+          "year": 2018,
+          "era": "mr_presso",
+          "era_num": "3"
+        },
+        {
+          "year": 2020,
+          "era": "within_family",
+          "era_num": "4"
+        },
+        {
+          "year": 2021,
+          "era": "strobe_mr",
+          "era_num": "5"
+        }
+      ]
+    }
+  },
+  "protected_function_ast_sha256": {
+    "calculate_log_ticks": "f914fcf347ce71e20e923d7af7b1fdee5597bc742cffcf89bbd84a2fb86118a5",
+    "create_era_markers": "193836418c2b4a9d4eb92cd9528d305bde8759dcdcd91eb3d03c1d95a2385486",
+    "create_temporal_distribution_subplot": "a811ca3e8eec36147c8ab481603ab3dc7c2481e2e1b4669c7c07f50213ba521c",
+    "create_diversity_subplot": "3d7116e595cb81d5287a486fc55a1f0e85329fbe6603c2558e8531c528b410a5"
+  }
+}

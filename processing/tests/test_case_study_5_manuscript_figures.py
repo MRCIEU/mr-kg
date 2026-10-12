@@ -51,29 +51,47 @@ def test_diversity_axis_title_and_supplied_sd_bounds() -> None:
 
 
 def test_completeness_labels_preserve_series_values_and_colors() -> None:
-    """Expand the SE label without changing its data or original color."""
+    """Consolidate five fields with preserved marginals and local C height."""
     data = pd.DataFrame(
         {
             "pub_year": [2005],
             "p_value_pct": [50.0],
             "confidence_interval_pct": [40.0],
             "standard_error_pct": [30.0],
+            "direction_pct": [80.0],
+            "effect_size_beta_pct": [20.0],
+            "effect_size_or_pct": [60.0],
+            "effect_size_hr_pct": [10.0],
         }
     )
     eras = [{"year": 2003, "era_num": "1"}]
     spec = figures.create_completeness_subplot(data, eras).to_dict()
-    assert spec["title"] == (
-        "C. Reporting completeness over time by field"
-    )
+    assert spec["title"] == "C. Reporting completeness by Field Type"
+    assert spec["height"] == 400
+    assert figures.PLOT_HEIGHT == 200
     line = spec["layer"][0]
-    colors = figures.get_field_type_colors(use_gruvbox=True)
+    colors = figures.get_completeness_field_colors()
     assert line["encoding"]["color"]["scale"] == {
-        "domain": ["P-value", "95% CI", "Standard error"],
-        "range": [colors["P-value"], colors["95% CI"], colors["SE"]],
+        "domain": list(colors),
+        "range": list(colors.values()),
     }
-    rows = spec["datasets"][line["data"]["name"]]
-    assert [(row["field"], row["completeness_pct"]) for row in rows] == [
-        ("P-value", 50.0),
-        ("95% CI", 40.0),
-        ("Standard error", 30.0),
+    assert list(colors) == [
+        "Direction",
+        "Effect size",
+        "Standard error",
+        "95% CI",
+        "P-Value",
     ]
+    assert len(set(colors.values())) == 5
+    rows = spec["datasets"][line["data"]["name"]]
+    assert [(row["field_type"], row["completeness_pct"]) for row in rows] == [
+        ("Direction", 80.0),
+        ("Effect size", 60.0),
+        ("Standard error", 30.0),
+        ("95% CI", 40.0),
+        ("P-Value", 50.0),
+    ]
+    assert len(spec["layer"]) == 2  # line plus nested era-marker layer
+    assert len(spec["layer"][1]["layer"]) == 2
+    assert line["mark"]["interpolate"] == "linear"
+    assert "effect_size_pct" not in data
