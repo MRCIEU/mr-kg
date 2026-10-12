@@ -740,8 +740,6 @@ def create_figure_2(
                 "Concordance by number of compared studies",
                 subtitle=[
                     f"Concordance summaries (n={len(df_clean):,})",
-                    "Focal study plus retained comparisons within the "
-                    "same model",
                 ],
                 fontSize=16,
                 anchor="middle",
